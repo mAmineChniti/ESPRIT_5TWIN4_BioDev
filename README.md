@@ -5,8 +5,8 @@ producer → processor → distributor → consumer, with environmental footprin
 certifications (organic, local, fair trade) to fight greenwashing and help
 consumers make informed choices.
 
-**Stack:** Laravel · MariaDB · Tailwind CSS 4 · Alpine.js ·
-[April UI](https://aprilui.dev) Blade components · Lucide icons.
+**Stack:** Laravel · Breeze (auth) · MariaDB · Tailwind CSS 4 · Alpine.js ·
+[April UI](https://aprilui.dev) Blade components · Lucide icons · Docker.
 
 ---
 
@@ -16,7 +16,7 @@ consumers make informed choices.
 | --- | --- | --- |
 | PHP | 8.3+ with `pdo_mysql` | See driver notes below |
 | Composer | 2.x | [getcomposer.org](https://getcomposer.org) |
-| Node.js + npm | 20+ | [nodejs.org](https://nodejs.org) |
+| Node.js + npm | 22+ | [nodejs.org](https://nodejs.org) |
 | MariaDB (or MySQL) | 10.6+ / 8.0+ | Server running locally |
 | Git | any | — |
 
@@ -61,7 +61,7 @@ node --version
 ## 2. Get the code
 
 ```bash
-git clone <repo-url> NutriTrace
+git clone <repo-url> NutriTrace   # replace with the team repository URL
 cd NutriTrace
 cp .env.example .env        # Windows: copy .env.example .env
 php artisan key:generate
@@ -108,8 +108,8 @@ php artisan migrate --seed
 ```
 
 This creates the `foods` and `meals` tables and fills them with demo data
-(20 foods, 10 meals) plus a test user. To start over:
-`php artisan migrate:fresh --seed`.
+(20 foods, 10 meals) plus a test user (`test@example.com` / `password`).
+To start over: `php artisan migrate:fresh --seed` (safe to re-run).
 
 ---
 
@@ -123,7 +123,12 @@ php artisan serve
 Open in your browser:
 
 - Front office → http://localhost:8000
-- Back office → http://localhost:8000/admin
+- Back office → http://localhost:8000/admin (login required — use the test
+  account above, or register a new one at `/register`)
+- Login / Register → http://localhost:8000/login
+
+Password-reset emails use the `log` mail driver in development — read them in
+`storage/logs/laravel.log`.
 
 For live-reload development, run `npm run dev` in a second terminal instead of
 `npm run build`.
@@ -149,7 +154,30 @@ Stop everything with `docker compose down` (add `-v` to also drop the database).
 
 ---
 
-## 8. Troubleshooting
+## 8. Checks (lint, tests, CI)
+
+```bash
+composer lint      # Pint — fails if PHP is not formatted
+composer format    # Pint — auto-fix formatting
+php artisan test   # full suite (Breeze auth + example tests)
+```
+
+`phpunit.xml` uses in-memory SQLite, so the suite runs anywhere the
+`pdo_sqlite` driver exists. Without it, point the suite at MySQL instead:
+
+```bash
+DB_CONNECTION=mysql DB_HOST=localhost DB_DATABASE=<scratch_db> DB_USERNAME=... DB_PASSWORD=... php vendor/bin/phpunit
+```
+
+> Use a scratch database — tests wipe it (`RefreshDatabase`).
+> Never run the suite against your dev database.
+
+Pushes and pull requests run GitHub Actions (`.github/workflows/ci.yml`):
+Pint, Vite build, migrations and PHPUnit on PHP 8.4 + SQLite.
+
+---
+
+## 9. Troubleshooting
 
 | Symptom | Fix |
 | --- | --- |
@@ -158,6 +186,8 @@ Stop everything with `docker compose down` (add `-v` to also drop the database).
 | Page shows old styles or old April script host | `php artisan view:clear`, then `npm run build` if CSS changed. |
 | `SQLSTATE[HY000] [1049] Unknown database` | Create the database (step 3) or fix `DB_*` in `.env`. |
 | `SQLSTATE[HY000] [1045] Access denied` | Wrong `DB_USERNAME`/`DB_PASSWORD` in `.env`. |
+| `Vite manifest not found` | Frontend never built — run `npm run build` (or `npm run dev`). |
+| `419 Page Expired` on forms | Session/cookie issue — `php artisan config:clear`, reload the form page first. |
 | Blank page after pulling changes | `composer install && npm install && npm run build && php artisan migrate` |
 
 ---
@@ -172,4 +202,8 @@ Stop everything with `docker compose down` (add `-v` to also drop the database).
   tokens, dark mode). Layouts must use semantic tokens (`bg-background`,
   `text-foreground`, …), never hardcoded neutrals.
 - Icons: Lucide via `<x-lucide-... />` (e.g. `<x-lucide-sprout />`).
+- Auth is Breeze (Blade) restyled with April UI. **Never re-run
+  `php artisan breeze:install`** — it overwrites the theme, the Vite config
+  and the routes.
+- Run `composer format` before committing; CI enforces `composer lint`.
 - Run `php artisan april:doctor` if component rendering looks off.
