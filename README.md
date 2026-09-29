@@ -61,7 +61,7 @@ node --version
 ## 2. Get the code
 
 ```bash
-git clone <repo-url> NutriTrace   # replace with the team repository URL
+git clone https://github.com/mAmineChniti/NutriTrace.git
 cd NutriTrace
 cp .env.example .env        # Windows: copy .env.example .env
 php artisan key:generate
