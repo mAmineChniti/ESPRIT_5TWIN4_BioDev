@@ -7,7 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
-        "laravel/framework": "^13.17",
+        "laravel/framework": "^12.56",
         "laravel/tinker": "^3.0",
         "mallardduck/blade-lucide-icons": "^2.0",
         "yungifez/april-ui": "^1.3"
