@@ -1,3 +1,4 @@
+
 <april:sidebar>
     <x-slot:header>
         <div class="px-2 py-2">
@@ -16,23 +17,23 @@
             </april:sidebar-menu-item>
         </april:sidebar-menu>
 
+        @if(in_array(Auth::user()->role, ['admin', 'producer', 'processor', 'distributor']))
         <april:sidebar-menu>
-            <april:sidebar-group-label>Catalog</april:sidebar-group-label>
+            <april:sidebar-group-label>Catalog (Pro)</april:sidebar-group-label>
             <april:sidebar-menu-item>
-                <april:sidebar-menu-button-link href="#" :active="false">
+                <april:sidebar-menu-button-link href="{{ route('foods.index') }}" :active="request()->routeIs('foods.*')">
                     <x-lucide-apple />
-                    <span>Foods</span>
+                    <span>Manage Foods</span>
                 </april:sidebar-menu-button-link>
-                <april:sidebar-menu-badge>{{ $foodCount ?? 0 }}</april:sidebar-menu-badge>
             </april:sidebar-menu-item>
             <april:sidebar-menu-item>
                 <april:sidebar-menu-button-link href="#" :active="false">
                     <x-lucide-utensils />
                     <span>Meals</span>
                 </april:sidebar-menu-button-link>
-                <april:sidebar-menu-badge>{{ $mealCount ?? 0 }}</april:sidebar-menu-badge>
             </april:sidebar-menu-item>
         </april:sidebar-menu>
+        @endif
     </x-slot:content>
 
     <x-slot:footer>
@@ -59,6 +60,7 @@
                 <div class="min-w-0 flex-1">
                     <p class="truncate text-sm font-semibold">{{ Auth::user()->name }}</p>
                     <p class="truncate text-xs text-muted-foreground">{{ Auth::user()->email }}</p>
+                    <p class="truncate text-xs font-bold text-indigo-600 mt-1 uppercase">{{ Auth::user()->role }}</p>
                 </div>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf

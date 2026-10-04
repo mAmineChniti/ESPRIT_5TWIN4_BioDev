@@ -46,7 +46,7 @@
                 @if($latestFoods->isNotEmpty())
                     <april:data-table
                         searchable
-                        :data="$latestFoods->map(fn ($food) => ['name' => $food->name, 'category' => ucfirst($food->category ?? 'other'), 'calories' => $food->calories . ' kcal', 'protein' => $food->protein . ' g'])->values()"
+                        :data="$latestFoods->map(fn ($food) => ['name' => $food->name, 'category' => ucfirst($food->category->name ?? 'other'), 'calories' => $food->calories . ' kcal', 'protein' => $food->protein . ' g'])->values()"
                         :columns="[['key' => 'name', 'label' => 'Product', 'sortable' => true], ['key' => 'category', 'label' => 'Category', 'sortable' => true], ['key' => 'calories', 'label' => 'Energy', 'sortable' => true], ['key' => 'protein', 'label' => 'Protein']]"
                     />
                 @else
@@ -82,27 +82,6 @@
                 </x-slot:content>
             </april:card>
 
-            {{-- Team next steps --}}
-            <april:card>
-                <x-slot:title>Team next steps</x-slot:title>
-                <x-slot:description>Boilerplate is ready — build on top.</x-slot:description>
-                <x-slot:content>
-                    <ul class="space-y-2.5 text-sm">
-                        <li class="flex items-start gap-2">
-                            <x-lucide-circle-check class="mt-0.5 size-4 shrink-0 text-bio" />
-                            Full CRUD for <strong>Foods</strong> and <strong>Meals</strong> in this shell.
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <x-lucide-circle-check class="mt-0.5 size-4 shrink-0 text-bio" />
-                            Product journey timeline: producer → plate.
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <x-lucide-circle-check class="mt-0.5 size-4 shrink-0 text-bio" />
-                            Certification checks against greenwashing.
-                        </li>
-                    </ul>
-                </x-slot:content>
-            </april:card>
         </div>
     </div>
 @endsection

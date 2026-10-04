@@ -24,8 +24,9 @@ $catalogData = function () {
         'avgCalories' => (int) round(Food::avg('calories') ?? 0),
         'latestFoods' => Food::latest()->take(8)->get(),
         'latestMeals' => Meal::latest()->take(5)->get(),
-        'topCategories' => Food::selectRaw('category, COUNT(*) as total')
-            ->groupBy('category')
+        'topCategories' => Food::join('categories', 'foods.category_id', '=', 'categories.id')
+            ->selectRaw('categories.name as category, COUNT(*) as total')
+            ->groupBy('categories.name', 'categories.id')
             ->orderByDesc('total')
             ->take(4)
             ->get(),
@@ -44,6 +45,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    
+    Route::resource('foods', App\Http\Controllers\FoodController::class)->middleware(\App\Http\Middleware\ProAccess::class);
 });
 
 require __DIR__.'/auth.php';

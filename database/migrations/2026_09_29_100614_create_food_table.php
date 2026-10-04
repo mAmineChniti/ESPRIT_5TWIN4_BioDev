@@ -14,7 +14,10 @@ return new class extends Migration
         Schema::create('foods', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('category')->nullable();
+            $table->foreignId('category_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('origin')->nullable();
+            $table->string('certifications')->nullable();
+            $table->char('environmental_score', 1)->nullable(); // A, B, C, D, E
             $table->unsignedInteger('calories')->default(0); // kcal per 100g
             $table->decimal('protein', 5, 2)->default(0);
             $table->decimal('carbs', 5, 2)->default(0);
