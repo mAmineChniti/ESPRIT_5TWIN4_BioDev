@@ -30,13 +30,13 @@ class AuthenticatedSessionController extends Controller
 
         $role = $request->user()->role;
 
-        return match($role) {
-            'admin'       => redirect()->route('dashboard'),
-            'producer'    => redirect()->route('producer.dashboard'),
-            'processor'   => redirect()->route('processor.dashboard'),
+        return match ($role) {
+            'admin' => redirect()->route('dashboard'),
+            'producer' => redirect()->route('producer.dashboard'),
+            'processor' => redirect()->route('processor.dashboard'),
             'distributor' => redirect()->route('distributor.dashboard'),
-            'consumer'    => redirect()->route('consumer.dashboard'),
-            default       => redirect('/'),
+            'consumer' => redirect()->route('consumer.dashboard'),
+            default => redirect('/'),
         };
     }
 

@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\FoodController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Middleware\ProAccess;
 use App\Models\Food;
 use App\Models\Meal;
 use Illuminate\Support\Facades\Route;
@@ -38,9 +40,10 @@ Route::get('/', function () use ($catalogData) {
 })->name('front.home');
 
 Route::get('/admin', function () use ($catalogData) {
-    if (!Auth::check() || Auth::user()->role !== 'admin') {
+    if (! Auth::check() || Auth::user()->role !== 'admin') {
         abort(403);
     }
+
     return view('back.dashboard', $catalogData());
 })->middleware(['auth'])->name('dashboard');
 
@@ -64,8 +67,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    
-    Route::resource('foods', App\Http\Controllers\FoodController::class)->middleware(\App\Http\Middleware\ProAccess::class);
+
+    Route::resource('foods', FoodController::class)->middleware(ProAccess::class);
 });
 
 require __DIR__.'/auth.php';

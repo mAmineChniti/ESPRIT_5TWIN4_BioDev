@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Food;
 use App\Models\Category;
+use App\Models\Food;
+use Illuminate\Http\Request;
 
 class FoodController extends Controller
 {
@@ -14,12 +14,14 @@ class FoodController extends Controller
     public function index()
     {
         $foods = Food::with('category')->get();
+
         return view('foods.index', compact('foods'));
     }
 
     public function create()
     {
         $categories = Category::all();
+
         return view('foods.create', compact('categories'));
     }
 
@@ -38,6 +40,7 @@ class FoodController extends Controller
         ]);
 
         Food::create($validated);
+
         return redirect()->route('foods.index')->with('success', 'Produit ajouté avec succès!');
     }
 
@@ -49,6 +52,7 @@ class FoodController extends Controller
     public function edit(Food $food)
     {
         $categories = Category::all();
+
         return view('foods.edit', compact('food', 'categories'));
     }
 
@@ -67,12 +71,14 @@ class FoodController extends Controller
         ]);
 
         $food->update($validated);
+
         return redirect()->route('foods.index')->with('success', 'Produit modifié avec succès!');
     }
 
     public function destroy(Food $food)
     {
         $food->delete();
+
         return redirect()->route('foods.index')->with('success', 'Produit supprimé!');
     }
 }

@@ -21,6 +21,7 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
