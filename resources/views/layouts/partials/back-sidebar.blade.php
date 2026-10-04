@@ -10,7 +10,9 @@
         <april:sidebar-menu>
             <april:sidebar-group-label>Overview</april:sidebar-group-label>
             <april:sidebar-menu-item>
-                <april:sidebar-menu-button-link href="{{ url('/admin') }}" :active="request()->is('admin')">
+                <april:sidebar-menu-button-link
+                    href="{{ Auth::user()->role === 'admin' ? route('dashboard') : route(Auth::user()->role . '.dashboard') }}"
+                    :active="request()->routeIs('dashboard') || request()->routeIs('producer.dashboard') || request()->routeIs('processor.dashboard') || request()->routeIs('distributor.dashboard') || request()->routeIs('consumer.dashboard')">
                     <x-lucide-layout-dashboard />
                     <span>Dashboard</span>
                 </april:sidebar-menu-button-link>
@@ -19,7 +21,7 @@
 
         @if(in_array(Auth::user()->role, ['admin', 'producer', 'processor', 'distributor']))
         <april:sidebar-menu>
-            <april:sidebar-group-label>Catalog (Pro)</april:sidebar-group-label>
+            <april:sidebar-group-label>Catalog</april:sidebar-group-label>
             <april:sidebar-menu-item>
                 <april:sidebar-menu-button-link href="{{ route('foods.index') }}" :active="request()->routeIs('foods.*')">
                     <x-lucide-apple />

@@ -4,7 +4,12 @@
         <nav class="flex items-center gap-2">
             <april:button-link href="{{ url('/') }}" variant="ghost">Home</april:button-link>
             @auth
-                <april:button-link href="{{ url('/admin') }}" variant="outline">Back Office</april:button-link>
+                @php
+                    $dashRoute = Auth::user()->role === 'admin'
+                        ? route('dashboard')
+                        : route(Auth::user()->role . '.dashboard');
+                @endphp
+                <april:button-link href="{{ $dashRoute }}" variant="outline">My Dashboard</april:button-link>
             @else
                 @if(!request()->routeIs('login'))
                     <april:button-link href="{{ route('login') }}" variant="ghost">Log in</april:button-link>

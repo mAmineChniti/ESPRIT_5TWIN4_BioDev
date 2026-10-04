@@ -38,8 +38,27 @@ Route::get('/', function () use ($catalogData) {
 })->name('front.home');
 
 Route::get('/admin', function () use ($catalogData) {
+    if (!Auth::check() || Auth::user()->role !== 'admin') {
+        abort(403);
+    }
     return view('back.dashboard', $catalogData());
 })->middleware(['auth'])->name('dashboard');
+
+Route::get('/producer/dashboard', function () use ($catalogData) {
+    return view('back.dashboard', $catalogData());
+})->middleware(['auth'])->name('producer.dashboard');
+
+Route::get('/processor/dashboard', function () use ($catalogData) {
+    return view('back.dashboard', $catalogData());
+})->middleware(['auth'])->name('processor.dashboard');
+
+Route::get('/distributor/dashboard', function () use ($catalogData) {
+    return view('back.dashboard', $catalogData());
+})->middleware(['auth'])->name('distributor.dashboard');
+
+Route::get('/consumer/dashboard', function () use ($catalogData) {
+    return view('back.dashboard', $catalogData());
+})->middleware(['auth'])->name('consumer.dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
