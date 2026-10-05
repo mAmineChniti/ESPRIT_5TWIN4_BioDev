@@ -5,6 +5,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Middleware\ProAccess;
 use App\Models\Food;
 use App\Models\Meal;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 
@@ -51,7 +52,7 @@ Route::get('/admin/users', function () {
     if (! Auth::check() || Auth::user()->role !== 'admin') {
         abort(403);
     }
-    $users = App\Models\User::orderBy('role')->orderBy('name')->get();
+    $users = User::orderBy('role')->orderBy('name')->get();
 
     return view('back.users', compact('users'));
 })->middleware(['auth'])->name('admin.users');
