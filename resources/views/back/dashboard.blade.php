@@ -115,7 +115,7 @@
                     </p>
                 @endif
             </x-slot:content>
-            @if(!in_array(Auth::user()->role, ['consumer']))
+            @if(in_array(Auth::user()->role, ['producer', 'processor', 'distributor']))
                 <x-slot:footer>
                     <a href="{{ route('foods.index') }}" class="text-sm font-medium text-primary hover:underline">
                         Manage all products →

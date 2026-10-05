@@ -19,7 +19,19 @@
             </april:sidebar-menu-item>
         </april:sidebar-menu>
 
-        @if(in_array(Auth::user()->role, ['admin', 'producer', 'processor', 'distributor']))
+        @if(Auth::user()->role === 'admin')
+        {{-- Admin: manage users --}}
+        <april:sidebar-menu>
+            <april:sidebar-group-label>Administration</april:sidebar-group-label>
+            <april:sidebar-menu-item>
+                <april:sidebar-menu-button-link href="{{ route('admin.users') }}" :active="request()->routeIs('admin.users')">
+                    <x-lucide-users />
+                    <span>Manage Users</span>
+                </april:sidebar-menu-button-link>
+            </april:sidebar-menu-item>
+        </april:sidebar-menu>
+        @elseif(in_array(Auth::user()->role, ['producer', 'processor', 'distributor']))
+        {{-- Pro roles: manage foods --}}
         <april:sidebar-menu>
             <april:sidebar-group-label>Catalog</april:sidebar-group-label>
             <april:sidebar-menu-item>

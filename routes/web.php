@@ -47,6 +47,15 @@ Route::get('/admin', function () use ($catalogData) {
     return view('back.dashboard', $catalogData());
 })->middleware(['auth'])->name('dashboard');
 
+Route::get('/admin/users', function () {
+    if (! Auth::check() || Auth::user()->role !== 'admin') {
+        abort(403);
+    }
+    $users = App\Models\User::orderBy('role')->orderBy('name')->get();
+
+    return view('back.users', compact('users'));
+})->middleware(['auth'])->name('admin.users');
+
 Route::get('/producer/dashboard', function () use ($catalogData) {
     return view('back.dashboard', $catalogData());
 })->middleware(['auth'])->name('producer.dashboard');

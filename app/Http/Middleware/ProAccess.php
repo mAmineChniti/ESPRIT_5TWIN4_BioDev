@@ -15,8 +15,10 @@ class ProAccess
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->user() && $request->user()->role === 'consumer') {
-            abort(403, 'Accès réservé aux professionnels.');
+        $role = $request->user()?->role;
+
+        if (! in_array($role, ['producer', 'processor', 'distributor'])) {
+            abort(403, 'Accès réservé aux producteurs et distributeurs.');
         }
 
         return $next($request);
