@@ -11,7 +11,32 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 
 $catalogData = function () {
-    if (! Schema::hasTable('foods') || ! Schema::hasTable('meals')) {
+    try {
+        if (! Schema::hasTable('foods') || ! Schema::hasTable('meals') || ! Schema::hasTable('categories')) {
+            return [
+                'foodCount' => 0,
+                'mealCount' => 0,
+                'avgCalories' => 0,
+                'latestFoods' => collect(),
+                'latestMeals' => collect(),
+                'topCategories' => collect(),
+            ];
+        }
+
+        return [
+            'foodCount' => Food::count(),
+            'mealCount' => Meal::count(),
+            'avgCalories' => (int) round(Food::avg('calories') ?? 0),
+            'latestFoods' => Food::latest()->take(8)->get(),
+            'latestMeals' => Meal::latest()->take(5)->get(),
+            'topCategories' => Food::join('categories', 'foods.category_id', '=', 'categories.id')
+                ->selectRaw('categories.name as category, COUNT(*) as total')
+                ->groupBy('categories.name', 'categories.id')
+                ->orderByDesc('total')
+                ->take(4)
+                ->get(),
+        ];
+    } catch (Throwable $e) {
         return [
             'foodCount' => 0,
             'mealCount' => 0,
@@ -21,20 +46,6 @@ $catalogData = function () {
             'topCategories' => collect(),
         ];
     }
-
-    return [
-        'foodCount' => Food::count(),
-        'mealCount' => Meal::count(),
-        'avgCalories' => (int) round(Food::avg('calories') ?? 0),
-        'latestFoods' => Food::latest()->take(8)->get(),
-        'latestMeals' => Meal::latest()->take(5)->get(),
-        'topCategories' => Food::join('categories', 'foods.category_id', '=', 'categories.id')
-            ->selectRaw('categories.name as category, COUNT(*) as total')
-            ->groupBy('categories.name', 'categories.id')
-            ->orderByDesc('total')
-            ->take(4)
-            ->get(),
-    ];
 };
 
 Route::get('/', function () use ($catalogData) {
