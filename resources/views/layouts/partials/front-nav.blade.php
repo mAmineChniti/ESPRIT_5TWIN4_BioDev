@@ -5,9 +5,10 @@
             <april:button-link href="{{ url('/') }}" variant="ghost">Home</april:button-link>
             @auth
                 @php
-                    $dashRoute = Auth::user()->role === 'admin'
+                    $role = Auth::user()?->role;
+                    $dashRoute = $role === 'admin'
                         ? route('dashboard')
-                        : route(Auth::user()->role . '.dashboard');
+                        : ($role && \Illuminate\Support\Facades\Route::has($role . '.dashboard') ? route($role . '.dashboard') : route('dashboard'));
                 @endphp
                 <april:button-link href="{{ $dashRoute }}" variant="outline">My Dashboard</april:button-link>
             @else

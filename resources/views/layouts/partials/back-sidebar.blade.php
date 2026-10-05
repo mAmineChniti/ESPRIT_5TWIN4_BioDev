@@ -9,9 +9,15 @@
     <x-slot:content>
         <april:sidebar-menu>
             <april:sidebar-group-label>Overview</april:sidebar-group-label>
+            @php
+                $role = Auth::user()?->role;
+                $dashHref = $role === 'admin'
+                    ? route('dashboard')
+                    : ($role && \Illuminate\Support\Facades\Route::has($role . '.dashboard') ? route($role . '.dashboard') : route('dashboard'));
+            @endphp
             <april:sidebar-menu-item>
                 <april:sidebar-menu-button-link
-                    href="{{ Auth::user()->role === 'admin' ? route('dashboard') : route(Auth::user()->role . '.dashboard') }}"
+                    href="{{ $dashHref }}"
                     :active="request()->routeIs('dashboard') || request()->routeIs('producer.dashboard') || request()->routeIs('processor.dashboard') || request()->routeIs('distributor.dashboard') || request()->routeIs('consumer.dashboard')">
                     <x-lucide-layout-dashboard />
                     <span>Dashboard</span>
