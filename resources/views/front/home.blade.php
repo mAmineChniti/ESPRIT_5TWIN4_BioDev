@@ -23,7 +23,11 @@
                 </p>
                 <div class="mt-6 flex flex-wrap gap-3">
                     <april:button-link href="#journey">Follow a product</april:button-link>
-                    <april:button-link href="{{ url('/admin') }}" variant="outline">Open Back Office</april:button-link>
+                    @auth
+                        <april:button-link href="{{ route('dashboard') }}" variant="outline">Back Office</april:button-link>
+                    @else
+                        <april:button-link href="{{ route('login') }}" variant="outline">Sign in</april:button-link>
+                    @endauth
                 </div>
                 <dl class="mt-8 flex flex-wrap gap-8">
                     <div>
@@ -173,7 +177,7 @@
                                     </span>
                                     <div>
                                         <p class="text-sm font-semibold">{{ $food->name }}</p>
-                                        <p class="text-xs capitalize text-muted-foreground">{{ $food->category }}</p>
+                                        <p class="text-xs capitalize text-muted-foreground">{{ $food->category->name ?? '' }}</p>
                                     </div>
                                 </div>
                                 <april:badge variant="secondary" class="tabular-nums">{{ $food->calories }} kcal</april:badge>

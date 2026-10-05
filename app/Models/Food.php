@@ -15,10 +15,18 @@ class Food extends Model
 
     protected $fillable = [
         'name',
-        'category',
+        'category_id',
+        'origin',
+        'certifications',
+        'environmental_score',
         'calories',
         'protein',
         'carbs',
         'fat',
     ];
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
 }
