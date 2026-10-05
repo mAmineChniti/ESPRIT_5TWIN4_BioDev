@@ -52,13 +52,26 @@ Route::get('/', function () use ($catalogData) {
     return view('front.home', $catalogData());
 })->name('front.home');
 
+Route::get('/dashboard', function () {
+    $role = Auth::user()?->role ?? 'consumer';
+
+    return match ($role) {
+        'admin' => redirect()->route('admin.dashboard'),
+        'producer' => redirect()->route('producer.dashboard'),
+        'processor' => redirect()->route('processor.dashboard'),
+        'distributor' => redirect()->route('distributor.dashboard'),
+        'consumer' => redirect()->route('consumer.dashboard'),
+        default => redirect('/'),
+    };
+})->middleware(['auth'])->name('dashboard');
+
 Route::get('/admin', function () use ($catalogData) {
     if (! Auth::check() || Auth::user()->role !== 'admin') {
         abort(403);
     }
 
     return view('back.dashboard', $catalogData());
-})->middleware(['auth'])->name('dashboard');
+})->middleware(['auth'])->name('admin.dashboard');
 
 Route::get('/admin/users', function () {
     if (! Auth::check() || Auth::user()->role !== 'admin') {

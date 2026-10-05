@@ -12,7 +12,7 @@
             @php
                 $role = Auth::user()?->role;
                 $dashHref = $role === 'admin'
-                    ? route('dashboard')
+                    ? route('admin.dashboard')
                     : ($role && \Illuminate\Support\Facades\Route::has($role . '.dashboard') ? route($role . '.dashboard') : route('dashboard'));
             @endphp
             <april:sidebar-menu-item>

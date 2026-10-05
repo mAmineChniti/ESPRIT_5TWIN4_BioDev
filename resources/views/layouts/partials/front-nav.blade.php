@@ -7,7 +7,7 @@
                 @php
                     $role = Auth::user()?->role;
                     $dashRoute = $role === 'admin'
-                        ? route('dashboard')
+                        ? route('admin.dashboard')
                         : ($role && \Illuminate\Support\Facades\Route::has($role . '.dashboard') ? route($role . '.dashboard') : route('dashboard'));
                 @endphp
                 <april:button-link href="{{ $dashRoute }}" variant="outline">My Dashboard</april:button-link>
