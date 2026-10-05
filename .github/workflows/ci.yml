@@ -34,7 +34,6 @@ jobs:
           cp .env.example .env
           php artisan key:generate
           touch database/database.sqlite
-          touch database/testing.sqlite
           sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
           sed -i 's|^DB_DATABASE=.*|DB_DATABASE=${{ github.workspace }}/database/database.sqlite|' .env
 
