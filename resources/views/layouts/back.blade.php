@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NutriTrace - @yield('title', 'Dashboard')</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+    <x-theme-bootstrap />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @aprilScripts
     @stack('styles')

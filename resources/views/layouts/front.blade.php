@@ -6,6 +6,7 @@
     @php($pageTitle = trim($__env->yieldContent('title')))
     <title>{{ $pageTitle === '' ? 'NutriTrace' : "NutriTrace - {$pageTitle}" }}</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+    <x-theme-bootstrap />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @aprilScripts
     @stack('styles')

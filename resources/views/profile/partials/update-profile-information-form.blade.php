@@ -24,7 +24,7 @@
             </p>
 
             @if (session('status') === 'verification-link-sent')
-                <p class="text-sm font-medium text-bio">A new verification link has been sent to your email address.</p>
+                <p class="text-sm font-medium text-primary">A new verification link has been sent to your email address.</p>
             @endif
         @endif
     </div>
@@ -38,7 +38,7 @@
                 x-show="show"
                 x-transition
                 x-init="setTimeout(() => show = false, 2000)"
-                class="text-sm text-bio"
+                class="text-sm text-primary"
             >Saved.</p>
         @endif
     </div>

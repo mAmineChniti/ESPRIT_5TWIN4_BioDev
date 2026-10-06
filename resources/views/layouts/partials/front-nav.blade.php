@@ -2,7 +2,11 @@
     <div class="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-4">
         <x-logo />
         <nav class="flex items-center gap-2">
-            <april:button-link href="{{ url('/') }}" variant="ghost">Home</april:button-link>
+            {{-- The logo is the only link home; no duplicate "Home" entry. --}}
+            <april:button-link href="{{ route('products.index') }}" variant="ghost"
+                @class(['bg-muted' => request()->routeIs('products.*')])>Products</april:button-link>
+            <april:button-link href="{{ route('greenwashing') }}" variant="ghost"
+                @class(['bg-muted' => request()->routeIs('greenwashing')])>Spot greenwashing</april:button-link>
             @auth
                 @php
                     $role = Auth::user()?->role;
@@ -19,6 +23,7 @@
                     <april:button-link href="{{ route('register') }}">Sign up</april:button-link>
                 @endif
             @endauth
+            <x-theme-toggle />
         </nav>
     </div>
 </header>

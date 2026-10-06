@@ -18,7 +18,7 @@ class ProAccess
         $role = $request->user()?->role;
 
         if (! in_array($role, ['producer', 'processor', 'distributor'])) {
-            abort(403, 'Accès réservé aux producteurs et distributeurs.');
+            abort(403, 'Restricted to supply chain professionals.');
         }
 
         return $next($request);

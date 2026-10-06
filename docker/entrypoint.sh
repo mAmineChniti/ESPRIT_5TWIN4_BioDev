@@ -1,29 +1,28 @@
 #!/bin/sh
-# Container entrypoint: materialize runtime environment variables into .env
-# (php artisan serve does NOT forward env vars to its web worker),
-# then migrate and serve.
+# Container entrypoint.
+#
+# Secrets are supplied as real environment variables (see docker-compose.yml) and
+# `artisan serve --no-reload` forwards $_ENV to the web worker, so nothing has
+# to be written into a .env file on disk.
 set -e
 
-[ -f .env ] || cp .env.example .env
+KEY_FILE=/app/storage/app/app.key
 
-for key in APP_ENV APP_DEBUG APP_URL APP_KEY \
-    DB_CONNECTION DB_HOST DB_PORT DB_DATABASE DB_USERNAME DB_PASSWORD \
-    SESSION_DRIVER CACHE_STORE QUEUE_CONNECTION; do
-    val=$(printenv "$key" || true)
-    if [ -n "$val" ]; then
-        esc=$(printf '%s' "$val" | sed 's/[&|]/\\&/g')
-        if grep -q "^${key}=" .env; then
-            sed -i "s|^${key}=.*|${key}=${esc}|" .env
-        else
-            printf '%s=%s\n' "$key" "$esc" >> .env
-        fi
+mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache \
+         storage/logs storage/app bootstrap/cache
+
+# A stable APP_KEY: taken from the environment, else reused from the persisted
+# storage volume, else generated once and kept there.
+if [ -z "${APP_KEY}" ]; then
+    if [ -f "$KEY_FILE" ]; then
+        APP_KEY=$(cat "$KEY_FILE")
+    else
+        php artisan key:generate --force --show > "$KEY_FILE"
+        APP_KEY=$(cat "$KEY_FILE")
     fi
-done
-
-if grep -q '^APP_KEY=$' .env; then
-    php artisan key:generate --force
+    export APP_KEY
 fi
 
 php artisan migrate --force
 
-exec php artisan serve --host=0.0.0.0 --port=8000
+exec php artisan serve --no-reload --host=0.0.0.0 --port=8000
