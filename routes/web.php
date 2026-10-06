@@ -89,9 +89,12 @@ Route::middleware(['auth'])->group(function () {
 
     // Editing and moving products is limited to supply chain professionals.
     Route::middleware(ProAccess::class)->group(function () {
+        Route::get('/foods/create', [FoodController::class, 'create'])->name('foods.create');
+        Route::post('/foods', [FoodController::class, 'store'])->name('foods.store');
         Route::get('/foods/{food}/edit', [FoodController::class, 'edit'])->name('foods.edit');
         Route::match(['put', 'patch'], '/foods/{food}', [FoodController::class, 'update'])->name('foods.update');
         Route::delete('/foods/{food}', [FoodController::class, 'destroy'])->name('foods.destroy');
+        Route::post('/foods/import', [FoodController::class, 'importCsv'])->name('foods.import');
         Route::post('/foods/{food}/transitions', [StageTransitionController::class, 'store'])->name('foods.transitions.store');
     });
 

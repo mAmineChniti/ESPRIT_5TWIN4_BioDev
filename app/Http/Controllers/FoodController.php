@@ -116,4 +116,83 @@ class FoodController extends Controller
         return redirect()->route('foods.index')
             ->with('success', 'Product deleted.');
     }
+
+    /**
+     * Import products from a CSV file.
+     *
+     * Expected columns: name, category, origin, environmental_score, calories, protein, carbs, fat
+     */
+    public function importCsv(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'csv_file' => ['required', 'file', 'mimes:csv,txt', 'max:2048'],
+        ]);
+
+        $file = $request->file('csv_file');
+        $handle = fopen($file->getRealPath(), 'r');
+
+        if ($handle === false) {
+            return back()->with('error', 'Unable to read the file.');
+        }
+
+        $header = fgetcsv($handle);
+
+        if (! $header) {
+            fclose($handle);
+
+            return back()->with('error', 'The CSV file is empty.');
+        }
+
+        $header = array_map(fn (string $col): string => strtolower(trim($col)), $header);
+
+        $imported = 0;
+        $errors = [];
+
+        while (($row = fgetcsv($handle)) !== false) {
+            if (count($row) !== count($header)) {
+                continue;
+            }
+
+            $data = array_combine($header, $row);
+
+            $category = Category::firstOrCreate(['name' => trim($data['category'] ?? 'Other')]);
+
+            try {
+                $food = Food::create([
+                    'name' => trim($data['name']),
+                    'category_id' => $category->id,
+                    'origin' => trim($data['origin'] ?? ''),
+                    'environmental_score' => strtoupper(trim($data['environmental_score'] ?? '')) ?: null,
+                    'calories' => (int) ($data['calories'] ?? 0),
+                    'protein' => (float) ($data['protein'] ?? 0),
+                    'carbs' => (float) ($data['carbs'] ?? 0),
+                    'fat' => (float) ($data['fat'] ?? 0),
+                    'producer_id' => $request->user()->id,
+                ]);
+
+                StageTransition::create([
+                    'food_id' => $food->id,
+                    'actor_id' => $request->user()->id,
+                    'from_stage' => null,
+                    'to_stage' => Stage::Produced->value,
+                    'notes' => 'Imported via CSV',
+                    'occurred_at' => now(),
+                ]);
+
+                $imported++;
+            } catch (\Throwable $e) {
+                $errors[] = ($data['name'] ?? 'unknown').': '.$e->getMessage();
+            }
+        }
+
+        fclose($handle);
+
+        $message = "{$imported} product(s) imported successfully.";
+
+        if (count($errors) > 0) {
+            $message .= ' '.count($errors).' row(s) skipped.';
+        }
+
+        return redirect()->route('foods.index')->with('success', $message);
+    }
 }

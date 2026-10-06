@@ -5,6 +5,8 @@ namespace App\Http\Requests;
 use App\Enums\EnvironmentalScore;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
+use App\Models\Certification;
 
 class FoodRequest extends FormRequest
 {
@@ -56,5 +58,45 @@ class FoodRequest extends FormRequest
     public function certificationIds(): array
     {
         return array_map('intval', $this->input('certifications', []));
+    }
+
+    /**
+     * "Intelligence métier" / Valeur Ajoutée :
+     * Détection des incohérences géographiques entre l'origine et les certifications.
+     */
+    public function after(): array
+    {
+        return [
+            function (Validator $validator) {
+                $origin = strtolower(trim((string) $this->input('origin', '')));
+                $certifications = $this->certificationIds();
+
+                if (empty($origin) || empty($certifications)) {
+                    return;
+                }
+
+                $certs = Certification::whereIn('id', $certifications)->get();
+
+                foreach ($certs as $cert) {
+                    $certName = strtolower($cert->name);
+                    
+                    // Règle métier 1 : "Local" = Tunisie
+                    if ($certName === 'local' && $origin !== 'tunisie') {
+                        $validator->errors()->add(
+                            'origin',
+                            "Incohérence détectée : La certification 'Local' exige que l'origine soit 'Tunisie' (Vous avez saisi : {$this->input('origin')})."
+                        );
+                    }
+
+                    // Règle métier 2 : "AOP Normandie" = France
+                    if (str_contains($certName, 'normandie') && $origin !== 'france') {
+                        $validator->errors()->add(
+                            'origin',
+                            "Incohérence détectée : La certification '{$cert->name}' exige que l'origine soit la 'France' (Vous avez saisi : {$this->input('origin')})."
+                        );
+                    }
+                }
+            }
+        ];
     }
 }

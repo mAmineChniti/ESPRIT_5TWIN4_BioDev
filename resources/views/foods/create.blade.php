@@ -37,6 +37,7 @@
             <div class="space-y-2">
                 <label class="block text-sm font-medium text-foreground">Origin</label>
                 <input type="text" name="origin" value="{{ old('origin') }}" placeholder="ex: France" class="w-full rounded-md border-input shadow-sm focus:border-primary focus:ring-primary">
+                @error('origin') <span class="text-destructive text-sm">{{ $message }}</span> @enderror
             </div>
             
             <div class="space-y-2">

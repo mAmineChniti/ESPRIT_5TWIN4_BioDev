@@ -98,6 +98,95 @@
     </div>
 
     <div class="px-6 py-5 border-t border-border">
+        <h3 class="text-md font-medium leading-6 text-foreground mb-4">Origin Map 🗺️</h3>
+        
+        @if($food->origin)
+            <div id="origin-map" class="h-64 w-full rounded-lg z-0 relative shadow-inner border border-border"></div>
+            
+            <!-- Leaflet CSS & JS -->
+            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+            <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+            
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const origin = "{{ strtolower(trim($food->origin)) }}";
+                    
+                    // Dictionnaire de coordonnées (Lat, Lng) enrichi pour la démo
+                    const coordinates = {
+                        'tunisie': [33.8869, 9.5375],
+                        'france': [46.2276, 2.2137],
+                        'espagne': [40.4637, -3.7492],
+                        'italie': [41.8719, 12.5674],
+                        'maroc': [31.7917, -7.0926],
+                        'algerie': [28.0339, 1.6596],
+                        'bresil': [-14.2350, -51.9253],
+                        'brésil': [-14.2350, -51.9253],
+                        'brasil': [-14.2350, -51.9253], // Orthographe portugaise/espagnole
+                        'brazil': [-14.2350, -51.9253], // Orthographe anglaise
+                        'usa': [37.0902, -95.7129],
+                        'etats-unis': [37.0902, -95.7129],
+                        'chine': [35.8617, 104.1954],
+                        'allemagne': [51.1657, 10.4515],
+                        'canada': [56.1304, -106.3468],
+                        'mexique': [23.6345, -102.5528],
+                        'argentine': [-38.4161, -63.6167],
+                        'inde': [20.5937, 78.9629],
+                        'japon': [36.2048, 138.2529],
+                        'turquie': [38.9637, 35.2433],
+                        'royaume-uni': [55.3781, -3.4360],
+                    };
+
+                    const coord = coordinates[origin];
+                    const homeCoord = coordinates['tunisie']; // Destination par défaut (Ex: L'utilisateur est en Tunisie)
+                    
+                    if (coord) {
+                        const map = L.map('origin-map');
+                        
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        }).addTo(map);
+
+                        if (origin === 'tunisie') {
+                            // Produit Local
+                            map.setView(coord, 5);
+                            L.marker(coord).addTo(map)
+                                .bindPopup('<b>🌿 Produit Local</b><br>Circuit court (Tunisie)')
+                                .openPopup();
+                        } else {
+                            // Produit importé : On trace la ligne et on calcule la distance
+                            const distanceKm = Math.round(map.distance(coord, homeCoord) / 1000);
+                            
+                            // Ligne rouge pointillée
+                            const polyline = L.polyline([coord, homeCoord], {
+                                color: 'red',
+                                weight: 3,
+                                dashArray: '10, 10'
+                            }).addTo(map);
+                            
+                            // Zoomer pour voir toute la ligne
+                            map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
+
+                            // Marqueur d'origine avec la distance
+                            L.marker(coord).addTo(map)
+                                .bindPopup(`<b>Origine :</b> {{ $food->origin }}<br><b>Distance :</b> ~${distanceKm} km ✈️<br><span class="text-xs text-red-500">Fort impact transport</span>`)
+                                .openPopup();
+                                
+                            // Marqueur d'arrivée (Maison)
+                            L.circleMarker(homeCoord, { color: 'green', radius: 5 }).addTo(map)
+                                .bindPopup('Destination (Vous)');
+                        }
+                    } else {
+                        const map = L.map('origin-map').setView([20, 0], 2);
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                    }
+                });
+            </script>
+        @else
+            <p class="text-sm text-muted-foreground">Aucune origine définie pour ce produit.</p>
+        @endif
+    </div>
+
+    <div class="px-6 py-5 border-t border-border">
         <h3 class="text-md font-medium leading-6 text-foreground mb-4">Nutritional values (per 100g)</h3>
         <div class="grid grid-cols-4 text-center gap-4">
             <div class="bg-muted p-4 rounded-lg">
