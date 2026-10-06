@@ -1,11 +1,18 @@
 # NutriTrace
 
-Farm-to-plate food traceability platform (subject n°5): follow every product from
-producer → processor → distributor → consumer, with environmental footprint and
-certifications (organic, local, fair trade) to fight greenwashing and help
-consumers make informed choices.
+Farm-to-plate food traceability platform (subject n°5). Products are registered
+by a producer, then move along a recorded supply chain — **produced →
+processed → distributed** — and consumers can look up where a product came
+from and which certifications back it.
 
-**Stack:** Laravel · Breeze (auth) · MariaDB · Tailwind CSS 4 · Alpine.js ·
+Every supply chain hand-off is stored as a row in `stage_transitions`, so the
+journey shown on a product page is real data rather than a claim. Certifications
+are a proper entity with an issuing body and an expiry date, and a product's
+environmental grade (A–E) is an enum, not free text — a product cannot claim a
+certification that is not on file, and a grade renders with a colour that matches
+its actual value.
+
+**Stack:** Laravel 12 · Breeze (auth) · MariaDB · Tailwind CSS 4 · Alpine.js ·
 [April UI](https://aprilui.dev) Blade components · Lucide icons · Docker.
 
 ---
@@ -107,8 +114,19 @@ npm install
 php artisan migrate --seed
 ```
 
-This creates the `foods` and `meals` tables and fills them with demo data
-(20 foods, 10 meals) plus a test user (`test@example.com` / `password`).
+This creates every table and fills it with demo data: 6 categories, 3
+certifications, 20 products (each owned by a producer, each with a recorded
+supply chain of 1–3 steps), 10 meals and 5 users. Demo logins all use the
+password `password`:
+
+| Email | Role |
+| --- | --- |
+| `producer@example.com` | producer |
+| `processor@example.com` | processor |
+| `distributor@example.com` | distributor |
+| `test@example.com` | consumer |
+| `admin@example.com` | admin |
+
 To start over: `php artisan migrate:fresh --seed` (safe to re-run).
 
 ---
@@ -173,7 +191,8 @@ DB_CONNECTION=mysql DB_HOST=localhost DB_DATABASE=<scratch_db> DB_USERNAME=... D
 > Never run the suite against your dev database.
 
 Pushes and pull requests run GitHub Actions (`.github/workflows/ci.yml`):
-Pint, Vite build, migrations and PHPUnit on PHP 8.4 + SQLite.
+Pint, a PHP syntax sweep, Vite build, migrations, seeding and PHPUnit on
+**PHP 8.3 + SQLite** — the same version the Docker image runs.
 
 ---
 
@@ -189,6 +208,40 @@ Pint, Vite build, migrations and PHPUnit on PHP 8.4 + SQLite.
 | `Vite manifest not found` | Frontend never built — run `npm run build` (or `npm run dev`). |
 | `419 Page Expired` on forms | Session/cookie issue — `php artisan config:clear`, reload the form page first. |
 | Blank page after pulling changes | `composer install && npm install && npm run build && php artisan migrate` |
+
+---
+
+## 10. Consumer space
+
+Three public pages, no login required to view them:
+
+| Page | Route | What it does |
+| --- | --- | --- |
+| Search / scan | `/products` | Look a product up by name, origin, producer or certification. Filter by category, eco grade or "certified only", and sort by recency, scans, grade or rating. `/products/scan?code=…` resolves a scanned code straight to a product and increments its scan counter. |
+| Product page | `/products/{food}` | The full traceability record: producer, certifications with issuer and expiry, consumer reviews, and an **interactive Chart.js timeline** showing how long each supply chain stage took. Click a bar for who recorded it. |
+| Greenwashing guide | `/greenwashing` | Awareness page: six concrete things to check on any label, and exactly how NutriTrace records each one. |
+
+Every product page carries a **transparency score** out of 100, computed only from
+checkable facts — how many chain stages are recorded, whether certifications are
+on file and still valid, and how many greenwashing reports a reviewer has upheld:
+
+```
+40 base
++12 per recorded stage (max 3)
++15 if any certification is on file, +5 more if one is still valid
++10 if an environmental grade is recorded
+−15 per upheld report (capped at −40)
+```
+
+Consumers can leave a review and file a greenwashing report against any reason in
+`App\Enums\ReportReason`. Reports are not decorative: an **upheld** report lowers
+the product's transparency score and flips its badge to *At risk*. Only admins can
+uphold or dismiss a report.
+
+The signed-in consumer dashboard lives at `/consumer/dashboard`: calories per day
+(line chart), eco-grade mix of what they ate (doughnut), share certified, plus
+their own reviews and filed reports. Charts load from a separate Vite entry
+(`resources/js/charts.js`) so they are only downloaded on pages that use them.
 
 ---
 

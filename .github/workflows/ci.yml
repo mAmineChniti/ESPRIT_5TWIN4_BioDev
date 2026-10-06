@@ -6,7 +6,7 @@ on:
 
 jobs:
   laravel:
-    name: Lint, build & test
+    name: Lint, build & test (PHP 8.3)
     runs-on: ubuntu-latest
 
     steps:
@@ -16,8 +16,8 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
-          extensions: mbstring, xml, bcmath, sqlite3, pdo_sqlite
+          php-version: '8.3'
+          extensions: mbstring, xml, bcmath, sqlite3, pdo_sqlite, pdo_mysql
           coverage: none
 
       - name: Setup Node
@@ -40,6 +40,9 @@ jobs:
       - name: Lint (Pint)
         run: ./vendor/bin/pint --test
 
+      - name: Syntax check
+        run: find app database routes tests -name '*.php' -print0 | xargs -0 -n1 -P4 php -l > /dev/null
+
       - name: Build frontend
         run: |
           npm ci
@@ -47,6 +50,9 @@ jobs:
 
       - name: Migrate
         run: php artisan migrate --force
+
+      - name: Seed
+        run: php artisan db:seed --force
 
       - name: Test
         run: php vendor/bin/phpunit

@@ -13,22 +13,6 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
-
-    /* Certification badges (anti-greenwashing: one honest hue per label). */
-    --color-bio: hsl(var(--bio));
-    --color-bio-foreground: hsl(var(--bio-foreground));
-    --color-local: hsl(var(--local));
-    --color-local-foreground: hsl(var(--local-foreground));
-    --color-fairtrade: hsl(var(--fairtrade));
-    --color-fairtrade-foreground: hsl(var(--fairtrade-foreground));
-
-    /* Carbon footprint scale: low = green, medium = amber, high = red. */
-    --color-footprint-low: hsl(var(--footprint-low));
-    --color-footprint-low-foreground: hsl(var(--footprint-low-foreground));
-    --color-footprint-medium: hsl(var(--footprint-medium));
-    --color-footprint-medium-foreground: hsl(var(--footprint-medium-foreground));
-    --color-footprint-high: hsl(var(--footprint-high));
-    --color-footprint-high-foreground: hsl(var(--footprint-high-foreground));
 }
 
 :root {
@@ -77,28 +61,12 @@
     --sidebar-border: 100 12% 80%;
     --sidebar-ring: 142 58% 30%;
 
-    /* --- Footprint charts: field green → amber → terracotta → soil --- */
+    /* --- Chart series --- */
     --chart-1: hsl(142 55% 28%);
     --chart-2: hsl(95 45% 45%);
     --chart-3: hsl(38 92% 50%);
     --chart-4: hsl(22 65% 50%);
     --chart-5: hsl(30 30% 35%);
-
-    /* --- Certifications: organic leaf, terroir clay, fair-trade river --- */
-    --bio: 145 62% 30%;
-    --bio-foreground: 140 30% 97%;
-    --local: 24 68% 46%;
-    --local-foreground: 30 40% 98%;
-    --fairtrade: 212 72% 46%;
-    --fairtrade-foreground: 210 40% 98%;
-
-    /* --- Footprint scale: honest traffic lights, no greenwashing --- */
-    --footprint-low: 142 60% 33%;
-    --footprint-low-foreground: 140 30% 97%;
-    --footprint-medium: 38 92% 48%;
-    --footprint-medium-foreground: 35 40% 14%;
-    --footprint-high: 0 72% 51%;
-    --footprint-high-foreground: 0 0% 98%;
 }
 
 .dark {
@@ -147,21 +115,6 @@
     --chart-3: hsl(38 90% 58%);
     --chart-4: hsl(22 65% 58%);
     --chart-5: hsl(30 30% 55%);
-
-    /* --- Certifications, brightened for dark surfaces --- */
-    --bio: 145 55% 45%;
-    --bio-foreground: 152 40% 8%;
-    --local: 24 70% 58%;
-    --local-foreground: 30 40% 10%;
-    --fairtrade: 212 75% 62%;
-    --fairtrade-foreground: 212 50% 10%;
-
-    --footprint-low: 142 55% 45%;
-    --footprint-low-foreground: 152 40% 8%;
-    --footprint-medium: 38 92% 55%;
-    --footprint-medium-foreground: 35 45% 10%;
-    --footprint-high: 0 68% 60%;
-    --footprint-high-foreground: 0 0% 8%;
 }
 
 /* Leaf-tinted text selection. */

@@ -29,7 +29,7 @@
                 x-show="show"
                 x-transition
                 x-init="setTimeout(() => show = false, 2000)"
-                class="text-sm text-bio"
+                class="text-sm text-primary"
             >Saved.</p>
         @endif
     </div>

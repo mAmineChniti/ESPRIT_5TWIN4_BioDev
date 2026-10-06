@@ -1,109 +1,108 @@
 <?php
 
+use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\ConsumerDashboardController;
+use App\Http\Controllers\ConsumerSearchController;
 use App\Http\Controllers\FoodController;
+use App\Http\Controllers\GreenwashingReportController;
+use App\Http\Controllers\MealController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\StageTransitionController;
+use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\ProAccess;
-use App\Models\Food;
 use App\Models\Meal;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Schema;
 
-$catalogData = function () {
-    try {
-        if (! Schema::hasTable('foods') || ! Schema::hasTable('meals') || ! Schema::hasTable('categories')) {
-            return [
-                'foodCount' => 0,
-                'mealCount' => 0,
-                'avgCalories' => 0,
-                'latestFoods' => collect(),
-                'latestMeals' => collect(),
-                'topCategories' => collect(),
-            ];
-        }
-
-        return [
-            'foodCount' => Food::count(),
-            'mealCount' => Meal::count(),
-            'avgCalories' => (int) round(Food::avg('calories') ?? 0),
-            'latestFoods' => Food::latest()->take(8)->get(),
-            'latestMeals' => Meal::latest()->take(5)->get(),
-            'topCategories' => Food::join('categories', 'foods.category_id', '=', 'categories.id')
-                ->selectRaw('categories.name as category, COUNT(*) as total')
-                ->groupBy('categories.name', 'categories.id')
-                ->orderByDesc('total')
-                ->take(4)
-                ->get(),
-        ];
-    } catch (Throwable $e) {
-        return [
-            'foodCount' => 0,
-            'mealCount' => 0,
-            'avgCalories' => 0,
-            'latestFoods' => collect(),
-            'latestMeals' => collect(),
-            'topCategories' => collect(),
-        ];
-    }
-};
-
-Route::get('/', function () use ($catalogData) {
-    return view('front.home', $catalogData());
+Route::get('/', function () {
+    return view('front.home', CatalogController::catalogData());
 })->name('front.home');
 
-Route::get('/dashboard', function () {
-    $role = Auth::user()?->role ?? 'consumer';
+// ---------- Public consumer space ----------
+Route::get('/products', [ConsumerSearchController::class, 'index'])->name('products.index');
+Route::get('/products/scan', [ConsumerSearchController::class, 'scan'])->name('products.scan');
+Route::get('/products/{food}', [ConsumerSearchController::class, 'show'])->name('products.show');
+Route::get('/greenwashing', function () {
+    return view('front.greenwashing');
+})->name('greenwashing');
 
-    return match ($role) {
-        'admin' => redirect()->route('admin.dashboard'),
-        'producer' => redirect()->route('producer.dashboard'),
-        'processor' => redirect()->route('processor.dashboard'),
-        'distributor' => redirect()->route('distributor.dashboard'),
-        'consumer' => redirect()->route('consumer.dashboard'),
-        default => redirect('/'),
-    };
-})->middleware(['auth'])->name('dashboard');
+Route::middleware(['auth'])->group(function () {
+    // Reviewing and reporting are consumer actions.
+    Route::post('/products/{food}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+    Route::delete('/products/{food}/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+    Route::post('/products/{food}/reports', [GreenwashingReportController::class, 'store'])->name('reports.store');
+    Route::patch('/reports/{report}', [GreenwashingReportController::class, 'update'])->name('reports.update');
 
-Route::get('/admin', function () use ($catalogData) {
-    if (! Auth::check() || Auth::user()->role !== 'admin') {
-        abort(403);
+    Route::get('/dashboard', function () {
+        $role = Auth::user()?->role ?? 'consumer';
+
+        return match ($role) {
+            'admin' => redirect()->route('admin.dashboard'),
+            'producer' => redirect()->route('producer.dashboard'),
+            'processor' => redirect()->route('processor.dashboard'),
+            'distributor' => redirect()->route('distributor.dashboard'),
+            default => redirect()->route('consumer.dashboard'),
+        };
+    })->name('dashboard');
+
+    // Each role dashboard is restricted to that role and shows its own data.
+    Route::get('/admin', CatalogController::class)
+        ->middleware(EnsureUserHasRole::class.':admin')
+        ->name('admin.dashboard');
+
+    Route::get('/admin/users', function () {
+        $users = User::orderBy('role')->orderBy('name')->get();
+
+        return view('back.users', compact('users'));
+    })->middleware(EnsureUserHasRole::class.':admin')->name('admin.users');
+
+    foreach ([
+        'producer' => 'producer.dashboard',
+        'processor' => 'processor.dashboard',
+        'distributor' => 'distributor.dashboard',
+    ] as $role => $name) {
+        Route::get("/{$role}/dashboard", CatalogController::class)
+            ->middleware(EnsureUserHasRole::class.':'.$role)
+            ->name($name);
     }
 
-    return view('back.dashboard', $catalogData());
-})->middleware(['auth'])->name('admin.dashboard');
+    Route::get('/consumer/dashboard', ConsumerDashboardController::class)
+        ->middleware(EnsureUserHasRole::class.':consumer')
+        ->name('consumer.dashboard');
 
-Route::get('/admin/users', function () {
-    if (! Auth::check() || Auth::user()->role !== 'admin') {
-        abort(403);
-    }
-    $users = User::orderBy('role')->orderBy('name')->get();
-
-    return view('back.users', compact('users'));
-})->middleware(['auth'])->name('admin.users');
-
-Route::get('/producer/dashboard', function () use ($catalogData) {
-    return view('back.dashboard', $catalogData());
-})->middleware(['auth'])->name('producer.dashboard');
-
-Route::get('/processor/dashboard', function () use ($catalogData) {
-    return view('back.dashboard', $catalogData());
-})->middleware(['auth'])->name('processor.dashboard');
-
-Route::get('/distributor/dashboard', function () use ($catalogData) {
-    return view('back.dashboard', $catalogData());
-})->middleware(['auth'])->name('distributor.dashboard');
-
-Route::get('/consumer/dashboard', function () use ($catalogData) {
-    return view('back.dashboard', $catalogData());
-})->middleware(['auth'])->name('consumer.dashboard');
-
-Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    Route::resource('foods', FoodController::class)->middleware(ProAccess::class);
+    // "create" must be declared before "/foods/{food}" so it is not read as an id.
+    Route::middleware(ProAccess::class)->group(function () {
+        Route::get('/foods/create', [FoodController::class, 'create'])->name('foods.create');
+        Route::post('/foods', [FoodController::class, 'store'])->name('foods.store');
+    });
+
+    // The catalog is readable by any signed in user.
+    Route::get('/foods', [FoodController::class, 'index'])->name('foods.index');
+    Route::get('/foods/{food}', [FoodController::class, 'show'])->name('foods.show');
+    Route::get('/foods/{food}/trace', [StageTransitionController::class, 'index'])->name('foods.transitions.index');
+
+    // Editing and moving products is limited to supply chain professionals.
+    Route::middleware(ProAccess::class)->group(function () {
+        Route::get('/foods/{food}/edit', [FoodController::class, 'edit'])->name('foods.edit');
+        Route::match(['put', 'patch'], '/foods/{food}', [FoodController::class, 'update'])->name('foods.update');
+        Route::delete('/foods/{food}', [FoodController::class, 'destroy'])->name('foods.destroy');
+        Route::post('/foods/{food}/transitions', [StageTransitionController::class, 'store'])->name('foods.transitions.store');
+    });
+
+    // Meal logging belongs to consumers.
+    Route::middleware(EnsureUserHasRole::class.':consumer')->group(function () {
+        Route::get('/meals', [MealController::class, 'index'])->name('meals.index');
+        Route::get('/meals/create', [MealController::class, 'create'])->name('meals.create');
+        Route::post('/meals', [MealController::class, 'store'])->name('meals.store');
+        Route::get('/meals/{meal}', [MealController::class, 'show'])->name('meals.show');
+        Route::delete('/meals/{meal}', [MealController::class, 'destroy'])->name('meals.destroy');
+    });
 });
 
 require __DIR__.'/auth.php';

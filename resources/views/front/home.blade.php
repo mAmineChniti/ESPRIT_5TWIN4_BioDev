@@ -39,37 +39,49 @@
                         <dd class="mt-1 text-2xl font-bold tabular-nums">{{ $mealCount }}</dd>
                     </div>
                     <div>
-                        <dt class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Certifications</dt>
-                        <dd class="mt-1 text-2xl font-bold tabular-nums">3</dd>
+                        <dt class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Certified products</dt>
+                        <dd class="mt-1 text-2xl font-bold tabular-nums">{{ $certifiedCount }}</dd>
                     </div>
                 </dl>
             </div>
 
             <april:card>
-                <x-slot:title>Today's honest label</x-slot:title>
-                <x-slot:description>What every product page will show.</x-slot:description>
+                <x-slot:title>A product from the catalog</x-slot:title>
+                <x-slot:description>Real data, taken from the products below.</x-slot:description>
                 <x-slot:content>
-                    <div class="flex items-center gap-3">
-                        <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-bio/15 text-bio">
-                            <x-lucide-salad class="size-6" />
-                        </span>
-                        <div>
-                            <p class="font-semibold">Grilled salmon bowl</p>
-                            <p class="text-sm text-muted-foreground">Nordic Sea Farm · 45 km</p>
+                    @php $spotlight = $latestFoods->first(); @endphp
+                    @if($spotlight)
+                        <div class="flex items-center gap-3">
+                            <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                                <x-lucide-salad class="size-6" />
+                            </span>
+                            <div>
+                                <p class="font-semibold">{{ $spotlight->name }}</p>
+                                <p class="text-sm text-muted-foreground">
+                                    {{ $spotlight->producer?->name ?? 'Unattributed' }}
+                                    @if($spotlight->origin) · {{ $spotlight->origin }} @endif
+                                </p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="mt-4 flex flex-wrap gap-2">
-                        <april:badge variant="none" class="border-transparent bg-bio text-bio-foreground">Organic</april:badge>
-                        <april:badge variant="none" class="border-transparent bg-local text-local-foreground">Local</april:badge>
-                        <april:badge variant="none" class="border-transparent bg-fairtrade text-fairtrade-foreground">Fair trade</april:badge>
-                    </div>
-                    <div class="mt-4 flex items-center gap-3 text-sm">
-                        <span class="w-28 shrink-0 text-muted-foreground">Footprint</span>
-                        <div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                            <div class="h-full w-1/5 rounded-full bg-footprint-low"></div>
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            @forelse($spotlight->certifications as $certification)
+                                <april:badge variant="none" class="border-transparent bg-primary text-primary-foreground">
+                                    {{ $certification->name }}
+                                </april:badge>
+                            @empty
+                                <span class="text-sm text-muted-foreground">No certifications recorded.</span>
+                            @endforelse
                         </div>
-                        <april:badge variant="none" class="border-transparent bg-footprint-low text-footprint-low-foreground">0.4 kg CO₂e</april:badge>
-                    </div>
+                        <div class="mt-4 flex items-center gap-3 text-sm">
+                            <span class="w-28 shrink-0 text-muted-foreground">Footprint</span>
+                            <x-eco-score :score="$spotlight->environmental_score?->value" />
+                        </div>
+                        <a href="{{ route('foods.show', $spotlight) }}" class="mt-4 inline-block text-sm text-primary hover:underline">
+                            View full traceability →
+                        </a>
+                    @else
+                        <p class="text-sm text-muted-foreground">No products in the catalog yet.</p>
+                    @endif
                 </x-slot:content>
             </april:card>
         </div>
@@ -84,9 +96,9 @@
                 <ol class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     @foreach ([
                         ['icon' => 'wheat', 'color' => 'bg-primary/10 text-primary', 'title' => 'Producer', 'text' => 'The farm: soil, water, growing practices.'],
-                        ['icon' => 'factory', 'color' => 'bg-local/15 text-local', 'title' => 'Processor', 'text' => 'Transformation steps and additives.'],
-                        ['icon' => 'truck', 'color' => 'bg-fairtrade/15 text-fairtrade', 'title' => 'Distributor', 'text' => 'Kilometres, cold chain, packaging.'],
-                        ['icon' => 'shopping-basket', 'color' => 'bg-bio/15 text-bio', 'title' => 'Consumer', 'text' => 'You: scan, compare, choose better.'],
+                        ['icon' => 'factory', 'color' => 'bg-primary/10 text-primary', 'title' => 'Processor', 'text' => 'Transformation steps and additives.'],
+                        ['icon' => 'truck', 'color' => 'bg-primary/10 text-primary', 'title' => 'Distributor', 'text' => 'Kilometres, cold chain, packaging.'],
+                        ['icon' => 'shopping-basket', 'color' => 'bg-primary/10 text-primary', 'title' => 'Consumer', 'text' => 'You: scan, compare, choose better.'],
                     ] as $step)
                         <li class="relative rounded-xl border border-border bg-background p-4">
                             <span class="flex h-10 w-10 items-center justify-center rounded-lg {{ $step['color'] }}">
@@ -109,22 +121,22 @@
             <x-slot:content>
                 <ul class="space-y-3 text-sm">
                     <li class="flex items-center gap-3">
-                        <april:badge variant="none" class="w-24 justify-center border-transparent bg-bio text-bio-foreground">Organic</april:badge>
+                        <april:badge variant="none" class="w-24 justify-center border-transparent bg-primary text-primary-foreground">Organic</april:badge>
                         <span class="text-muted-foreground">Grown without synthetic pesticides.</span>
                     </li>
                     <li class="flex items-center gap-3">
-                        <april:badge variant="none" class="w-24 justify-center border-transparent bg-local text-local-foreground">Local</april:badge>
+                        <april:badge variant="none" class="w-24 justify-center border-transparent bg-primary text-primary-foreground">Local</april:badge>
                         <span class="text-muted-foreground">Produced within 100 km of you.</span>
                     </li>
                     <li class="flex items-center gap-3">
-                        <april:badge variant="none" class="w-24 justify-center border-transparent bg-fairtrade text-fairtrade-foreground">Fair trade</april:badge>
+                        <april:badge variant="none" class="w-24 justify-center border-transparent bg-primary text-primary-foreground">Fair trade</april:badge>
                         <span class="text-muted-foreground">Producers paid a fair price.</span>
                     </li>
                 </ul>
             </x-slot:content>
             <x-slot:footer>
                 <p class="flex items-center gap-2 text-sm text-muted-foreground">
-                    <x-lucide-shield-check class="size-4 text-bio" />
+                    <x-lucide-shield-check class="size-4 text-primary" />
                     Every claim is verified — that is the whole point.
                 </p>
             </x-slot:footer>
@@ -132,32 +144,26 @@
 
         <april:card>
             <x-slot:title>Footprint, at a glance</x-slot:title>
-            <x-slot:description>Traffic lights even greenwashers can read.</x-slot:description>
-            <x-slot:content>
-                <div class="space-y-3 text-sm">
-                    <div class="flex items-center gap-3">
-                        <span class="w-36 shrink-0">Farm → plate: 45 km</span>
-                        <div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                            <div class="h-full w-1/5 rounded-full bg-footprint-low"></div>
+<x-slot:description>Real grades recorded in the catalog.</x-slot:description>
+                <x-slot:content>
+                    @php $scoredTotal = max($scoreDistribution->sum(), 1); @endphp
+                    @if($scoreDistribution->isNotEmpty())
+                        <div class="space-y-3 text-sm">
+                            @foreach(\App\Enums\EnvironmentalScore::cases() as $grade)
+                                @php $count = (int) $scoreDistribution->get($grade->value, 0); @endphp
+                                <div class="flex items-center gap-3">
+                                    <span class="w-32 shrink-0">{{ $grade->value }} — {{ $grade->label() }}</span>
+                                    <div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                                        <div class="h-full rounded-full {{ $grade->badgeClasses() }}" style="width: {{ round($count / $scoredTotal * 100) }}%"></div>
+                                    </div>
+                                    <span class="w-8 shrink-0 text-right tabular-nums text-muted-foreground">{{ $count }}</span>
+                                </div>
+                            @endforeach
                         </div>
-                        <april:badge variant="none" class="border-transparent bg-footprint-low text-footprint-low-foreground">0.4 kg CO₂e</april:badge>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="w-36 shrink-0">Imported, in season</span>
-                        <div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                            <div class="h-full w-3/5 rounded-full bg-footprint-medium"></div>
-                        </div>
-                        <april:badge variant="none" class="border-transparent bg-footprint-medium text-footprint-medium-foreground">2.1 kg CO₂e</april:badge>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="w-36 shrink-0">Air-freighted</span>
-                        <div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                            <div class="h-full w-full rounded-full bg-footprint-high"></div>
-                        </div>
-                        <april:badge variant="none" class="border-transparent bg-footprint-high text-footprint-high-foreground">8.7 kg CO₂e</april:badge>
-                    </div>
-                </div>
-            </x-slot:content>
+                    @else
+                        <p class="text-sm text-muted-foreground">No products have been environmentally scored yet.</p>
+                    @endif
+                </x-slot:content>
         </april:card>
     </section>
 
