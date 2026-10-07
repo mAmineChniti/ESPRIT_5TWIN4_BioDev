@@ -1,11 +1,14 @@
 <?php
 
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\AgriculturalRegionController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\ConsumerDashboardController;
 use App\Http\Controllers\ConsumerIntelligenceController;
 use App\Http\Controllers\ConsumerSearchController;
+use App\Http\Controllers\FarmController;
 use App\Http\Controllers\FoodController;
+use App\Http\Controllers\FrontRegionController;
 use App\Http\Controllers\GreenwashingReportController;
 use App\Http\Controllers\MealController;
 use App\Http\Controllers\ProfileController;
@@ -29,6 +32,8 @@ Route::get('/products/{food}', [ConsumerSearchController::class, 'show'])->name(
 Route::get('/greenwashing', function () {
     return view('front.greenwashing');
 })->name('greenwashing');
+Route::get('/regions-agricoles', [FrontRegionController::class, 'index'])->name('front.regions.index');
+Route::get('/regions-agricoles/{agriculturalRegion}', [FrontRegionController::class, 'show'])->name('front.regions.show');
 
 // ---------- AI greenwashing detection & product assistant (public reads) ----------
 Route::get('/products/{food}/analysis', [ConsumerIntelligenceController::class, 'analyze'])
@@ -41,11 +46,17 @@ Route::get('/products/{food}/ask/suggestions', [ConsumerIntelligenceController::
     ->name('products.ask.suggestions');
 
 Route::middleware(['auth'])->group(function () {
-    // Reviewing and reporting are consumer actions.
-    Route::post('/products/{food}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
-    Route::delete('/products/{food}/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
-    Route::post('/products/{food}/reports', [GreenwashingReportController::class, 'store'])->name('reports.store');
-    Route::patch('/reports/{report}', [GreenwashingReportController::class, 'update'])->name('reports.update');
+    // Reviewing and reporting are consumer actions. Deciding a report is an
+    // admin action.
+    Route::middleware(EnsureUserHasRole::class.':consumer')->group(function () {
+        Route::post('/products/{food}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+        Route::delete('/products/{food}/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+        Route::post('/products/{food}/reports', [GreenwashingReportController::class, 'store'])->name('reports.store');
+    });
+
+    Route::patch('/reports/{report}', [GreenwashingReportController::class, 'update'])
+        ->middleware(EnsureUserHasRole::class.':admin')
+        ->name('reports.update');
 
     // The consumer's own space: AI detection, the assistant, recommendations
     // and one-click escalation of anything the detector flags.
@@ -56,15 +67,9 @@ Route::middleware(['auth'])->group(function () {
         ->name('products.reportFinding');
 
     Route::get('/dashboard', function () {
-        $role = Auth::user()?->role ?? 'consumer';
-
-        return match ($role) {
-            'admin' => redirect()->route('admin.dashboard'),
-            'producer' => redirect()->route('producer.dashboard'),
-            'processor' => redirect()->route('processor.dashboard'),
-            'distributor' => redirect()->route('distributor.dashboard'),
-            default => redirect()->route('consumer.dashboard'),
-        };
+        // Every dashboard is role-restricted, so the role picks the destination
+        // rather than the request picking a fixed one.
+        return redirect()->route(Auth::user()->dashboardRouteName());
     })->name('dashboard');
 
     // Each role dashboard is restricted to that role and shows its own data.
@@ -124,6 +129,48 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/meals', [MealController::class, 'store'])->name('meals.store');
         Route::get('/meals/{meal}', [MealController::class, 'show'])->name('meals.show');
         Route::delete('/meals/{meal}', [MealController::class, 'destroy'])->name('meals.destroy');
+    });
+
+    // ---------- Farms & agricultural regions ----------
+    // Declared before the resources below because `farms/{farm}` and
+    // `regions/{region}` would otherwise swallow the literal `farms/requests`
+    // and `regions/create` paths, turning a 403 into a 404. Route::resource
+    // has the same trap for its own `create` route, which it orders for us.
+    Route::middleware(EnsureUserHasRole::class.':admin')->group(function () {
+        Route::get('/farms/requests', [FarmController::class, 'requests'])->name('back.farms.requests');
+        Route::patch('/farms/{farm}/approve', [FarmController::class, 'approve'])->name('back.farms.approve');
+        Route::patch('/farms/{farm}/reject', [FarmController::class, 'reject'])->name('back.farms.reject');
+
+        Route::resource('regions', AgriculturalRegionController::class)
+            ->only(['create', 'store', 'edit', 'update', 'destroy'])
+            ->names([
+                'create' => 'back.regions.create',
+                'store' => 'back.regions.store',
+                'edit' => 'back.regions.edit',
+                'update' => 'back.regions.update',
+                'destroy' => 'back.regions.destroy',
+            ]);
+    });
+
+    // Both admins and producers browse farms and regions, but only an admin
+    // approves, rejects, or changes the shape of the region list.
+    Route::middleware(EnsureUserHasRole::class.':admin,producer')->group(function () {
+        Route::resource('regions', AgriculturalRegionController::class)
+            ->only(['index', 'show'])
+            ->names([
+                'index' => 'back.regions.index',
+                'show' => 'back.regions.show',
+            ]);
+
+        Route::resource('farms', FarmController::class)->names([
+            'index' => 'back.farms.index',
+            'create' => 'back.farms.create',
+            'store' => 'back.farms.store',
+            'show' => 'back.farms.show',
+            'edit' => 'back.farms.edit',
+            'update' => 'back.farms.update',
+            'destroy' => 'back.farms.destroy',
+        ]);
     });
 });
 

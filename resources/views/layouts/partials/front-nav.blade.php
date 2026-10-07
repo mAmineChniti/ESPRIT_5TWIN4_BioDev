@@ -5,6 +5,8 @@
             {{-- The logo is the only link home; no duplicate "Home" entry. --}}
             <april:button-link href="{{ route('products.index') }}" variant="ghost"
                 @class(['bg-muted' => request()->routeIs('products.*')])>Products</april:button-link>
+            <april:button-link href="{{ route('front.regions.index') }}" variant="ghost"
+                @class(['bg-muted' => request()->routeIs('front.regions.*')])>Régions & Fermes</april:button-link>
             <april:button-link href="{{ route('greenwashing') }}" variant="ghost"
                 @class(['bg-muted' => request()->routeIs('greenwashing')])>Spot greenwashing</april:button-link>
             @auth
@@ -13,13 +15,9 @@
                     @class(['bg-muted' => request()->routeIs('consumer.space', 'consumer.recommendations')])>
                     Consumer Space
                 </april:button-link>
-                @php
-                    $role = Auth::user()?->role;
-                    $dashRoute = $role === 'admin'
-                        ? route('admin.dashboard')
-                        : ($role && \Illuminate\Support\Facades\Route::has($role . '.dashboard') ? route($role . '.dashboard') : route('dashboard'));
-                @endphp
-                <april:button-link href="{{ $dashRoute }}" variant="outline">My Dashboard</april:button-link>
+                {{-- Resolved from the role: every dashboard is role-restricted,
+                     so a fixed href would 403 for the reader who sees this. --}}
+                <april:button-link href="{{ auth()->user()->dashboardUrl() }}" variant="outline">My Dashboard</april:button-link>
             @else
                 @if(!request()->routeIs('login'))
                     <april:button-link href="{{ route('login') }}" variant="ghost">Log in</april:button-link>

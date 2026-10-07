@@ -81,17 +81,22 @@
                 </div>
                 <april:button type="submit">Record {{ $nextStage->label() }}</april:button>
             </form>
-        @elseif($nextStage === null)
-            <p class="mt-6 border-t border-border pt-6 text-sm text-muted-foreground">
-                This product has completed every supply chain stage.
-            </p>
         @else
-            <p class="mt-6 border-t border-border pt-6 text-sm text-muted-foreground">
-                The next step is <strong>{{ $nextStage->label() }}</strong>. Only an account with the
-                <strong>{{ $nextStage->requiredRole() }}</strong> role can record it, and you are
-                signed in as a {{ auth()->user()->role }}.
-            </p>
-        @endif
+            {{-- @can compiled to a plain "if" is what let this pair with
+                 @elseif/@endif, but @endcan is the explicit form and does not
+                 depend on that. --}}
+            @if($nextStage === null)
+                <p class="mt-6 border-t border-border pt-6 text-sm text-muted-foreground">
+                    This product has completed every supply chain stage.
+                </p>
+            @else
+                <p class="mt-6 border-t border-border pt-6 text-sm text-muted-foreground">
+                    The next step is <strong>{{ $nextStage->label() }}</strong>. Only an account with the
+                    <strong>{{ $nextStage->requiredRole() }}</strong> role can record it, and you are
+                    signed in as a {{ auth()->user()->role }}.
+                </p>
+            @endif
+        @endcan
     </x-slot:content>
 </april:card>
 @endsection

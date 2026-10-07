@@ -128,6 +128,8 @@ class DatabaseSeeder extends Seeder
                     ->all()
             );
         }
+
+        $this->call(AgriculturalRegionSeeder::class);
     }
 
     /**

@@ -3,8 +3,6 @@
 @section('title', 'Food List')
 
 @section('content')
-@php $canManage = in_array(auth()->user()?->role, ['producer', 'processor', 'distributor']); @endphp
-
 @if(session('success'))
     <april:alert class="mb-4" aria-live="polite">
         <x-slot:icon><x-lucide-circle-check class="size-4" /></x-slot:icon>
@@ -28,7 +26,7 @@
 
 <div class="mb-6 flex items-center justify-between">
     <h1 class="text-2xl font-bold">Products</h1>
-    @if($canManage)
+    @can('create', App\Models\Food::class)
         <div class="flex items-center gap-3">
             {{-- The file input stays visible rather than hidden or sr-only:
                  a hidden input is out of the tab order, and sr-only competes
@@ -54,7 +52,7 @@
                 Add a product
             </april:button-link>
         </div>
-    @endif
+    @endcan
 </div>
 
 <april:data-table>
@@ -84,12 +82,13 @@
                         <april:button-link href="{{ route('foods.show', $food) }}" variant="link" size="sm">
                             View
                         </april:button-link>
-                        @if($canManage)
+                        @can('update', $food)
                             <april:button-link href="{{ route('foods.edit', $food) }}" variant="link" size="sm">
                                 Edit
                             </april:button-link>
+                        @endcan
 
-                            @can('delete', $food)
+                        @can('delete', $food)
                                 <april:alert-dialog>
                                     <x-slot:trigger>
                                         <april:button type="button" variant="link" size="sm"
@@ -117,8 +116,7 @@
                                         </april:alert-dialog-footer>
                                     </x-slot:content>
                                 </april:alert-dialog>
-                            @endcan
-                        @endif
+                        @endcan
                     </div>
                 </td>
             </tr>

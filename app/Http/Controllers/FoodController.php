@@ -18,22 +18,27 @@ class FoodController extends Controller
 {
     /**
      * Display a listing of the resource. Consumers see the whole catalog;
-     * producers see what they registered.
+     * professionals see what they registered.
      */
     public function index(Request $request): View
     {
         $user = $request->user();
 
+        $this->authorize('viewAny', Food::class);
+
         $foods = Food::query()
             ->with(['category', 'producer'])
-            ->when(
-                $user->isProfessional() && ! $user->isAdmin(),
-                fn ($query) => $query->where('producer_id', $user->id)
-            )
+            ->when($user->isProfessional(), fn ($query) => $query->where('producer_id', $user->id))
             ->latest()
             ->paginate(10);
 
-        return view('foods.index', compact('foods'));
+        return view('foods.index', [
+            'foods' => $foods,
+            // Derived from the policy rather than a hand-rolled role check, so
+            // the "Add a product" and CSV import controls appear for exactly
+            // the people whose POST would be authorised.
+            'canManage' => $user->can('create', Food::class),
+        ]);
     }
 
     public function create(): View
@@ -41,7 +46,7 @@ class FoodController extends Controller
         $this->authorize('create', Food::class);
 
         return view('foods.create', [
-            'categories' => Category::all(),
+            'categories' => Category::orderBy('name')->get(),
             'certifications' => Certification::orderBy('name')->get(),
         ]);
     }
@@ -76,6 +81,8 @@ class FoodController extends Controller
 
     public function show(Food $food): View
     {
+        $this->authorize('view', $food);
+
         $food->load(['category', 'producer', 'transitions.actor', 'certifications']);
 
         return view('foods.show', compact('food'));
@@ -87,7 +94,7 @@ class FoodController extends Controller
 
         return view('foods.edit', [
             'food' => $food,
-            'categories' => Category::all(),
+            'categories' => Category::orderBy('name')->get(),
             'certifications' => Certification::orderBy('name')->get(),
             'selectedCertifications' => $food->certifications->pluck('id')->all(),
         ]);
@@ -230,6 +237,7 @@ class FoodController extends Controller
         $obtainedOn = now()->toDateString();
 
         return collect($request->certificationIds())
+            ->unique()
             ->mapWithKeys(fn (int $id): array => [$id => ['obtained_on' => $obtainedOn]])
             ->all();
     }

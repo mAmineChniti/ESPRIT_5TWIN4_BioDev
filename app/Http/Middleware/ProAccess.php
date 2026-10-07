@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,7 +25,11 @@ class ProAccess
     {
         $role = $request->user()?->role;
 
-        if (! in_array($role, ['producer', 'processor', 'distributor', 'admin'], true)) {
+        // Admins are admitted alongside the supply chain roles: they moderate
+        // the catalogue and may correct a mistaken chain entry. FoodPolicy
+        // grants the same set, minus registering products, which stays with the
+        // professionals who actually perform the first step.
+        if (! in_array($role, [...User::PROFESSIONAL_ROLES, 'admin'], true)) {
             abort(403, 'Restricted to supply chain professionals.');
         }
 

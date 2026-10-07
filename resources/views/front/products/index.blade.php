@@ -69,8 +69,10 @@
         </april:native-select>
     </div>
 
+    {{-- @checked, not :checked: a leading colon is a Blade binding, so it
+         would render the boolean's value instead of the attribute. --}}
     <div class="flex items-center gap-2 pb-2.5 text-sm">
-        <april:checkbox id="certified" name="certified" value="1" :checked="request()->boolean('certified')" />
+        <april:checkbox id="certified" name="certified" value="1" @checked(request()->boolean('certified')) />
         <april:label for="certified">Certified only</april:label>
     </div>
 

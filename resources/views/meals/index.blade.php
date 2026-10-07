@@ -81,3 +81,9 @@
     </x-slot:body>
 </april:data-table>
 @endsection
+
+{{-- The controller paginates, so without these links every meal past the
+     first page would be unreachable. --}}
+@if(method_exists($meals, 'hasPages') && $meals->hasPages())
+    <div class="mt-6">{{ $meals->links() }}</div>
+@endif
