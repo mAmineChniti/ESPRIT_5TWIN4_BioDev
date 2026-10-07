@@ -8,6 +8,11 @@
             <april:button-link href="{{ route('greenwashing') }}" variant="ghost"
                 @class(['bg-muted' => request()->routeIs('greenwashing')])>Spot greenwashing</april:button-link>
             @auth
+                {{-- Espace Consommateur: AI audit, assistant, recommendations. --}}
+                <april:button-link href="{{ route('consumer.space') }}" variant="ghost"
+                    @class(['bg-muted' => request()->routeIs('consumer.space', 'consumer.recommendations')])>
+                    Consumer Space
+                </april:button-link>
                 @php
                     $role = Auth::user()?->role;
                     $dashRoute = $role === 'admin'

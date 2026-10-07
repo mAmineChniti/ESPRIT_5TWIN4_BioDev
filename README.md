@@ -245,6 +245,83 @@ their own reviews and filed reports. Charts load from a separate Vite entry
 
 ---
 
+## 11. Espace Consommateur — Amine Chnitti
+
+The consumer-facing AI module, at `/consumer/space`. Four features, all reading the
+same traceability record.
+
+| Feature | Where | What it does |
+| --- | --- | --- |
+| AI greenwashing detection | product page, `/consumer/space` | An auditor model is given the product's **claims** (name, category, origin, grade, certifications) and its **evidence** (recorded chain steps with actors, nutrition, reports, transparency score), and returns typed findings with a severity and the exact record field that triggered each one. |
+| Product assistant | product page | Answers questions about one product **only** from the record, and cites the fields it used. If the record does not contain the answer it says so rather than guessing. |
+| Responsible recommendations | `/consumer/recommendations` | Ranked by transparency score, then environmental grade, scoped to categories the consumer has logged. |
+| Reporting suspicious information | product page, `/consumer/space` | Every finding carries a **one-click report** that files it under the matching `ReportReason` automatically. |
+
+### Switching the AI on
+
+The detector and assistant need an API key. Set it in `.env`:
+
+```dotenv
+AI_PROVIDER=groq
+AI_KEY=your_key_here
+AI_MODEL=openai/gpt-oss-120b
+```
+
+Free tiers, no payment card required:
+
+| Provider | Key | Provider value | Model |
+| --- | --- | --- | --- |
+| Groq | <https://console.groq.com/keys> | `groq` | `llama-3.3-70b-versatile` |
+| OpenRouter | <https://openrouter.ai/keys> | `openrouter` | `meta-llama/llama-3.3-70b-instruct` |
+| Google AI Studio | <https://aistudio.google.com/apikey> | `gemini` | `gemini-2.5-flash` |
+
+Everything but Gemini speaks the OpenAI chat-completions shape; Gemini uses its own
+request shape and is handled by one branch in `app/Services/Ai/AiClient.php`.
+No vendor package is required — Laravel's HTTP client is used directly.
+
+**Without a key every page still loads.** The detector reports that it could not
+run and renders an *Analysis unavailable* panel. It never falls back to declaring a
+product clean, because a traceability platform that invents an all-clear is worse
+than one that admits it could not check.
+
+### How it is wired
+
+```
+app/Services/Ai/AiClient.php                 HTTP + provider shapes + JSON decoding
+app/Services/Greenwashing/
+    ProductRecord.php                         flattens a Food into claims + evidence
+    GreenwashingDetector.php                  prompt, JSON Schema, caching
+    AnalysisReport.php                        typed result, risk score
+    Finding.php
+app/Services/Assistant/ProductAssistant.php   grounded question answering
+app/Services/Recommendations/
+    ProductRecommender.php                    computed ranking, model-written reason
+app/Http/Controllers/ConsumerIntelligenceController.php
+```
+
+Design decisions worth knowing:
+
+- **The model never picks the products it recommends.** Ranking is computed from
+  the record; the model only writes the one-line reason. A model choosing
+  "responsible products" has no basis to compare transparency scores.
+- **The model never gets to state an unverified fact.** Both prompts state that a
+  missing field is itself a finding, and the assistant is required to answer
+  "NutriTrace has no record of…" rather than infer.
+- **Findings map to report reasons** through `App\Enums\FindingCategory`, which is
+  why a detected problem can be escalated in one click.
+- **The risk score is derived from the findings**, so the headline number can never
+  contradict the reasoning shown beneath it.
+- **Responses are sanitised** — markup and whitespace runs are stripped from
+  anything the model returns before it reaches a consumer.
+- **Analyses are cached for 12 hours**, keyed on a hash of the record's own
+  contents, so recording a new chain step invalidates the entry automatically.
+  The cache stores a plain array, never the object, because every cache driver
+  except `array` serialises.
+- **The API key never reaches the browser.** The assistant asks the server, which
+  holds the key and the record, and returns the answer plus its sources.
+
+---
+
 ## Project conventions
 
 - English only — code, comments, UI strings.

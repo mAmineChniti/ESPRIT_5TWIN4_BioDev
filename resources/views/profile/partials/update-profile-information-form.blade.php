@@ -1,6 +1,10 @@
-<form id="send-verification" method="post" action="{{ route('verification.send') }}">
-    @csrf
-</form>
+{{-- Moved inside the unverified block: rendered unconditionally it shipped an
+     empty CSRF form on every page load with no possible submit button. --}}
+@if (! $user->hasVerifiedEmail())
+    <form id="send-verification" method="post" action="{{ route('verification.send') }}">
+        @csrf
+    </form>
+@endif
 
 <form method="post" action="{{ route('profile.update') }}" class="space-y-4">
     @csrf
@@ -8,23 +12,31 @@
 
     <div class="space-y-2">
         <april:label for="name">Name</april:label>
-        <april:input id="name" name="name" type="text" :value="old('name', $user->name)" required autofocus autocomplete="name" />
-        <x-input-error :messages="$errors->get('name')" />
+        <april:input id="name" name="name" type="text" :value="old('name', $user->name)" required autofocus
+                     autocomplete="name" aria-describedby="name-error"
+                     :aria-invalid="$errors->has('name') ? 'true' : 'false'" />
+        <x-input-error id="name-error" :messages="$errors->get('name')" />
     </div>
 
     <div class="space-y-2">
         <april:label for="email">Email</april:label>
-        <april:input id="email" name="email" type="email" :value="old('email', $user->email)" required autocomplete="username" />
-        <x-input-error :messages="$errors->get('email')" />
+        <april:input id="email" name="email" type="email" :value="old('email', $user->email)" required
+                     autocomplete="username" aria-describedby="email-error"
+                     :aria-invalid="$errors->has('email') ? 'true' : 'false'" />
+        <x-input-error id="email-error" :messages="$errors->get('email')" />
 
-        @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
+        @if (! $user->hasVerifiedEmail())
             <p class="text-sm text-muted-foreground">
                 Your email address is unverified.
-                <april:button type="submit" form="send-verification" variant="link" size="sm" class="px-1">Re-send verification email.</april:button>
+                <april:button type="submit" form="send-verification" variant="link" size="sm" class="px-1">
+                    Re-send verification email.
+                </april:button>
             </p>
 
             @if (session('status') === 'verification-link-sent')
-                <p class="text-sm font-medium text-primary">A new verification link has been sent to your email address.</p>
+                <p class="text-sm font-medium text-primary" role="status" aria-live="polite">
+                    A new verification link has been sent to your email address.
+                </p>
             @endif
         @endif
     </div>
@@ -39,6 +51,8 @@
                 x-transition
                 x-init="setTimeout(() => show = false, 2000)"
                 class="text-sm text-primary"
+                role="status"
+                aria-live="polite"
             >Saved.</p>
         @endif
     </div>

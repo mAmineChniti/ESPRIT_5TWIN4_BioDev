@@ -39,6 +39,14 @@ class ReviewController extends Controller
             'You can only delete your own review.',
         );
 
+        // The route binds both models, so check the review belongs to the
+        // product actually named in the URL rather than trusting the binding.
+        abort_unless(
+            $review->food_id === $food->id,
+            404,
+            'That review does not belong to this product.',
+        );
+
         $review->delete();
 
         return back()->with('success', 'Your review was removed.');

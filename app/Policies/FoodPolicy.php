@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\Stage;
 use App\Models\Food;
 use App\Models\User;
 
@@ -36,5 +37,18 @@ class FoodPolicy
     public function delete(User $user, Food $food): bool
     {
         return $user->isAdmin() || $food->producer_id === $user->id;
+    }
+
+    /**
+     * Record a hand-off in the chain of custody.
+     *
+     * Deliberately not the same rule as editing the product: a processor must
+     * not rewrite the producer's nutrition data, but they must be able to sign
+     * for the stage they actually perform. Admins moderate the chain outright
+     * so a mistaken entry can be corrected.
+     */
+    public function recordTransition(User $user, Food $food, Stage $stage): bool
+    {
+        return $user->isAdmin() || $user->role === $stage->requiredRole();
     }
 }

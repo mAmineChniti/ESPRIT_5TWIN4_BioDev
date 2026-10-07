@@ -3,60 +3,61 @@
 @section('title', 'Edit User')
 
 @section('content')
-<div class="mb-6">
-    <div class="flex items-center gap-4">
-        <a href="{{ route('admin.users') }}" class="text-muted-foreground hover:text-foreground">← Back to users</a>
-        <h1 class="text-2xl font-bold">Edit User: {{ $user->name }}</h1>
-    </div>
+<div class="mb-6 flex items-center gap-4">
+    <april:button-link href="{{ route('admin.users') }}" variant="link" size="sm" class="text-muted-foreground">
+        <x-lucide-arrow-left class="size-4" />
+        Back to users
+    </april:button-link>
+    <h1 class="text-2xl font-bold">Edit User: {{ $user->name }}</h1>
 </div>
 
-<div class="bg-card rounded-lg shadow max-w-2xl border border-border">
-    <div class="px-6 py-5 border-b border-border">
-        <h3 class="text-lg font-medium leading-6 text-foreground">User Profile</h3>
-        <p class="mt-1 text-sm text-muted-foreground">Update the account details and role for this user.</p>
-    </div>
-    
-    <div class="px-6 py-5">
+<april:card class="max-w-2xl">
+    <x-slot:title class="text-lg">User Profile</x-slot:title>
+    <x-slot:description>Update the account details and role for this user.</x-slot:description>
+    <x-slot:content>
         <form action="{{ route('admin.users.update', $user) }}" method="POST" class="space-y-6">
             @csrf
             @method('PATCH')
 
             <div>
-                <label for="name" class="block text-sm font-medium text-foreground">Full Name</label>
-                <input type="text" name="name" id="name" value="{{ old('name', $user->name) }}" required
-                    class="mt-1 block w-full rounded-md border-input bg-background shadow-sm focus:border-primary focus:ring-primary sm:text-sm px-3 py-2 border">
-                @error('name') <p class="mt-1 text-sm text-destructive">{{ $message }}</p> @enderror
+                <april:label for="name">Full Name</april:label>
+                <april:input id="name" name="name" :value="old('name', $user->name)" required
+                             autocomplete="name" class="mt-1" aria-describedby="name-error"
+                             :aria-invalid="$errors->has('name') ? 'true' : 'false'" />
+                <x-input-error id="name-error" :messages="$errors->get('name')" class="mt-1" />
             </div>
 
             <div>
-                <label for="email" class="block text-sm font-medium text-foreground">Email Address</label>
-                <input type="email" name="email" id="email" value="{{ old('email', $user->email) }}" required
-                    class="mt-1 block w-full rounded-md border-input bg-background shadow-sm focus:border-primary focus:ring-primary sm:text-sm px-3 py-2 border">
-                @error('email') <p class="mt-1 text-sm text-destructive">{{ $message }}</p> @enderror
+                <april:label for="email">Email Address</april:label>
+                <april:input id="email" name="email" type="email" :value="old('email', $user->email)" required
+                             autocomplete="username" class="mt-1" aria-describedby="email-error"
+                             :aria-invalid="$errors->has('email') ? 'true' : 'false'" />
+                <x-input-error id="email-error" :messages="$errors->get('email')" class="mt-1" />
             </div>
 
             <div>
-                <label for="role" class="block text-sm font-medium text-foreground">Platform Role</label>
-                <select id="role" name="role" required class="mt-1 block w-full rounded-md border-input bg-background shadow-sm focus:border-primary focus:ring-primary sm:text-sm px-3 py-2 border">
+                <april:label for="role">Platform Role</april:label>
+                <april:native-select id="role" name="role" required class="mt-1"
+                                       aria-describedby="role-hint role-error"
+                                       :aria-invalid="$errors->has('role') ? 'true' : 'false'">
                     <option value="admin" @selected(old('role', $user->role) === 'admin')>Administrator</option>
                     <option value="producer" @selected(old('role', $user->role) === 'producer')>Producer</option>
                     <option value="processor" @selected(old('role', $user->role) === 'processor')>Processor</option>
                     <option value="distributor" @selected(old('role', $user->role) === 'distributor')>Distributor</option>
                     <option value="consumer" @selected(old('role', $user->role) === 'consumer')>Consumer</option>
-                </select>
-                <p class="mt-2 text-sm text-muted-foreground">Changing a role modifies the user's dashboard and permissions.</p>
-                @error('role') <p class="mt-1 text-sm text-destructive">{{ $message }}</p> @enderror
+                </april:native-select>
+                <p id="role-hint" class="mt-2 text-sm text-muted-foreground">
+                    Changing a role modifies the user's dashboard and permissions.
+                    You cannot change your own role, which would lock the last admin out of this area.
+                </p>
+                <x-input-error id="role-error" :messages="$errors->get('role')" class="mt-1" />
             </div>
 
-            <div class="flex justify-end gap-3 pt-4 border-t border-border">
-                <a href="{{ route('admin.users') }}" class="px-4 py-2 border border-input rounded-md text-sm font-medium text-foreground bg-background hover:bg-muted">
-                    Cancel
-                </a>
-                <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90">
-                    Save Changes
-                </button>
+            <div class="flex justify-end gap-3 border-t border-border pt-4">
+                <april:button-link href="{{ route('admin.users') }}" variant="outline">Cancel</april:button-link>
+                <april:button type="submit">Save Changes</april:button>
             </div>
         </form>
-    </div>
-</div>
+    </x-slot:content>
+</april:card>
 @endsection

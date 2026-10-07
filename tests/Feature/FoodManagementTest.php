@@ -109,7 +109,9 @@ class FoodManagementTest extends TestCase
 
     public function test_certifications_are_attached_from_validated_ids(): void
     {
-        $certification = Certification::factory()->create();
+        // Named explicitly: a "Local" certification fails validation unless the
+        // origin is Tunisie, and the factory picks that name at random.
+        $certification = Certification::factory()->create(['name' => 'Organic']);
 
         $this->actingAs($this->producer())->post(
             route('foods.store'),

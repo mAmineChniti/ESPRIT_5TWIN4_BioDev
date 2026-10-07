@@ -6,7 +6,13 @@
         </div>
         <nav class="flex items-center gap-1">
             <april:button-link href="{{ url('/') }}" variant="link" size="sm">Home</april:button-link>
-            <april:button-link href="{{ url('/admin') }}" variant="link" size="sm">Back Office</april:button-link>
+            <april:button-link href="{{ url('/products') }}" variant="link" size="sm">Products</april:button-link>
+            {{-- /admin is role gated, so only offer it where it resolves. --}}
+            @auth
+                <april:button-link href="{{ route('dashboard') }}" variant="link" size="sm">Back Office</april:button-link>
+            @else
+                <april:button-link href="{{ route('login') }}" variant="link" size="sm">Sign in</april:button-link>
+            @endauth
         </nav>
     </div>
 </footer>

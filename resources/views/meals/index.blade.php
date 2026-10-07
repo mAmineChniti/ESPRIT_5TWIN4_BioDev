@@ -3,50 +3,81 @@
 @section('title', 'My Meals')
 
 @section('content')
-<div class="flex justify-between items-center mb-6">
+<div class="mb-6 flex items-center justify-between">
     <h1 class="text-2xl font-bold">My Meals</h1>
-    <a href="{{ route('meals.create') }}" class="bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2 px-4 rounded-md">
-        + Log a meal
-    </a>
+    <april:button-link href="{{ route('meals.create') }}">
+        <x-lucide-plus class="size-4" />
+        Log a meal
+    </april:button-link>
 </div>
 
-<div class="bg-card rounded-lg shadow overflow-hidden">
-    <table class="min-w-full divide-y divide-border">
-        <thead class="bg-muted">
-            <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Meal</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Type</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Products</th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
-            </tr>
-        </thead>
-        <tbody class="bg-card divide-y divide-border">
-            @forelse($meals as $meal)
-            <tr>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">{{ $meal->name }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{{ ucfirst($meal->type) }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{{ $meal->consumed_on?->format('Y-m-d') }}</td>
-                <td class="px-6 py-4 text-sm text-muted-foreground">
+<april:data-table>
+    <x-slot:header>
+        <tr>
+            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Meal</th>
+            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Type</th>
+            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Date</th>
+            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Products</th>
+            <th scope="col" class="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Actions</th>
+        </tr>
+    </x-slot:header>
+
+    <x-slot:body>
+        @forelse($meals as $meal)
+            <tr class="border-b transition-colors last:border-0 hover:bg-muted/50">
+                <td class="whitespace-nowrap p-4 align-middle text-sm font-medium text-foreground">{{ $meal->name }}</td>
+                <td class="whitespace-nowrap p-4 align-middle text-sm text-muted-foreground">{{ ucfirst($meal->type) }}</td>
+                <td class="whitespace-nowrap p-4 align-middle text-sm text-muted-foreground">
+                    {{ $meal->consumed_on?->format('Y-m-d') }}
+                </td>
+                <td class="p-4 align-middle text-sm text-muted-foreground">
                     {{ $meal->foods->pluck('name')->join(', ') ?: '—' }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                    <a href="{{ route('meals.show', $meal) }}" class="text-primary hover:underline">View</a>
-                    <form action="{{ route('meals.destroy', $meal) }}" method="POST" class="inline" onsubmit="return confirm('Delete this meal?');">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="text-destructive hover:underline">Delete</button>
-                    </form>
+                <td class="whitespace-nowrap p-4 text-right align-middle">
+                    <div class="inline-flex items-center gap-2">
+                        <april:button-link href="{{ route('meals.show', $meal) }}" variant="link" size="sm">
+                            View
+                        </april:button-link>
+
+                        <april:alert-dialog>
+                            <x-slot:trigger>
+                                <april:button type="button" variant="link" size="sm" class="text-destructive">
+                                    Delete
+                                </april:button>
+                            </x-slot:trigger>
+                            <x-slot:content>
+                                <div>
+                                    <h2 class="text-lg font-semibold" x-bind="title">Delete this meal?</h2>
+                                    <p class="mt-2 text-sm text-muted-foreground" x-bind="description">
+                                        <strong>{{ $meal->name }}</strong> and the nutrition it contributed
+                                        to your dashboard will be removed.
+                                    </p>
+                                </div>
+                                <april:alert-dialog-footer>
+                                    <april:alert-dialog-cancel>Cancel</april:alert-dialog-cancel>
+                                    <form action="{{ route('meals.destroy', $meal) }}" method="POST">
+                                        @csrf
+                                        @method('DELETE')
+                                        <april:button type="submit" variant="destructive" x-bind="action">
+                                            Delete meal
+                                        </april:button>
+                                    </form>
+                                </april:alert-dialog-footer>
+                            </x-slot:content>
+                        </april:alert-dialog>
+                    </div>
                 </td>
             </tr>
-            @empty
+        @empty
             <tr>
-                <td colspan="5" class="px-6 py-4 text-sm text-muted-foreground text-center">
-                    No meals logged yet. <a href="{{ route('meals.create') }}" class="text-primary">Log your first meal</a>.
+                <td colspan="5" class="p-4 text-center align-middle text-sm text-muted-foreground">
+                    No meals logged yet.
+                    <april:button-link href="{{ route('meals.create') }}" variant="link" size="sm">
+                        Log your first meal
+                    </april:button-link>
                 </td>
             </tr>
-            @endforelse
-        </tbody>
-    </table>
-</div>
+        @endforelse
+    </x-slot:body>
+</april:data-table>
 @endsection

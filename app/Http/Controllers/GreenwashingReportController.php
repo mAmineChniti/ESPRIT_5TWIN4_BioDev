@@ -14,7 +14,7 @@ use Illuminate\View\View;
 class GreenwashingReportController extends Controller
 {
     /**
-     * List all reports for the admin.
+     * List reports for the admin's moderation queue.
      */
     public function index(Request $request): View
     {
@@ -22,7 +22,8 @@ class GreenwashingReportController extends Controller
 
         $reports = GreenwashingReport::with(['food', 'user'])
             ->latest()
-            ->get();
+            ->paginate(15)
+            ->withQueryString();
 
         return view('back.reports', compact('reports'));
     }
@@ -32,13 +33,17 @@ class GreenwashingReportController extends Controller
      */
     public function store(Request $request, Food $food): RedirectResponse
     {
+        $user = $request->user();
+
+        abort_unless($user->role === 'consumer', 403, 'Only consumers can report greenwashing claims.');
+
         $validated = $request->validate([
             'reason' => ['required', Rule::enum(ReportReason::class)],
             'details' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $alreadyPending = GreenwashingReport::where('food_id', $food->id)
-            ->where('user_id', $request->user()->id)
+            ->where('user_id', $user->id)
             ->where('status', ReportStatus::Pending->value)
             ->exists();
 
@@ -50,7 +55,7 @@ class GreenwashingReportController extends Controller
 
         GreenwashingReport::create([
             'food_id' => $food->id,
-            'user_id' => $request->user()->id,
+            'user_id' => $user->id,
             'reason' => ReportReason::from($validated['reason']),
             'details' => $validated['details'] ?? null,
             'status' => ReportStatus::Pending,
@@ -69,8 +74,14 @@ class GreenwashingReportController extends Controller
 
         abort_unless($user->isAdmin(), 403, 'Only admins can review reports.');
 
+        if ($report->status !== ReportStatus::Pending) {
+            return back()->withErrors([
+                'status' => "This report was already reviewed as \"{$report->status->label()}\".",
+            ]);
+        }
+
         $validated = $request->validate([
-            'status' => ['required', Rule::enum(ReportStatus::class)],
+            'status' => ['required', Rule::enum(ReportStatus::class), Rule::notIn([ReportStatus::Pending->value])],
         ]);
 
         $status = ReportStatus::from($validated['status']);
