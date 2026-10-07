@@ -35,5 +35,4 @@ class EtapeParcours extends Model
     {
         return $this->belongsTo(Parcours::class);
     }
-
 }
