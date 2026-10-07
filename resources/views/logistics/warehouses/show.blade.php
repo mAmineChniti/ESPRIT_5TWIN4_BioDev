@@ -32,7 +32,7 @@
         <tbody class="divide-y divide-border">
             @forelse($warehouse->shipments as $shipment)
             <tr>
-                <td class="px-6 py-3 text-sm">{{ $shipment->reference }}</td>
+                <td class="px-6 py-3 text-sm"><a href="{{ route('logistics.shipments.show', $shipment) }}" class="text-primary hover:underline">{{ $shipment->reference }}</a></td>
                 <td class="px-6 py-3 text-sm text-muted-foreground">{{ $shipment->destination }}</td>
                 <td class="px-6 py-3 text-sm text-muted-foreground">{{ $shipment->transport_mode->label() }}</td>
                 <td class="px-6 py-3 text-sm text-muted-foreground">{{ $shipment->status->label() }}</td>
