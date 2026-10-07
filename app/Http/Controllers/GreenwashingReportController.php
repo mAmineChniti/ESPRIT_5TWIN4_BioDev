@@ -13,6 +13,20 @@ use Illuminate\Validation\Rule;
 class GreenwashingReportController extends Controller
 {
     /**
+     * List all reports for the admin.
+     */
+    public function index(Request $request): \Illuminate\View\View
+    {
+        abort_unless($request->user()->isAdmin(), 403, 'Only admins can view reports.');
+
+        $reports = GreenwashingReport::with(['food', 'user'])
+            ->latest()
+            ->get();
+
+        return view('back.reports', compact('reports'));
+    }
+
+    /**
      * A consumer flags a claim they believe is misleading.
      */
     public function store(Request $request, Food $food): RedirectResponse

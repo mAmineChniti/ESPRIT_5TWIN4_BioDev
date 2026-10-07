@@ -29,7 +29,7 @@ class FoodController extends Controller
                 fn ($query) => $query->where('producer_id', $user->id)
             )
             ->latest()
-            ->get();
+            ->paginate(10);
 
         return view('foods.index', compact('foods'));
     }

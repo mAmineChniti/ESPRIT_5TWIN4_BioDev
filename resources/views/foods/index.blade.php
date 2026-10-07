@@ -81,5 +81,11 @@
             @endforelse
         </tbody>
     </table>
+    
+    @if($foods->hasPages())
+        <div class="px-6 py-4 border-t border-border bg-card">
+            {{ $foods->links() }}
+        </div>
+    @endif
 </div>
 @endsection
