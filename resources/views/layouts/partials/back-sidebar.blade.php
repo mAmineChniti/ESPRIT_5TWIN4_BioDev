@@ -49,6 +49,42 @@
             </april:sidebar-menu-item>
         </april:sidebar-menu>
 
+        @if(in_array(Auth::user()?->role, ['admin', 'producer'], true))
+        <april:sidebar-menu>
+            <april:sidebar-group-label>Gestion Agricole</april:sidebar-group-label>
+            <april:sidebar-menu-item>
+                <april:sidebar-menu-button-link href="{{ route('back.regions.index') }}" :active="request()->routeIs('back.regions.*')">
+                    <x-lucide-map-pin />
+                    <span>Régions Agricoles</span>
+                </april:sidebar-menu-button-link>
+            </april:sidebar-menu-item>
+            <april:sidebar-menu-item>
+                <april:sidebar-menu-button-link href="{{ route('back.farms.index') }}" :active="request()->routeIs('back.farms.index') || request()->routeIs('back.farms.show') || request()->routeIs('back.farms.create') || request()->routeIs('back.farms.edit')">
+                    <x-lucide-tractor />
+                    <span>Fermes & Exploitations</span>
+                </april:sidebar-menu-button-link>
+            </april:sidebar-menu-item>
+            @if(Auth::user()?->isAdmin())
+            @php
+                $pendingRequestsCount = \App\Models\Farm::where('status', 'en_attente')->count();
+            @endphp
+            <april:sidebar-menu-item>
+                <april:sidebar-menu-button-link href="{{ route('back.farms.requests') }}" :active="request()->routeIs('back.farms.requests')">
+                    <x-lucide-clipboard-check />
+                    <span class="flex-1 flex items-center justify-between">
+                        <span>Demandes de Fermes</span>
+                        @if($pendingRequestsCount > 0)
+                            <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-amber-500 rounded-full">
+                                {{ $pendingRequestsCount }}
+                            </span>
+                        @endif
+                    </span>
+                </april:sidebar-menu-button-link>
+            </april:sidebar-menu-item>
+            @endif
+        </april:sidebar-menu>
+        @endif
+
         {{-- Meals are logged by consumers --}}
         @if(Auth::user()->role === 'consumer')
             <april:sidebar-menu>

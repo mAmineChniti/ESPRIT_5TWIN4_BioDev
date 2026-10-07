@@ -60,6 +60,16 @@ class User extends Authenticatable
     }
 
     /**
+     * Farms owned by this user/producer.
+     *
+     * @return HasMany<Farm, $this>
+     */
+    public function farms(): HasMany
+    {
+        return $this->hasMany(Farm::class);
+    }
+
+    /**
      * Meals this user logged.
      *
      * @return HasMany<Meal, $this>

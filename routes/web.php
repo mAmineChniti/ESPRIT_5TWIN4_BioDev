@@ -1,9 +1,12 @@
 <?php
 
+use App\Http\Controllers\AgriculturalRegionController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\ConsumerDashboardController;
 use App\Http\Controllers\ConsumerSearchController;
+use App\Http\Controllers\FarmController;
 use App\Http\Controllers\FoodController;
+use App\Http\Controllers\FrontRegionController;
 use App\Http\Controllers\GreenwashingReportController;
 use App\Http\Controllers\MealController;
 use App\Http\Controllers\ProfileController;
@@ -27,6 +30,8 @@ Route::get('/products/{food}', [ConsumerSearchController::class, 'show'])->name(
 Route::get('/greenwashing', function () {
     return view('front.greenwashing');
 })->name('greenwashing');
+Route::get('/regions-agricoles', [FrontRegionController::class, 'index'])->name('front.regions.index');
+Route::get('/regions-agricoles/{agriculturalRegion}', [FrontRegionController::class, 'show'])->name('front.regions.show');
 
 Route::middleware(['auth'])->group(function () {
     // Reviewing and reporting are consumer actions.
@@ -102,6 +107,33 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/meals', [MealController::class, 'store'])->name('meals.store');
         Route::get('/meals/{meal}', [MealController::class, 'show'])->name('meals.show');
         Route::delete('/meals/{meal}', [MealController::class, 'destroy'])->name('meals.destroy');
+    });
+
+    // Agricultural Regions & Farms CRUD (Restricted to Admin and Producer roles)
+    Route::middleware(EnsureUserHasRole::class.':admin,producer')->group(function () {
+        Route::get('/farms/requests', [FarmController::class, 'requests'])->name('back.farms.requests');
+        Route::patch('/farms/{farm}/approve', [FarmController::class, 'approve'])->name('back.farms.approve');
+        Route::patch('/farms/{farm}/reject', [FarmController::class, 'reject'])->name('back.farms.reject');
+
+        Route::resource('regions', AgriculturalRegionController::class)->names([
+            'index' => 'back.regions.index',
+            'create' => 'back.regions.create',
+            'store' => 'back.regions.store',
+            'show' => 'back.regions.show',
+            'edit' => 'back.regions.edit',
+            'update' => 'back.regions.update',
+            'destroy' => 'back.regions.destroy',
+        ]);
+
+        Route::resource('farms', FarmController::class)->names([
+            'index' => 'back.farms.index',
+            'create' => 'back.farms.create',
+            'store' => 'back.farms.store',
+            'show' => 'back.farms.show',
+            'edit' => 'back.farms.edit',
+            'update' => 'back.farms.update',
+            'destroy' => 'back.farms.destroy',
+        ]);
     });
 });
 
