@@ -56,6 +56,24 @@
         </april:sidebar-menu>
 
         {{-- Meals are logged by consumers --}}
+                {{-- Logistics: distributors and admins --}}
+        @if(in_array(Auth::user()->role, ['distributor', 'admin'], true))
+            <april:sidebar-menu>
+                <april:sidebar-group-label>Logistics</april:sidebar-group-label>
+                <april:sidebar-menu-item>
+                    <april:sidebar-menu-button-link href="{{ route('logistics.warehouses.index') }}" :active="request()->routeIs('logistics.warehouses.*')">
+                        <x-lucide-warehouse />
+                        <span>Warehouses</span>
+                    </april:sidebar-menu-button-link>
+                </april:sidebar-menu-item>
+                <april:sidebar-menu-item>
+                    <april:sidebar-menu-button-link href="{{ route('logistics.shipments.index') }}" :active="request()->routeIs('logistics.shipments.*')">
+                        <x-lucide-truck />
+                        <span>Shipments</span>
+                    </april:sidebar-menu-button-link>
+                </april:sidebar-menu-item>
+            </april:sidebar-menu>
+        @endif
         @if(Auth::user()->role === 'consumer')
             <april:sidebar-menu>
                 <april:sidebar-group-label>Nutrition</april:sidebar-group-label>
