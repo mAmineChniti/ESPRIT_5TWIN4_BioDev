@@ -231,4 +231,14 @@ class Food extends Model
             'message' => 'Some steps are recorded but the picture is incomplete.',
         ];
     }
+
+        /**
+     * Shipments that carried this product.
+     *
+     * @return HasMany<Shipment, $this>
+     */
+    public function shipments(): HasMany
+    {
+        return $this->hasMany(Shipment::class);
+    }
 }
