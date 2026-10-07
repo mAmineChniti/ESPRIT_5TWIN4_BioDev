@@ -34,16 +34,16 @@
         <h2 class="text-2xl font-bold tracking-tight">Fermes d'origine dans cette région</h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            @forelse($region->farms as $farm)
+            @forelse($farms as $farm)
                 <div class="rounded-xl border border-border bg-card p-6 shadow-sm space-y-4">
                     <div class="flex items-start justify-between">
                         <div>
                             <h3 class="text-lg font-bold text-foreground">{{ $farm->name }}</h3>
                             <p class="text-xs text-muted-foreground mt-0.5">Exploitant : {{ $farm->producer_name ?? 'Producteur local' }}</p>
                         </div>
-                        <span class="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600">
+                        <april:badge variant="secondary">
                             {{ $farm->farming_type }}
-                        </span>
+                        </april:badge>
                     </div>
 
                     <p class="text-sm text-muted-foreground">
@@ -61,6 +61,12 @@
                 </div>
             @endforelse
         </div>
+
+        @if($farms->hasPages())
+            <div class="flex justify-center">
+                {{ $farms->links() }}
+            </div>
+        @endif
     </div>
 </div>
 @endsection

@@ -22,4 +22,14 @@ class AgriculturalRegion extends Model
     {
         return $this->hasMany(Farm::class);
     }
+
+    /**
+     * Farms that cleared administrative review and may be shown publicly.
+     *
+     * @return HasMany<Farm, $this>
+     */
+    public function approvedFarms(): HasMany
+    {
+        return $this->hasMany(Farm::class)->approved();
+    }
 }

@@ -10,24 +10,24 @@ use App\Models\Food;
 use App\Models\StageTransition;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class FoodController extends Controller
 {
     /**
      * Display a listing of the resource. Consumers see the whole catalog;
-     * producers see what they registered.
+     * professionals see what they registered.
      */
     public function index(Request $request): View
     {
         $user = $request->user();
 
+        $this->authorize('viewAny', Food::class);
+
         $foods = Food::query()
             ->with(['category', 'producer'])
-            ->when(
-                $user->isProfessional() && ! $user->isAdmin(),
-                fn ($query) => $query->where('producer_id', $user->id)
-            )
+            ->when($user->isProfessional(), fn ($query) => $query->where('producer_id', $user->id))
             ->latest()
             ->get();
 
@@ -36,8 +36,10 @@ class FoodController extends Controller
 
     public function create(): View
     {
+        $this->authorize('create', Food::class);
+
         return view('foods.create', [
-            'categories' => Category::all(),
+            'categories' => Category::orderBy('name')->get(),
             'certifications' => Certification::orderBy('name')->get(),
         ]);
     }
@@ -46,25 +48,29 @@ class FoodController extends Controller
     {
         $this->authorize('create', Food::class);
 
-        $food = Food::create([
-            ...$request->foodPayload(),
-            'producer_id' => $request->user()->id,
-        ]);
+        $user = $request->user();
 
-        $food->certifications()->sync(
-            collect($request->certificationIds())
-                ->mapWithKeys(fn (int $id): array => [$id => ['obtained_on' => now()->toDateString()]])
-                ->all()
-        );
+        // The product, its certifications and its first supply chain step form
+        // one unit: a partial failure must not leave a product with no chain.
+        $food = DB::transaction(function () use ($request, $user): Food {
+            $food = Food::create([
+                ...$request->foodPayload(),
+                'producer_id' => $user->id,
+            ]);
 
-        StageTransition::create([
-            'food_id' => $food->id,
-            'actor_id' => $request->user()->id,
-            'from_stage' => null,
-            'to_stage' => Stage::Produced->value,
-            'notes' => 'Product registered',
-            'occurred_at' => now(),
-        ]);
+            $this->syncCertifications($food, $request->certificationIds());
+
+            StageTransition::create([
+                'food_id' => $food->id,
+                'actor_id' => $user->id,
+                'from_stage' => null,
+                'to_stage' => Stage::Produced,
+                'notes' => 'Product registered',
+                'occurred_at' => now(),
+            ]);
+
+            return $food;
+        });
 
         return redirect()->route('foods.index')
             ->with('success', 'Product added successfully.');
@@ -72,6 +78,8 @@ class FoodController extends Controller
 
     public function show(Food $food): View
     {
+        $this->authorize('view', $food);
+
         $food->load(['category', 'producer', 'transitions.actor', 'certifications']);
 
         return view('foods.show', compact('food'));
@@ -83,7 +91,7 @@ class FoodController extends Controller
 
         return view('foods.edit', [
             'food' => $food,
-            'categories' => Category::all(),
+            'categories' => Category::orderBy('name')->get(),
             'certifications' => Certification::orderBy('name')->get(),
             'selectedCertifications' => $food->certifications->pluck('id')->all(),
         ]);
@@ -93,15 +101,13 @@ class FoodController extends Controller
     {
         $this->authorize('update', $food);
 
-        $food->update($request->foodPayload());
+        DB::transaction(function () use ($request, $food): void {
+            $food->update($request->foodPayload());
 
-        if ($request->has('certifications')) {
-            $food->certifications()->sync(
-                collect($request->certificationIds())
-                    ->mapWithKeys(fn (int $id): array => [$id => ['obtained_on' => now()->toDateString()]])
-                    ->all()
-            );
-        }
+            // Always synced, never conditional on the key being present: this
+            // is the only way to clear every certification from the product.
+            $this->syncCertifications($food, $request->certificationIds());
+        });
 
         return redirect()->route('foods.index')
             ->with('success', 'Product updated successfully.');
@@ -115,5 +121,20 @@ class FoodController extends Controller
 
         return redirect()->route('foods.index')
             ->with('success', 'Product deleted.');
+    }
+
+    /**
+     * Replace the product's certifications outright.
+     *
+     * @param  list<int>  $certificationIds
+     */
+    private function syncCertifications(Food $food, array $certificationIds): void
+    {
+        $food->certifications()->sync(
+            collect($certificationIds)
+                ->unique()
+                ->mapWithKeys(fn (int $id): array => [$id => ['obtained_on' => now()->toDateString()]])
+                ->all()
+        );
     }
 }

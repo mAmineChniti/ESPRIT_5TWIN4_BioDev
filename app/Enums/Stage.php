@@ -2,6 +2,9 @@
 
 namespace App\Enums;
 
+/**
+ * The supply chain stages, in the order a product passes through them.
+ */
 enum Stage: string
 {
     case Produced = 'produced';
@@ -15,6 +18,14 @@ enum Stage: string
             self::Processed => 'Processed',
             self::Distributed => 'Distributed',
         };
+    }
+
+    /**
+     * The position of this stage in the chain, starting at zero.
+     */
+    public function position(): int
+    {
+        return (int) array_search($this->value, self::order(), true);
     }
 
     /**

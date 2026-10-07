@@ -3,49 +3,76 @@
 @section('title', 'Food List')
 
 @section('content')
-<div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold">Products</h1>
-    <a href="{{ route('foods.create') }}" class="bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2 px-4 rounded-md">
-        + Add a product
-    </a>
-</div>
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 class="text-2xl font-bold">Products</h1>
+        {{-- Guarded by the same rule the controller enforces, so a consumer or
+             an admin is never offered a control that would 403. --}}
+        @can('create', App\Models\Food::class)
+            <april:button-link href="{{ route('foods.create') }}">
+                <x-lucide-plus class="mr-2 size-4" />
+                Add a product
+            </april:button-link>
+        @endcan
+    </div>
 
-<div class="bg-card rounded-lg shadow overflow-hidden">
-    <table class="min-w-full divide-y divide-border">
-        <thead class="bg-muted">
-            <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Nom</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Category</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Origin</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Eco score</th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
-            </tr>
-        </thead>
-        <tbody class="bg-card divide-y divide-border">
-            @forelse($foods as $food)
-            <tr>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">{{ $food->name }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{{ $food->category->name ?? 'Not set' }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{{ $food->origin ?? '-' }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                    <x-eco-score :score="$food->environmental_score" />
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                    <a href="{{ route('foods.show', $food) }}" class="text-primary hover:underline">View</a>
-                    <a href="{{ route('foods.edit', $food) }}" class="text-primary hover:underline">Edit</a>
-                    <form action="{{ route('foods.destroy', $food) }}" method="POST" class="inline" onsubmit="return confirm('Delete this product?');">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="text-destructive hover:underline">Delete</button>
-                    </form>
-                </td>
-            </tr>
-            @empty
-            <tr>
-                <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground text-center">No products found.</td>
-            </tr>
-            @endforelse
-        </tbody>
-    </table>
-</div>
+    <april:card class="overflow-hidden">
+        <x-slot:content>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-border">
+                    <caption class="sr-only">Registered products</caption>
+                    <thead class="bg-muted">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Nom</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Category</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Origin</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Eco score</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-border">
+                        @forelse($foods as $food)
+                            <tr>
+                                <td class="whitespace-nowrap px-6 py-4 text-sm font-medium text-foreground">{{ $food->name }}</td>
+                                <td class="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">{{ $food->category->name ?? 'Not set' }}</td>
+                                <td class="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">{{ $food->origin ?? '-' }}</td>
+                                <td class="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
+                                    <x-eco-score :score="$food->environmental_score" />
+                                </td>
+                                <td class="whitespace-nowrap px-6 py-4 text-right">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <april:button-link href="{{ route('foods.show', $food) }}" variant="ghost" size="sm">
+                                            View
+                                        </april:button-link>
+
+                                        @can('update', $food)
+                                            <april:button-link href="{{ route('foods.edit', $food) }}" variant="ghost" size="sm">
+                                                Edit
+                                            </april:button-link>
+                                        @endcan
+
+                                        @can('delete', $food)
+                                            <x-confirm-action
+                                                :action="route('foods.destroy', $food)"
+                                                label="Delete product"
+                                                title="Delete this product?"
+                                                description="This removes {{ $food->name }} and its entire recorded supply chain. It cannot be undone."
+                                            >
+                                                Delete<span class="sr-only"> {{ $food->name }}</span>
+                                            </x-confirm-action>
+                                        @endcan
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="whitespace-nowrap px-6 py-12 text-center text-sm text-muted-foreground">
+                                    No products found.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </x-slot:content>
+    </april:card>
 @endsection

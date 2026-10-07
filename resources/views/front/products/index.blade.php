@@ -76,11 +76,10 @@
         </select>
     </div>
 
-    <label class="flex items-center gap-2 text-sm">
-        <input type="checkbox" name="certified" value="1" @checked(request()->boolean('certified'))
-               class="rounded border-input">
-        Certified only
-    </label>
+    <div class="flex items-center gap-2">
+        <april:checkbox id="certified" name="certified" value="1" @checked(request()->boolean('certified')) />
+        <april:label for="certified">Certified only</april:label>
+    </div>
 
     <div class="ml-auto">
         <label for="sort" class="block text-xs font-medium uppercase tracking-wide text-muted-foreground">Sort</label>

@@ -8,12 +8,16 @@ use App\Models\Food;
 use App\Models\GreenwashingReport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class GreenwashingReportController extends Controller
 {
     /**
      * A consumer flags a claim they believe is misleading.
+     *
+     * Only a consumer reaches this action; the route carries the role gate.
      */
     public function store(Request $request, Food $food): RedirectResponse
     {
@@ -22,24 +26,32 @@ class GreenwashingReportController extends Controller
             'details' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $alreadyPending = GreenwashingReport::where('food_id', $food->id)
-            ->where('user_id', $request->user()->id)
-            ->where('status', ReportStatus::Pending->value)
-            ->exists();
+        // One open report per consumer per product. The product row is locked
+        // for the duration so two concurrent submissions cannot both pass the
+        // check and open a duplicate.
+        DB::transaction(function () use ($request, $food, $validated): void {
+            Food::query()->whereKey($food->getKey())->lockForUpdate()->first();
 
-        if ($alreadyPending) {
-            return back()->withErrors([
-                'reason' => 'You already have a report awaiting review on this product.',
+            $alreadyPending = GreenwashingReport::query()
+                ->where('food_id', $food->id)
+                ->where('user_id', $request->user()->id)
+                ->where('status', ReportStatus::Pending)
+                ->exists();
+
+            if ($alreadyPending) {
+                throw ValidationException::withMessages([
+                    'reason' => 'You already have a report awaiting review on this product.',
+                ]);
+            }
+
+            GreenwashingReport::create([
+                'food_id' => $food->id,
+                'user_id' => $request->user()->id,
+                'reason' => ReportReason::from($validated['reason']),
+                'details' => $validated['details'] ?? null,
+                'status' => ReportStatus::Pending,
             ]);
-        }
-
-        GreenwashingReport::create([
-            'food_id' => $food->id,
-            'user_id' => $request->user()->id,
-            'reason' => ReportReason::from($validated['reason']),
-            'details' => $validated['details'] ?? null,
-            'status' => ReportStatus::Pending,
-        ]);
+        });
 
         return back()->with('success', 'Report received. A reviewer will look at it.');
     }
@@ -47,13 +59,11 @@ class GreenwashingReportController extends Controller
     /**
      * An admin records a decision on a report. Upholding one lowers the
      * product's transparency score, which is what makes the signal meaningful.
+     *
+     * @see Food::upheldReportCount() the score this decision feeds
      */
     public function update(Request $request, GreenwashingReport $report): RedirectResponse
     {
-        $user = $request->user();
-
-        abort_unless($user->isAdmin(), 403, 'Only admins can review reports.');
-
         $validated = $request->validate([
             'status' => ['required', Rule::enum(ReportStatus::class)],
         ]);
@@ -62,7 +72,7 @@ class GreenwashingReportController extends Controller
 
         $report->update([
             'status' => $status,
-            'reviewed_by' => $user->id,
+            'reviewed_by' => $request->user()->id,
             'reviewed_at' => now(),
         ]);
 

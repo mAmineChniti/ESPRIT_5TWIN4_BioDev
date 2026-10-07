@@ -16,7 +16,16 @@
         </p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    @if($regions->isEmpty())
+        <april:card>
+            <x-slot:content>
+                <p class="py-10 text-center text-sm text-muted-foreground">
+                    Aucune région agricole n'est publiée pour le moment.
+                </p>
+            </x-slot:content>
+        </april:card>
+    @else
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
         @foreach($regions as $region)
             <div class="rounded-xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between space-y-4">
                 <div class="space-y-3">
@@ -25,7 +34,7 @@
                             {{ $region->code }}
                         </span>
                         <span class="text-xs font-semibold text-primary">
-                            {{ $region->farms_count }} ferme(s)
+                            {{ $region->approved_farms_count }} ferme(s)
                         </span>
                     </div>
 
@@ -54,6 +63,13 @@
                 </div>
             </div>
         @endforeach
-    </div>
+        </div>
+
+        @if($regions->hasPages())
+            <div class="flex justify-center">
+                {{ $regions->links() }}
+            </div>
+        @endif
+    @endif
 </div>
 @endsection

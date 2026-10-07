@@ -3,20 +3,45 @@
 namespace App\Http\Controllers;
 
 use App\Models\AgriculturalRegion;
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class AgriculturalRegionController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * How many regions one back-office page shows.
      */
-    public function index()
-    {
-        $user = Auth::user();
+    private const PER_PAGE = 10;
 
-        // Both Admin and Producer can see all created regions to allow selection
-        $regions = AgriculturalRegion::withCount('farms')->latest()->paginate(10);
+    /**
+     * @return array<string, mixed>
+     */
+    private function regionRules(?AgriculturalRegion $region = null): array
+    {
+        return [
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:50', 'unique:agricultural_regions,code'.($region ? ','.$region->id : '')],
+            'climate' => ['nullable', 'string', 'max:255'],
+            'soil_type' => ['nullable', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:2000'],
+        ];
+    }
+
+    /**
+     * Display a listing of the resource.
+     *
+     * Both admins and producers see every region: a producer needs the list in
+     * order to attach a farm to one.
+     */
+    public function index(): View
+    {
+        $regions = AgriculturalRegion::query()
+            ->withCount('farms')
+            ->latest()
+            ->paginate(self::PER_PAGE);
 
         return view('back.regions.index', compact('regions'));
     }
@@ -24,33 +49,17 @@ class AgriculturalRegionController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): View
     {
-        if (! Auth::user()?->isAdmin()) {
-            abort(403, 'Seul l\'Administrateur peut créer une région agricole.');
-        }
-
         return view('back.regions.create');
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
-        if (! Auth::user()?->isAdmin()) {
-            abort(403, 'Seul l\'Administrateur peut créer une région agricole.');
-        }
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:agricultural_regions,code',
-            'climate' => 'nullable|string|max:255',
-            'soil_type' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-        ]);
-
-        AgriculturalRegion::create($validated);
+        AgriculturalRegion::create($request->validate($this->regionRules()));
 
         return redirect()->route('back.regions.index')
             ->with('success', 'Région agricole créée avec succès.');
@@ -58,16 +67,19 @@ class AgriculturalRegionController extends Controller
 
     /**
      * Display the specified resource.
+     *
+     * A producer sees only their own farms on the page; an admin sees all.
      */
-    public function show(AgriculturalRegion $region)
+    public function show(Request $request, AgriculturalRegion $region): View
     {
-        $user = Auth::user();
+        $user = $request->user();
 
-        $region->load(['farms' => function ($q) use ($user) {
-            if (! $user?->isAdmin()) {
-                $q->where('user_id', $user->id);
-            }
-        }]);
+        $region->load([
+            'farms' => fn (HasMany $farms) => $farms
+                ->with('user')
+                ->when(! $user->isAdmin(), fn (Builder $query) => $query->where('user_id', $user->id))
+                ->latest(),
+        ]);
 
         return view('back.regions.show', compact('region'));
     }
@@ -75,33 +87,17 @@ class AgriculturalRegionController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(AgriculturalRegion $region)
+    public function edit(AgriculturalRegion $region): View
     {
-        if (! Auth::user()?->isAdmin()) {
-            abort(403, 'Seul l\'Administrateur peut modifier une région agricole.');
-        }
-
         return view('back.regions.edit', compact('region'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, AgriculturalRegion $region)
+    public function update(Request $request, AgriculturalRegion $region): RedirectResponse
     {
-        if (! Auth::user()?->isAdmin()) {
-            abort(403, 'Seul l\'Administrateur peut modifier une région agricole.');
-        }
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:agricultural_regions,code,'.$region->id,
-            'climate' => 'nullable|string|max:255',
-            'soil_type' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-        ]);
-
-        $region->update($validated);
+        $region->update($request->validate($this->regionRules($region)));
 
         return redirect()->route('back.regions.index')
             ->with('success', 'Région agricole mise à jour avec succès.');
@@ -110,13 +106,8 @@ class AgriculturalRegionController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(AgriculturalRegion $region)
+    public function destroy(AgriculturalRegion $region): RedirectResponse
     {
-        // Only Admin can delete a global agricultural region
-        if (! Auth::user()?->isAdmin()) {
-            abort(403, 'Seul un Administrateur peut supprimer une région agricole.');
-        }
-
         $region->delete();
 
         return redirect()->route('back.regions.index')

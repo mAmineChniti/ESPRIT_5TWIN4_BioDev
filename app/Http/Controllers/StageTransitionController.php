@@ -17,6 +17,8 @@ class StageTransitionController extends Controller
      */
     public function index(Food $food): View
     {
+        $this->authorize('view', $food);
+
         $food->load('transitions.actor');
 
         return view('foods.transitions.index', ['food' => $food]);
@@ -29,7 +31,9 @@ class StageTransitionController extends Controller
     {
         $this->authorize('update', $food);
 
-        $current = $food->transitions->last()?->to_stage;
+        $food->load('transitions');
+
+        $current = $food->currentStage();
 
         $validated = $request->validate([
             'to_stage' => ['required', Rule::enum(Stage::class)],
@@ -44,7 +48,7 @@ class StageTransitionController extends Controller
             ]);
         }
 
-        if ($current !== null && $this->stepIndex($next) <= $this->stepIndex($current)) {
+        if ($current !== null && $next->position() <= $current->position()) {
             return back()->withErrors([
                 'to_stage' => "A product cannot move back from {$current->label()} to {$next->label()}.",
             ]);
@@ -53,17 +57,12 @@ class StageTransitionController extends Controller
         StageTransition::create([
             'food_id' => $food->id,
             'actor_id' => $request->user()->id,
-            'from_stage' => $current?->value,
-            'to_stage' => $next->value,
+            'from_stage' => $current,
+            'to_stage' => $next,
             'notes' => $validated['notes'] ?? null,
             'occurred_at' => now(),
         ]);
 
         return back()->with('success', "Step recorded: {$next->label()}.");
-    }
-
-    private function stepIndex(Stage $stage): int
-    {
-        return array_search($stage->value, Stage::order(), true);
     }
 }

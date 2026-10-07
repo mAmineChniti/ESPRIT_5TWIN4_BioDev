@@ -32,15 +32,16 @@
         @endif
     </dl>
 
-    <h2 class="mt-6 text-md font-medium text-foreground">Products in this meal</h2>
+    <h2 class="mt-6 text-lg font-medium text-foreground">Products in this meal</h2>
     <div class="mt-2 overflow-hidden border border-border rounded-md">
         <table class="min-w-full divide-y divide-border">
+            <caption class="sr-only">Products recorded in this meal</caption>
             <thead class="bg-muted">
                 <tr>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Product</th>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Category</th>
-                    <th class="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Quantity</th>
-                    <th class="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Eco score</th>
+                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Product</th>
+                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Category</th>
+                    <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Quantity</th>
+                    <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Eco score</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-border">

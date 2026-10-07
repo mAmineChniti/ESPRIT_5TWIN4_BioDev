@@ -222,4 +222,142 @@ class FoodManagementTest extends TestCase
         $response->assertSee('Fair trade');
         $response->assertSee('Medium impact');
     }
+
+    // ---------- Ownership and the policy/middleware agreement ----------
+
+    public function test_an_admin_cannot_update_a_product_the_supply_chain_owns(): void
+    {
+        $food = Food::factory()->create(['producer_id' => $this->producer()->id, 'name' => 'Not Mine']);
+
+        // ProAccess keeps an admin off these routes; the policy agrees.
+        $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->get(route('foods.edit', $food))
+            ->assertForbidden();
+
+        $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->patch(route('foods.update', $food), $this->validPayload())
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('foods', ['id' => $food->id, 'name' => 'Not Mine']);
+    }
+
+    public function test_an_admin_cannot_delete_a_product_the_supply_chain_owns(): void
+    {
+        $food = Food::factory()->create(['producer_id' => $this->producer()->id]);
+
+        $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->delete(route('foods.destroy', $food))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('foods', ['id' => $food->id]);
+    }
+
+    public function test_a_producer_cannot_update_another_producers_product(): void
+    {
+        $food = Food::factory()->create(['producer_id' => $this->producer()->id, 'name' => 'Theirs']);
+
+        $this->actingAs(User::factory()->create(['role' => 'processor']))
+            ->patch(route('foods.update', $food), $this->validPayload())
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('foods', ['id' => $food->id, 'name' => 'Theirs']);
+    }
+
+    public function test_the_owning_producer_can_update_and_delete(): void
+    {
+        $producer = $this->producer();
+        $food = Food::factory()->create(['producer_id' => $producer->id]);
+
+        $this->actingAs($producer)
+            ->patch(route('foods.update', $food), $this->validPayload(['name' => 'Renamed']))
+            ->assertRedirect(route('foods.index'));
+
+        $this->assertDatabaseHas('foods', ['id' => $food->id, 'name' => 'Renamed']);
+
+        $this->actingAs($producer)->delete(route('foods.destroy', $food));
+        $this->assertDatabaseMissing('foods', ['id' => $food->id]);
+    }
+
+    // ---------- Atomic writes ----------
+
+    public function test_a_new_product_always_lands_with_its_chain_and_certifications(): void
+    {
+        $certification = Certification::factory()->create();
+
+        $this->actingAs($this->producer())->post(
+            route('foods.store'),
+            $this->validPayload(['certifications' => [$certification->id]])
+        )->assertRedirect(route('foods.index'));
+
+        $food = Food::firstOrFail();
+
+        $this->assertDatabaseHas('certification_food', [
+            'certification_id' => $certification->id,
+            'food_id' => $food->id,
+        ]);
+        $this->assertCount(1, $food->transitions()->get());
+    }
+
+    public function test_a_food_is_not_left_behind_when_its_certifications_are_invalid(): void
+    {
+        $this->actingAs($this->producer())->post(
+            route('foods.store'),
+            $this->validPayload(['certifications' => [999999]])
+        )->assertSessionHasErrors('certifications.*');
+
+        // The whole write is one unit: a rejected certification id must not
+        // leave an orphaned product row.
+        $this->assertDatabaseCount('foods', 0);
+    }
+
+    // ---------- Certification sync ----------
+
+    public function test_clearing_the_certifications_is_possible(): void
+    {
+        $producer = $this->producer();
+        $food = Food::factory()->create(['producer_id' => $producer->id]);
+        $food->certifications()->attach(Certification::factory()->create());
+
+        $this->assertCount(1, $food->certifications()->get());
+
+        $this->actingAs($producer)
+            ->patch(route('foods.update', $food), $this->validPayload(['certifications' => []]))
+            ->assertRedirect(route('foods.index'));
+
+        // Synced unconditionally, so submitting no certifications clears them.
+        $this->assertCount(0, $food->fresh()->certifications()->get());
+    }
+
+    public function test_updating_replaces_the_certification_set_rather_than_adding_to_it(): void
+    {
+        $producer = $this->producer();
+        $food = Food::factory()->create(['producer_id' => $producer->id]);
+
+        $old = Certification::factory()->create();
+        $new = Certification::factory()->create();
+        $food->certifications()->attach($old);
+
+        $this->actingAs($producer)->patch(
+            route('foods.update', $food),
+            $this->validPayload(['certifications' => [$new->id]])
+        );
+
+        $this->assertSame([$new->id], $food->fresh()->certifications()->pluck('certifications.id')->all());
+    }
+
+    public function test_omitting_the_certifications_key_also_clears_them(): void
+    {
+        $producer = $this->producer();
+        $food = Food::factory()->create(['producer_id' => $producer->id]);
+        $food->certifications()->attach(Certification::factory()->create());
+
+        $payload = $this->validPayload();
+        unset($payload['certifications']);
+
+        $this->actingAs($producer)->patch(route('foods.update', $food), $payload);
+
+        // The sync must not be conditional on the key being present, or
+        // "remove every certification" is impossible to express.
+        $this->assertCount(0, $food->fresh()->certifications()->get());
+    }
 }

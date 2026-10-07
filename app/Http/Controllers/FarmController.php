@@ -2,75 +2,117 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\FarmStatus;
 use App\Models\AgriculturalRegion;
 use App\Models\Farm;
+use App\Models\User;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 
 class FarmController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * How many farms one back-office page shows.
      */
-    public function index(Request $request)
+    private const PER_PAGE = 10;
+
+    /**
+     * The rules shared by the create and update forms.
+     *
+     * @return array<string, mixed>
+     */
+    private function farmRules(): array
     {
-        $user = Auth::user();
-        $statusFilter = $request->query('status');
+        return [
+            'agricultural_region_id' => ['required', 'exists:agricultural_regions,id'],
+            'name' => ['required', 'string', 'max:255'],
+            'soil_type' => ['nullable', 'string', 'max:255'],
+            'producer_name' => ['nullable', 'string', 'max:255'],
+            'address' => ['required', 'string', 'max:255'],
+            'surface_hectares' => ['required', 'numeric', 'min:0'],
+            'farming_type' => ['required', 'string', 'max:100'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'description' => ['nullable', 'string', 'max:2000'],
+        ];
+    }
 
-        if ($user?->isAdmin()) {
-            // Admin sees ALL farms, with optional status filtering
-            $query = Farm::with(['region', 'user'])->latest();
-            if ($statusFilter && in_array($statusFilter, ['en_attente', 'validee', 'refusee'], true)) {
-                $query->where('status', $statusFilter);
-            }
-            $farms = $query->paginate(10)->withQueryString();
+    /**
+     * Display a listing of the resource.
+     *
+     * An admin supervises every farm in the country; a producer sees only the
+     * farms they registered.
+     */
+    public function index(Request $request): View
+    {
+        $user = $request->user();
 
-            // Statistics for admin
-            $stats = [
-                'total' => Farm::count(),
-                'validees' => Farm::where('status', 'validee')->count(),
-                'en_attente' => Farm::where('status', 'en_attente')->count(),
-                'refusees' => Farm::where('status', 'refusee')->count(),
-                'surface' => Farm::where('status', 'validee')->sum('surface_hectares'),
-            ];
-        } else {
-            // Producer sees ONLY their own farms
-            $query = Farm::where('user_id', $user->id)->with('region')->latest();
-            if ($statusFilter && in_array($statusFilter, ['en_attente', 'validee', 'refusee'], true)) {
-                $query->where('status', $statusFilter);
-            }
-            $farms = $query->paginate(10)->withQueryString();
+        $validated = $request->validate([
+            'status' => ['nullable', Rule::enum(FarmStatus::class)],
+        ]);
 
-            // Statistics for producer
-            $stats = [
-                'total' => Farm::where('user_id', $user->id)->count(),
-                'validees' => Farm::where('user_id', $user->id)->where('status', 'validee')->count(),
-                'en_attente' => Farm::where('user_id', $user->id)->where('status', 'en_attente')->count(),
-                'refusees' => Farm::where('user_id', $user->id)->where('status', 'refusee')->count(),
-                'surface' => Farm::where('user_id', $user->id)->where('status', 'validee')->sum('surface_hectares'),
-            ];
+        /** @var FarmStatus|null $statusFilter */
+        $statusFilter = isset($validated['status'])
+            ? FarmStatus::from($validated['status'])
+            : null;
+
+        $farms = Farm::query()
+            ->when(! $user->isAdmin(), fn ($query) => $query->where('user_id', $user->id))
+            ->when($statusFilter, fn ($query, FarmStatus $status) => $query->where('status', $status))
+            ->with(['region', 'user'])
+            ->latest()
+            ->paginate(self::PER_PAGE)
+            ->withQueryString();
+
+        return view('back.farms.index', [
+            'farms' => $farms,
+            'statusFilter' => $statusFilter,
+            'pendingCount' => $user->isAdmin() ? Farm::query()->pending()->count() : 0,
+            'stats' => $this->statisticsFor($user),
+        ]);
+    }
+
+    /**
+     * Counts and total approved surface, scoped to whoever is asking.
+     *
+     * Aggregated in SQL rather than counted from the paginated page.
+     *
+     * @return array<string, int|float>
+     */
+    private function statisticsFor(User $user): array
+    {
+        $stats = ['total' => 0, 'validees' => 0, 'en_attente' => 0, 'refusees' => 0, 'surface' => 0];
+
+        foreach (FarmStatus::cases() as $status) {
+            $stats[$status->statKey()] = Farm::query()
+                ->when(! $user->isAdmin(), fn ($query) => $query->where('user_id', $user->id))
+                ->where('status', $status)
+                ->count();
         }
 
-        $pendingCount = $user?->isAdmin() ? Farm::where('status', 'en_attente')->count() : 0;
+        $stats['total'] = $stats['validees'] + $stats['en_attente'] + $stats['refusees'];
+        $stats['surface'] = (float) Farm::query()
+            ->when(! $user->isAdmin(), fn ($query) => $query->where('user_id', $user->id))
+            ->where('status', FarmStatus::Approved)
+            ->sum('surface_hectares');
 
-        return view('back.farms.index', compact('farms', 'statusFilter', 'pendingCount', 'stats'));
+        return $stats;
     }
 
     /**
      * Display pending farm validation requests for Admin.
      */
-    public function requests()
+    public function requests(): View
     {
-        $user = Auth::user();
+        $this->ensureAdmin(request());
 
-        if (! $user?->isAdmin()) {
-            abort(403, 'Accès réservé à l\'Administrateur.');
-        }
-
-        $requests = Farm::where('status', 'en_attente')
+        $requests = Farm::query()
+            ->pending()
             ->with(['region', 'user'])
             ->latest()
-            ->paginate(10);
+            ->paginate(self::PER_PAGE);
 
         return view('back.farms.requests', compact('requests'));
     }
@@ -78,15 +120,11 @@ class FarmController extends Controller
     /**
      * Approve a farm validation request (Admin only).
      */
-    public function approve(Farm $farm)
+    public function approve(Request $request, Farm $farm): RedirectResponse
     {
-        $user = Auth::user();
+        $this->ensureAdmin($request);
 
-        if (! $user?->isAdmin()) {
-            abort(403, 'Seul un Administrateur peut valider une ferme.');
-        }
-
-        $farm->update(['status' => 'validee']);
+        $farm->update(['status' => FarmStatus::Approved, 'rejection_reason' => null]);
 
         return back()->with('success', "La ferme « {$farm->name} » a été acceptée et validée.");
     }
@@ -94,17 +132,17 @@ class FarmController extends Controller
     /**
      * Reject a farm validation request (Admin only).
      */
-    public function reject(Request $request, Farm $farm)
+    public function reject(Request $request, Farm $farm): RedirectResponse
     {
-        $user = Auth::user();
+        $this->ensureAdmin($request);
 
-        if (! $user?->isAdmin()) {
-            abort(403, 'Seul un Administrateur peut refuser une ferme.');
-        }
+        $validated = $request->validate([
+            'rejection_reason' => ['required', 'string', 'max:1000'],
+        ]);
 
         $farm->update([
-            'status' => 'refusee',
-            'rejection_reason' => $request->input('rejection_reason'),
+            'status' => FarmStatus::Rejected,
+            'rejection_reason' => $validated['rejection_reason'],
         ]);
 
         return back()->with('success', "La ferme « {$farm->name} » a été refusée.");
@@ -113,40 +151,31 @@ class FarmController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): View
     {
-        $regions = AgriculturalRegion::orderBy('name')->get();
-
-        return view('back.farms.create', compact('regions'));
+        return view('back.farms.create', [
+            'regions' => $this->regionsForForm(),
+        ]);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'agricultural_region_id' => 'required|exists:agricultural_regions,id',
-            'name' => 'required|string|max:255',
-            'soil_type' => 'nullable|string|max:255',
-            'producer_name' => 'nullable|string|max:255',
-            'address' => 'required|string|max:255',
-            'surface_hectares' => 'required|numeric|min:0',
-            'farming_type' => 'required|string|max:100',
-            'phone' => 'nullable|string|max:50',
-            'description' => 'nullable|string',
-        ]);
+        $validated = $request->validate($this->farmRules());
 
-        $user = Auth::user();
+        $user = $request->user();
+
         $validated['user_id'] = $user->id;
 
-        if (empty($validated['producer_name'])) {
-            $validated['producer_name'] = $user->name;
-        }
+        // A nullable field is absent from the validated array when it is not
+        // submitted, so fall back to the account name.
+        $validated['producer_name'] = ($validated['producer_name'] ?? null) ?: $user->name;
 
-        // When a producer adds a farm, status is automatically 'en_attente'
-        // If an admin creates a farm directly, status is 'validee'
-        $validated['status'] = $user->isAdmin() ? 'validee' : 'en_attente';
+        // A producer's farm waits for an admin; an admin's own farm is
+        // immediately in force.
+        $validated['status'] = $user->isAdmin() ? FarmStatus::Approved : FarmStatus::Pending;
 
         Farm::create($validated);
 
@@ -162,59 +191,36 @@ class FarmController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Farm $farm)
+    public function show(Request $request, Farm $farm): View
     {
-        $user = Auth::user();
+        $this->ensureOwnership($request, $farm);
 
-        if (! $user?->isAdmin() && $farm->user_id !== $user->id) {
-            abort(403, 'Accès refusé. Vous ne pouvez consulter que vos propres fermes.');
-        }
-
-        $farm->load(['region', 'user']);
-
-        return view('back.farms.show', compact('farm'));
+        return view('back.farms.show', [
+            'farm' => $farm->load(['region', 'user']),
+        ]);
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Farm $farm)
+    public function edit(Request $request, Farm $farm): View
     {
-        $user = Auth::user();
+        $this->ensureOwnership($request, $farm);
 
-        if (! $user?->isAdmin() && $farm->user_id !== $user->id) {
-            abort(403, 'Accès refusé. Vous ne pouvez modifier que vos propres fermes.');
-        }
-
-        $regions = AgriculturalRegion::orderBy('name')->get();
-
-        return view('back.farms.edit', compact('farm', 'regions'));
+        return view('back.farms.edit', [
+            'farm' => $farm,
+            'regions' => $this->regionsForForm(),
+        ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Farm $farm)
+    public function update(Request $request, Farm $farm): RedirectResponse
     {
-        $user = Auth::user();
+        $this->ensureOwnership($request, $farm);
 
-        if (! $user?->isAdmin() && $farm->user_id !== $user->id) {
-            abort(403, 'Accès refusé.');
-        }
-
-        $validated = $request->validate([
-            'agricultural_region_id' => 'required|exists:agricultural_regions,id',
-            'name' => 'required|string|max:255',
-            'soil_type' => 'nullable|string|max:255',
-            'producer_name' => 'nullable|string|max:255',
-            'address' => 'required|string|max:255',
-            'surface_hectares' => 'required|numeric|min:0',
-            'farming_type' => 'required|string|max:100',
-            'phone' => 'nullable|string|max:50',
-            'description' => 'nullable|string',
-        ]);
-
-        $farm->update($validated);
+        $farm->update($request->validate($this->farmRules()));
 
         return redirect()->route('back.farms.index')
             ->with('success', 'Ferme mise à jour avec succès.');
@@ -223,17 +229,45 @@ class FarmController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Farm $farm)
+    public function destroy(Request $request, Farm $farm): RedirectResponse
     {
-        $user = Auth::user();
-
-        if (! $user?->isAdmin() && $farm->user_id !== $user->id) {
-            abort(403, 'Accès refusé. Vous ne pouvez supprimer que vos propres fermes.');
-        }
+        $this->ensureOwnership($request, $farm);
 
         $farm->delete();
 
         return redirect()->route('back.farms.index')
             ->with('success', 'Ferme supprimée avec succès.');
+    }
+
+    /**
+     * The regions a farm may be attached to.
+     *
+     * @return Collection<int, AgriculturalRegion>
+     */
+    private function regionsForForm(): Collection
+    {
+        return AgriculturalRegion::orderBy('name')->get();
+    }
+
+    /**
+     * Route-level middleware already restricts these to an admin; this is the
+     * second layer, so a route accidentally moved out of the group still fails
+     * closed.
+     */
+    private function ensureAdmin(Request $request): void
+    {
+        abort_unless($request->user()?->isAdmin(), 403, 'Seul un Administrateur peut valider une ferme.');
+    }
+
+    /**
+     * An admin may touch any farm; everyone else only their own.
+     */
+    private function ensureOwnership(Request $request, Farm $farm): void
+    {
+        abort_if(
+            ! $request->user()?->isAdmin() && $farm->user_id !== $request->user()->id,
+            403,
+            'Accès refusé. Vous ne pouvez gérer que vos propres fermes.',
+        );
     }
 }

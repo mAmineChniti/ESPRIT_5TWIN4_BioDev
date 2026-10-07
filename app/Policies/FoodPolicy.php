@@ -22,19 +22,28 @@ class FoodPolicy
 
     /**
      * Only supply chain professionals may register products.
+     *
+     * Admins are deliberately excluded: they supervise, they do not supply
+     * chain steps, and ProAccess keeps them off these routes.
      */
     public function create(User $user): bool
     {
         return $user->isProfessional();
     }
 
+    /**
+     * A product may be changed only by the professional who registered it.
+     *
+     * This mirrors ProAccess exactly: the policy never grants more than the
+     * middleware already allows, so the two layers cannot disagree.
+     */
     public function update(User $user, Food $food): bool
     {
-        return $user->isAdmin() || $food->producer_id === $user->id;
+        return $user->isProfessional() && $food->producer_id === $user->id;
     }
 
     public function delete(User $user, Food $food): bool
     {
-        return $user->isAdmin() || $food->producer_id === $user->id;
+        return $this->update($user, $food);
     }
 }

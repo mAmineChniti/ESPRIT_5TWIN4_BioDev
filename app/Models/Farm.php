@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use App\Enums\FarmStatus;
+use Database\Factories\FarmFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Farm extends Model
 {
+    /** @use HasFactory<FarmFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -25,29 +29,66 @@ class Farm extends Model
         'description',
     ];
 
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'status' => FarmStatus::class,
+            'surface_hectares' => 'decimal:2',
+        ];
+    }
+
     public function isPending(): bool
     {
-        return $this->status === 'en_attente';
+        return $this->status === FarmStatus::Pending;
     }
 
     public function isApproved(): bool
     {
-        return $this->status === 'validee' || empty($this->status);
+        return $this->status === FarmStatus::Approved;
     }
 
     public function isRejected(): bool
     {
-        return $this->status === 'refusee';
+        return $this->status === FarmStatus::Rejected;
     }
 
-    public function scopeApproved($query)
+    /**
+     * Whether the details of this farm may still be corrected.
+     *
+     * A pending farm can be fixed while it waits, and an approved one while it
+     * is in force. A rejected farm has been closed, so its record is kept as
+     * submitted rather than edited.
+     */
+    public function canBeEdited(): bool
     {
-        return $query->where('status', 'validee')->orWhereNull('status');
+        return ! $this->isRejected();
     }
 
-    public function scopePending($query)
+    /**
+     * Farms that have cleared administrative review.
+     *
+     * This is the only scope the public pages may use. Anything that is not
+     * explicitly approved stays in the back office, which fails closed if a
+     * row ever ends up with an unexpected status.
+     *
+     * @param  Builder<Farm>  $query
+     * @return Builder<Farm>
+     */
+    public function scopeApproved(Builder $query): Builder
     {
-        return $query->where('status', 'en_attente');
+        return $query->where('status', FarmStatus::Approved);
+    }
+
+    /**
+     * @param  Builder<Farm>  $query
+     * @return Builder<Farm>
+     */
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->where('status', FarmStatus::Pending);
     }
 
     public function region(): BelongsTo

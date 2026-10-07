@@ -86,11 +86,15 @@ class Food extends Model
     /**
      * Every hand-off this product made along the supply chain.
      *
+     * Ordered by insertion order rather than by occurred_at: two steps recorded in
+     * the same second have no reliable time order, so id is what makes
+     * "the latest step" unambiguous and agree with CatalogController::pendingByStage().
+     *
      * @return HasMany<StageTransition, $this>
      */
     public function transitions(): HasMany
     {
-        return $this->hasMany(StageTransition::class)->orderBy('occurred_at');
+        return $this->hasMany(StageTransition::class)->orderBy('id');
     }
 
     /**
@@ -107,10 +111,35 @@ class Food extends Model
 
     /**
      * The stage the product has most recently reached.
+     *
+     * Reads the loaded relation when there is one, so a page that has already
+     * eager-loaded the chain does not issue a second query.
      */
     public function currentStage(): ?Stage
     {
-        return $this->transitions->last()?->to_stage;
+        $transitions = $this->relationLoaded('transitions')
+            ? $this->transitions
+            : $this->transitions()->get();
+
+        return $transitions->last()?->to_stage;
+    }
+
+    /**
+     * The next stage the product may legitimately move to, or null once the
+     * chain is complete.
+     *
+     * The chain only ever moves forward, so this is simply the stage after the
+     * current one.
+     */
+    public function nextStage(): ?Stage
+    {
+        $current = $this->currentStage();
+
+        if ($current === null) {
+            return Stage::cases()[0];
+        }
+
+        return Stage::cases()[$current->position() + 1] ?? null;
     }
 
     /**
