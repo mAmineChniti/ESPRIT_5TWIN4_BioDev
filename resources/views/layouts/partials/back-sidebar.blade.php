@@ -28,13 +28,19 @@
         </april:sidebar-menu>
 
         @if($isAdmin)
-            {{-- Admin: manage users --}}
+            {{-- Admin-only destinations --}}
             <april:sidebar-menu>
                 <april:sidebar-group-label>Administration</april:sidebar-group-label>
                 <april:sidebar-menu-item>
                     <april:sidebar-menu-button-link href="{{ route('admin.users') }}" :active="request()->routeIs('admin.users')">
                         <x-lucide-users />
                         <span>Manage Users</span>
+                    </april:sidebar-menu-button-link>
+                </april:sidebar-menu-item>
+                <april:sidebar-menu-item>
+                    <april:sidebar-menu-button-link href="{{ route('admin.reports') }}" :active="request()->routeIs('admin.reports')">
+                        <x-lucide-flag />
+                        <span>Greenwashing Reports</span>
                     </april:sidebar-menu-button-link>
                 </april:sidebar-menu-item>
             </april:sidebar-menu>

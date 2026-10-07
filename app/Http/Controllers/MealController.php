@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Food;
 use App\Models\Meal;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -25,11 +26,38 @@ class MealController extends Controller
         return view('meals.index', compact('meals'));
     }
 
-    public function create(): View
+    /**
+     * How many products the picker offers before it asks the consumer to narrow
+     * the list. Loading the whole catalog into a checkbox list does not scale, and
+     * a consumer logging a meal is usually after one or two products.
+     */
+    private const PICKER_LIMIT = 50;
+
+    public function create(Request $request): View
     {
+        $request->validate([
+            'q' => ['nullable', 'string', 'max:120'],
+        ]);
+
+        $term = trim((string) $request->query('q', ''));
+
+        $foods = Food::with('category')
+            ->when($term !== '', fn (Builder $query) => $query
+                ->where(fn (Builder $inner) => $inner
+                    ->where('name', 'like', "%{$term}%")
+                    ->orWhere('origin', 'like', "%{$term}%")
+                    ->orWhereHas('category', fn (Builder $category) => $category->where('name', 'like', "%{$term}%")))
+            )
+            ->orderBy('name')
+            ->limit(self::PICKER_LIMIT)
+            ->get();
+
         return view('meals.create', [
-            'foods' => Food::with('category')->orderBy('name')->get(),
+            'foods' => $foods,
             'types' => Meal::TYPES,
+            'search' => $term,
+            // Only worth offering a hint when the list was actually capped.
+            'pickerTruncated' => $term === '' && Food::count() > self::PICKER_LIMIT,
         ]);
     }
 

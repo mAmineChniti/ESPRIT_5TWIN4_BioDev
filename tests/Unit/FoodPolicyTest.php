@@ -83,9 +83,8 @@ class FoodPolicyTest extends TestCase
 
     public function test_an_admin_may_not_register_a_product(): void
     {
-        // An admin supervises but takes no part in the chain, so this grant
-        // must stay off. ProAccess would hide it anyway; a policy that
-        // disagrees is a latent bug.
+        // ProAccess lets an admin reach /foods/create, but registering is the
+        // professionals' first supply chain step, so the policy still refuses.
         $this->assertFalse($this->policy->create($this->actor('admin')));
     }
 
@@ -98,20 +97,23 @@ class FoodPolicyTest extends TestCase
         $this->assertTrue($this->policy->delete($owner, $food));
     }
 
-    public function test_an_admin_may_not_update_or_delete_someone_elses_product(): void
+    public function test_an_admin_may_update_and_delete_any_product(): void
     {
+        // Admins moderate the catalogue, so they are not limited to the
+        // products they registered. ProAccess admits them for the same reason.
         $food = Food::factory()->create(['producer_id' => $this->actor('producer')->id]);
+        $admin = $this->actor('admin');
 
-        $this->assertFalse(
-            $this->policy->update($this->actor('admin'), $food),
-            'The policy grants admin an action ProAccess already refuses.'
-        );
-        $this->assertFalse($this->policy->delete($this->actor('admin'), $food));
+        $this->assertTrue($this->policy->update($admin, $food));
+        $this->assertTrue($this->policy->delete($admin, $food));
     }
 
     public function test_a_consumer_may_not_update_or_delete(): void
     {
         $consumer = $this->actor('consumer');
+
+        // Even a product that names them as the producer: ownership only counts
+        // for a supply chain role.
         $food = Food::factory()->create(['producer_id' => $consumer->id]);
 
         $this->assertFalse($this->policy->update($consumer, $food));

@@ -10,6 +10,7 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/js/app.js',
                 'resources/js/charts.js',
+                'resources/js/assistant.js',
             ],
             refresh: true,
             fonts: [

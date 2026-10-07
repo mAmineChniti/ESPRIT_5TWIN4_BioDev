@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\EnvironmentalScore;
 use App\Enums\Stage;
 use App\Http\Requests\FoodRequest;
 use App\Models\Category;
@@ -29,9 +30,15 @@ class FoodController extends Controller
             ->with(['category', 'producer'])
             ->when($user->isProfessional(), fn ($query) => $query->where('producer_id', $user->id))
             ->latest()
-            ->get();
+            ->paginate(10);
 
-        return view('foods.index', compact('foods'));
+        return view('foods.index', [
+            'foods' => $foods,
+            // Derived from the policy rather than a hand-rolled role check, so
+            // the "Add a product" and CSV import controls appear for exactly
+            // the people whose POST would be authorised.
+            'canManage' => $user->can('create', Food::class),
+        ]);
     }
 
     public function create(): View
@@ -48,23 +55,19 @@ class FoodController extends Controller
     {
         $this->authorize('create', Food::class);
 
-        $user = $request->user();
-
-        // The product, its certifications and its first supply chain step form
-        // one unit: a partial failure must not leave a product with no chain.
-        $food = DB::transaction(function () use ($request, $user): Food {
+        $food = DB::transaction(function () use ($request): Food {
             $food = Food::create([
                 ...$request->foodPayload(),
-                'producer_id' => $user->id,
+                'producer_id' => $request->user()->id,
             ]);
 
-            $this->syncCertifications($food, $request->certificationIds());
+            $food->certifications()->sync($this->certificationSyncPayload($request));
 
             StageTransition::create([
                 'food_id' => $food->id,
-                'actor_id' => $user->id,
+                'actor_id' => $request->user()->id,
                 'from_stage' => null,
-                'to_stage' => Stage::Produced,
+                'to_stage' => Stage::Produced->value,
                 'notes' => 'Product registered',
                 'occurred_at' => now(),
             ]);
@@ -104,9 +107,10 @@ class FoodController extends Controller
         DB::transaction(function () use ($request, $food): void {
             $food->update($request->foodPayload());
 
-            // Always synced, never conditional on the key being present: this
-            // is the only way to clear every certification from the product.
-            $this->syncCertifications($food, $request->certificationIds());
+            // Synced unconditionally: the form omits "certifications" entirely
+            // when every box is unchecked, and guarding on has() would make
+            // certifications impossible to remove.
+            $food->certifications()->sync($this->certificationSyncPayload($request));
         });
 
         return redirect()->route('foods.index')
@@ -124,17 +128,117 @@ class FoodController extends Controller
     }
 
     /**
-     * Replace the product's certifications outright.
+     * Import products from a CSV file.
      *
-     * @param  list<int>  $certificationIds
+     * Expected columns: name, category, origin, environmental_score, calories, protein, carbs, fat
      */
-    private function syncCertifications(Food $food, array $certificationIds): void
+    public function importCsv(Request $request): RedirectResponse
     {
-        $food->certifications()->sync(
-            collect($certificationIds)
-                ->unique()
-                ->mapWithKeys(fn (int $id): array => [$id => ['obtained_on' => now()->toDateString()]])
-                ->all()
-        );
+        $this->authorize('create', Food::class);
+
+        $request->validate([
+            'csv_file' => ['required', 'file', 'mimes:csv,txt', 'max:2048'],
+        ]);
+
+        $file = $request->file('csv_file');
+        $handle = fopen($file->getRealPath(), 'r');
+
+        if ($handle === false) {
+            return back()->with('error', 'Unable to read the file.');
+        }
+
+        $header = fgetcsv($handle);
+
+        if (! $header) {
+            fclose($handle);
+
+            return back()->with('error', 'The CSV file is empty.');
+        }
+
+        $header = array_map(fn (string $col): string => strtolower(trim($col)), $header);
+
+        $imported = 0;
+        $errors = [];
+
+        while (($row = fgetcsv($handle)) !== false) {
+            if (count($row) !== count($header)) {
+                $errors[] = 'Skipped a row with '.count($row).' columns, expected '.count($header).'.';
+
+                continue;
+            }
+
+            $data = array_combine($header, $row);
+            $name = trim((string) ($data['name'] ?? ''));
+
+            if ($name === '') {
+                $errors[] = 'Skipped a row with no product name.';
+
+                continue;
+            }
+
+            $score = strtoupper(trim((string) ($data['environmental_score'] ?? '')));
+
+            if ($score !== '' && EnvironmentalScore::tryFrom($score) === null) {
+                $errors[] = "{$name}: \"{$score}\" is not a valid eco grade (expected A-E).";
+
+                continue;
+            }
+
+            try {
+                DB::transaction(function () use ($request, $data, $name, $score): void {
+                    $category = Category::firstOrCreate(['name' => trim((string) ($data['category'] ?? '')) ?: 'Other']);
+
+                    $food = Food::create([
+                        'name' => $name,
+                        'category_id' => $category->id,
+                        'origin' => trim((string) ($data['origin'] ?? '')),
+                        'environmental_score' => $score ?: null,
+                        'calories' => (int) ($data['calories'] ?? 0),
+                        'protein' => (float) ($data['protein'] ?? 0),
+                        'carbs' => (float) ($data['carbs'] ?? 0),
+                        'fat' => (float) ($data['fat'] ?? 0),
+                        'producer_id' => $request->user()->id,
+                    ]);
+
+                    StageTransition::create([
+                        'food_id' => $food->id,
+                        'actor_id' => $request->user()->id,
+                        'from_stage' => null,
+                        'to_stage' => Stage::Produced->value,
+                        'notes' => 'Imported via CSV',
+                        'occurred_at' => now(),
+                    ]);
+                });
+
+                $imported++;
+            } catch (\Throwable $e) {
+                $errors[] = "{$name}: {$e->getMessage()}";
+            }
+        }
+
+        fclose($handle);
+
+        $message = "{$imported} product(s) imported successfully.";
+
+        if ($errors !== []) {
+            $message .= ' '.count($errors).' row(s) skipped: '.collect($errors)->implode(' ');
+        }
+
+        return redirect()->route('foods.index')->with('success', $message);
+    }
+
+    /**
+     * Pivot payload for the certifications selected on a form.
+     *
+     * @return array<int, array{obtained_on: string}>
+     */
+    private function certificationSyncPayload(FoodRequest $request): array
+    {
+        $obtainedOn = now()->toDateString();
+
+        return collect($request->certificationIds())
+            ->unique()
+            ->mapWithKeys(fn (int $id): array => [$id => ['obtained_on' => $obtainedOn]])
+            ->all();
     }
 }

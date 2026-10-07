@@ -141,16 +141,22 @@ class NavigationAccessTest extends TestCase
         $this->assertStringNotContainsString(route('foods.destroy', $food), $html);
     }
 
-    public function test_an_admin_is_not_offered_actions_the_supply_chain_roles_own(): void
+    public function test_an_admin_is_offered_the_moderation_actions_but_not_registration(): void
     {
         $producer = $this->user('producer');
         $food = Food::factory()->create(['producer_id' => $producer->id]);
 
         $html = $this->actingAs($this->user('admin'))->get(route('foods.index'))->assertOk()->getContent();
 
+        // An admin moderates the catalogue, so Edit and Delete are offered on
+        // another professional's product...
+        $this->assertStringContainsString(route('foods.edit', $food), $html);
+        $this->assertStringContainsString('Delete this product?', $html);
+
+        // ...but registering a product is the professionals' first supply
+        // chain step, so that control stays hidden even though the route is
+        // reachable.
         $this->assertStringNotContainsString('Add a product', $html);
-        $this->assertStringNotContainsString(route('foods.edit', $food), $html);
-        $this->assertStringNotContainsString('Delete this product?', $html);
     }
 
     public function test_the_owner_is_offered_the_actions_they_can_perform(): void

@@ -187,12 +187,12 @@ Tailwind scans source text. A class built at runtime is never emitted.
 
 ## Accessibility is part of "done"
 
-- Every input has a matching `id` and a `<april:label for="…">`. A `<label>` wrapping a checkbox is fine; wrapping a _second_ control inside it is not — that control inherits the label text as its accessible name and toggles the checkbox on click.
+- Every input has a matching `id` and a `<april:label for="…">`. A `<label>` wrapping a checkbox is fine; wrapping a *second* control inside it is not — that control inherits the label text as its accessible name and toggles the checkbox on click.
 - Errors link to their field: `aria-describedby` pointing at the message, `role="alert"`/`aria-live` on transient status text, and `aria-invalid` when the field is bad.
 - Every `<th>` carries `scope`. A `colspan` must match the real column count.
 - A control hidden with `class="hidden"` is out of the tab order and unusable by keyboard. Use a real label, or `sr-only` only when nothing competes for `width`/`height` on the same element.
 - Icon-only buttons need `aria-label` or `sr-only` text.
-- A disabled control must say _why_ it is disabled, not just look faded.
+- A disabled control must say *why* it is disabled, not just look faded.
 
 === audit rules ===
 
@@ -272,13 +272,12 @@ Broken navigation and leaked or hidden controls are correctness bugs, not polish
 - Count `@if`/`@endif` (and `@foreach`/`@endforeach`, `@forelse`/`@endforeach`) when editing a template. An orphaned `@endif` parses to a fatal error in the compiled view, not a helpful Blade error — and it will not be caught by tests for routes that never render that view.
 - Check every role's landing page and every page in a nav menu actually render. A quick matrix beats reasoning about it:
 
-    ```bash
-    # for each role: log in, then walk the routes that role can reach
-    php artisan route:list --except-vendor
-    ```
+  ```bash
+  # for each role: log in, then walk the routes that role can reach
+  php artisan route:list --except-vendor
+  ```
 
-    Seeded demo accounts are `admin@nutritrace.com`, `producer@`, `processor@`, `distributor@`, `test@` / `consumer2@` (`example.com`), all with password `password`.
-
+  Seeded demo accounts are `admin@nutritrace.com`, `producer@`, `processor@`, `distributor@`, `test@` / `consumer2@` (`example.com`), all with password `password`.
 - After a seeder changes, re-check demo credentials and any hard-coded assumption about seeded IDs — the seeder owns that data, not the code.
 
 === verification rules ===
@@ -303,7 +302,7 @@ Finishing the edit is not finishing the task. After writing or changing code, ru
   `php artisan test --compact tests/Feature/SomeTest.php`
 - Then run the **whole suite** before declaring done:
   `php artisan test --compact`
-- A change is not verified until the full suite has been run _after_ the last edit. Earlier green runs do not carry over.
+- A change is not verified until the full suite has been run *after* the last edit. Earlier green runs do not carry over.
 - If a test fails, fix the cause rather than relaxing the assertion. An assertion loosened to pass is a deleted test.
 - New behaviour gets a test that fails without the fix. Confirm this by reverting the fix and watching it go red, then restore it.
 

@@ -76,7 +76,7 @@
                             <span class="w-28 shrink-0 text-muted-foreground">Footprint</span>
                             <x-eco-score :score="$spotlight->environmental_score?->value" />
                         </div>
-                        <a href="{{ route('foods.show', $spotlight) }}" class="mt-4 inline-block text-sm text-primary hover:underline">
+                        <a href="{{ route('products.show', $spotlight) }}" class="mt-4 inline-block text-sm text-primary hover:underline">
                             View full traceability →
                         </a>
                     @else
@@ -176,7 +176,7 @@
                 <x-slot:content>
                     <ul class="grid gap-3 sm:grid-cols-2">
                         @foreach($latestFoods->take(6) as $food)
-                            <li class="flex items-center justify-between gap-3 rounded-xl border border-border bg-background px-4 py-3">
+                            <a href="{{ route('products.show', $food) }}" class="flex items-center justify-between gap-3 rounded-xl border border-border bg-background px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer">
                                 <div class="flex items-center gap-3">
                                     <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
                                         <x-lucide-apple class="size-4.5" />
@@ -187,7 +187,7 @@
                                     </div>
                                 </div>
                                 <april:badge variant="secondary" class="tabular-nums">{{ $food->calories }} kcal</april:badge>
-                            </li>
+                            </a>
                         @endforeach
                     </ul>
                 </x-slot:content>

@@ -12,6 +12,22 @@
 @section('content')
     @php($user = auth()->user())
 
+    <april:breadcrumb>
+        <x-slot:list>
+            {{-- This dashboard is shared by every role, so the Admin crumb is
+                 only rendered where /admin actually resolves. --}}
+            @if($user->isAdmin())
+                <april:breadcrumb-item>
+                    <april:breadcrumb-link href="{{ route('admin.dashboard') }}">Admin</april:breadcrumb-link>
+                </april:breadcrumb-item>
+                <april:breadcrumb-separator />
+            @endif
+            <april:breadcrumb-item>
+                <april:breadcrumb-page>Dashboard</april:breadcrumb-page>
+            </april:breadcrumb-item>
+        </x-slot:list>
+    </april:breadcrumb>
+
     {{-- Welcome banner with role --}}
     <div class="flex items-center justify-between rounded-xl border border-border bg-card px-6 py-4">
         <div>

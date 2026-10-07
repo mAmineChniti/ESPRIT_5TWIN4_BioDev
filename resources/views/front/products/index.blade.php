@@ -4,44 +4,39 @@
 
 @section('content')
 {{-- Scan / search entry point --}}
-<section class="rounded-2xl border border-border bg-card p-6 shadow-sm">
-    <div class="flex flex-col gap-4 md:flex-row md:items-end">
-        <form action="{{ route('products.scan') }}" method="GET" class="flex-1">
-            <label for="code" class="block text-sm font-medium text-foreground">Scan or type a product code</label>
-            <div class="mt-2 flex gap-2">
-                <input type="text" id="code" name="code" value="{{ request('code') }}" autofocus
-                       placeholder="e.g. 7 or “organic apple”"
-                       class="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30">
-                <button type="submit"
-                        class="shrink-0 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90">
-                    Look up
-                </button>
-            </div>
-            @error('code')
-                <p class="mt-2 text-sm text-destructive">{{ $message }}</p>
-            @enderror
-        </form>
+<april:card>
+    <x-slot:content>
+        <div class="flex flex-col gap-4 md:flex-row md:items-end">
+            <form action="{{ route('products.scan') }}" method="GET" class="flex-1">
+                <april:label for="code">Scan or type a product code</april:label>
+                <div class="mt-2 flex gap-2">
+                    <april:input id="code" name="code" :value="request('code')"
+                                 placeholder="e.g. 7 or “organic apple”"
+                                 aria-describedby="code-error" />
+                    <april:button type="submit">Look up</april:button>
+                </div>
+                <p id="code-error" class="mt-2 text-sm text-destructive" role="alert" aria-live="polite">
+                    @error('code') {{ $message }} @enderror
+                </p>
+            </form>
 
-        <form action="{{ route('products.index') }}" method="GET" class="flex-1">
-            <label for="q" class="block text-sm font-medium text-foreground">Search the catalog</label>
-            <div class="mt-2 flex gap-2">
-                <input type="search" id="q" name="q" value="{{ $filters['q'] ?? '' }}"
-                       placeholder="Name, origin, producer or certification"
-                       class="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30">
-                <button type="submit"
-                        class="shrink-0 rounded-lg border border-border bg-background px-5 py-2.5 text-sm font-semibold hover:bg-muted">
-                    Search
-                </button>
-            </div>
-        </form>
-    </div>
+            <form action="{{ route('products.index') }}" method="GET" class="flex-1">
+                <april:label for="q">Search the catalog</april:label>
+                <div class="mt-2 flex gap-2">
+                    <april:input id="q" name="q" type="search" :value="$filters['q'] ?? ''"
+                                 placeholder="Name, origin, producer or certification" />
+                    <april:button type="submit" variant="outline">Search</april:button>
+                </div>
+            </form>
+        </div>
 
-    <p class="mt-4 text-xs text-muted-foreground">
-        Every product page shows who registered it, which certifications are actually on file, and the full
-        recorded journey. If something does not add up,
-        <a href="{{ route('greenwashing') }}" class="text-primary underline underline-offset-2">learn how to spot it</a>.
-    </p>
-</section>
+        <p class="mt-4 text-xs text-muted-foreground">
+            Every product page shows who registered it, which certifications are actually on file, and the full
+            recorded journey. If something does not add up,
+            <a href="{{ route('greenwashing') }}" class="text-primary underline underline-offset-2">learn how to spot it</a>.
+        </p>
+    </x-slot:content>
+</april:card>
 
 {{-- Filters --}}
 <form action="{{ route('products.index') }}" method="GET"
@@ -51,49 +46,47 @@
     @endif
 
     <div>
-        <label for="category" class="block text-xs font-medium uppercase tracking-wide text-muted-foreground">Category</label>
-        <select id="category" name="category"
-                class="mt-1 rounded-lg border border-input bg-background px-3 py-2 text-sm">
+        <april:label for="category" class="text-xs uppercase tracking-wide text-muted-foreground">Category</april:label>
+        <april:native-select id="category" name="category" class="mt-1">
             <option value="">All</option>
             @foreach($categories as $category)
                 <option value="{{ $category->id }}" @selected(($filters['category'] ?? null) == $category->id)>
                     {{ $category->name }}
                 </option>
             @endforeach
-        </select>
+        </april:native-select>
     </div>
 
     <div>
-        <label for="grade" class="block text-xs font-medium uppercase tracking-wide text-muted-foreground">Eco grade</label>
-        <select id="grade" name="grade"
-                class="mt-1 rounded-lg border border-input bg-background px-3 py-2 text-sm">
+        <april:label for="grade" class="text-xs uppercase tracking-wide text-muted-foreground">Eco grade</april:label>
+        <april:native-select id="grade" name="grade" class="mt-1">
             <option value="">Any</option>
             @foreach($grades as $grade)
                 <option value="{{ $grade->value }}" @selected(($filters['grade'] ?? null) === $grade->value)>
                     {{ $grade->value }} — {{ $grade->label() }}
                 </option>
             @endforeach
-        </select>
+        </april:native-select>
     </div>
 
-    <div class="flex items-center gap-2">
+    {{-- @checked, not :checked: a leading colon is a Blade binding, so it
+         would render the boolean's value instead of the attribute. --}}
+    <div class="flex items-center gap-2 pb-2.5 text-sm">
         <april:checkbox id="certified" name="certified" value="1" @checked(request()->boolean('certified')) />
         <april:label for="certified">Certified only</april:label>
     </div>
 
     <div class="ml-auto">
-        <label for="sort" class="block text-xs font-medium uppercase tracking-wide text-muted-foreground">Sort</label>
-        <select id="sort" name="sort" class="mt-1 rounded-lg border border-input bg-background px-3 py-2 text-sm">
+        <april:label for="sort" class="text-xs uppercase tracking-wide text-muted-foreground">Sort</april:label>
+        <april:native-select id="sort" name="sort" class="mt-1">
             <option value="recent" @selected($sort === 'recent')>Most recent</option>
             <option value="scanned" @selected($sort === 'scanned')>Most scanned</option>
             <option value="grade" @selected($sort === 'grade')>Eco grade</option>
             <option value="rated" @selected($sort === 'rated')>Best rated</option>
-        </select>
+        </april:native-select>
     </div>
 
-    <button type="submit" class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">
-        Apply
-    </button>
+    <april:button type="submit">Apply</april:button>
 </form>
 
 {{-- Results --}}
@@ -106,7 +99,9 @@
     <div class="mt-4 rounded-xl border border-dashed border-border p-10 text-center">
         <p class="text-sm font-medium">Nothing matched.</p>
         <p class="mt-1 text-sm text-muted-foreground">Try a shorter search term, or clear the filters.</p>
-        <a href="{{ route('products.index') }}" class="mt-4 inline-block text-sm text-primary underline">Reset filters</a>
+        <april:button-link href="{{ route('products.index') }}" variant="link" size="sm" class="mt-4">
+            Reset filters
+        </april:button-link>
     </div>
 @else
     <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -129,20 +124,19 @@
 
                 <div class="mt-3 flex flex-wrap gap-1">
                     @foreach($food->certifications as $certification)
-                        <span class="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                        <april:badge variant="none" class="bg-primary/10 text-primary">
                             {{ $certification->name }}
-                        </span>
+                        </april:badge>
                     @endforeach
                     @if($food->certifications->isEmpty())
-                        <span class="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                        <april:badge variant="none" class="bg-muted text-muted-foreground">
                             No certification on file
-                        </span>
+                        </april:badge>
                     @endif
                 </div>
 
                 <div class="mt-auto pt-4 flex items-center justify-between text-xs">
-                    <span class="inline-flex items-center gap-1
-                        {{ $verdict['tone'] === 'high' ? 'text-destructive' : ($verdict['tone'] === 'low' ? 'text-primary' : 'text-secondary-foreground') }}">
+                    <span class="inline-flex items-center gap-1 {{ $verdict['tone']->textClasses() }}">
                         <x-lucide-shield-check class="size-3.5" />
                         {{ $verdict['level'] }}
                     </span>

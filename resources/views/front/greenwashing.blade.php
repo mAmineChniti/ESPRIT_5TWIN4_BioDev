@@ -86,8 +86,8 @@
             <span>Each supply chain stage that has actually been recorded, up to all three.</span>
         </li>
         <li class="flex items-start gap-3">
-            <span class="mt-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">+20</span>
-            <span>Certifications on file, with extra credit if at least one is still within its validity window.</span>
+            <span class="mt-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">+15</span>
+            <span>Certifications on file, plus another +5 if at least one is still within its validity window.</span>
         </li>
         <li class="flex items-start gap-3">
             <span class="mt-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">+10</span>
@@ -99,26 +99,26 @@
         </li>
     </ul>
 
-    <div class="mt-6 grid gap-3 sm:grid-cols-3">
+    <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         @foreach([
-            ['Well traced', '80 and above', 'low'],
-            ['Partly traced', 'below 80', 'medium'],
-            ['At risk', 'one or more upheld reports', 'high'],
-        ] as $band)
+            ['Well traced', 'Every stage recorded and a score of 80 or above.', \App\Enums\VerdictTone::Low],
+            ['Partly traced', 'The chain is incomplete, or evidence is missing.', \App\Enums\VerdictTone::Medium],
+            ['Unverified', 'No supply chain has been recorded at all.', \App\Enums\VerdictTone::Medium],
+            ['At risk', 'One or more reports have been upheld.', \App\Enums\VerdictTone::High],
+        ] as [$level, $detail, $tone])
             <div class="rounded-lg border border-border p-4">
                 <div class="flex items-center gap-2">
-                    <span class="inline-flex h-3 w-3 rounded-full bg-{{ $band[2] === 'high' ? 'destructive' : ($band[2] === 'low' ? 'bio' : 'footprint-medium') }}"></span>
-                    <p class="text-sm font-semibold">{{ $band[0] }}</p>
+                    <span class="inline-flex h-3 w-3 shrink-0 rounded-full {{ $tone->fillClasses() }}"></span>
+                    <p class="text-sm font-semibold">{{ $level }}</p>
                 </div>
-                <p class="mt-1 text-xs text-muted-foreground">{{ $band[1] }}</p>
+                <p class="mt-1 text-xs text-muted-foreground">{{ $detail }}</p>
             </div>
         @endforeach
     </div>
 
-    <a href="{{ route('products.index') }}"
-       class="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90">
+    <april:button-link href="{{ route('products.index') }}" class="mt-6">
         <x-lucide-search class="size-4" />
         Check a product
-    </a>
+    </april:button-link>
 </section>
 @endsection

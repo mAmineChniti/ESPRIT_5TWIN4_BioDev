@@ -49,7 +49,8 @@ class RegisteredUserController extends Controller
         Auth::login($user);
 
         return match ($user->role) {
-            'admin' => redirect()->route('dashboard'),
+            // 'admin' is not assignable at registration, so there is no admin
+            // arm here on purpose.
             'producer' => redirect()->route('producer.dashboard'),
             'processor' => redirect()->route('processor.dashboard'),
             'distributor' => redirect()->route('distributor.dashboard'),

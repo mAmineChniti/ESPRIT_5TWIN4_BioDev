@@ -3,14 +3,16 @@
 @section('title', 'Meal')
 
 @section('content')
-<div class="mb-6">
-    <div class="flex items-center gap-4">
-        <a href="{{ route('meals.index') }}" class="text-muted-foreground hover:text-foreground">← Back</a>
-        <h1 class="text-2xl font-bold">{{ $meal->name }}</h1>
-    </div>
+<div class="mb-6 flex items-center gap-4">
+    <april:button-link href="{{ route('meals.index') }}" variant="link" size="sm" class="text-muted-foreground">
+        <x-lucide-arrow-left class="size-4" />
+        Back
+    </april:button-link>
+    <h1 class="text-2xl font-bold">{{ $meal->name }}</h1>
 </div>
 
-<div class="bg-card rounded-lg shadow p-6 max-w-2xl">
+<april:card class="max-w-2xl">
+    <x-slot:content>
     <dl class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
             <dt class="text-sm font-medium text-muted-foreground">Type</dt>
@@ -32,31 +34,35 @@
         @endif
     </dl>
 
-    <h2 class="mt-6 text-lg font-medium text-foreground">Products in this meal</h2>
-    <div class="mt-2 overflow-hidden border border-border rounded-md">
-        <table class="min-w-full divide-y divide-border">
-            <caption class="sr-only">Products recorded in this meal</caption>
-            <thead class="bg-muted">
+    <h2 class="mt-6 text-base font-medium text-foreground">Products in this meal</h2>
+        <april:data-table class="mt-2">
+            <x-slot:header>
                 <tr>
-                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Product</th>
-                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Category</th>
-                    <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Quantity</th>
-                    <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Eco score</th>
+                    <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Product</th>
+                    <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Category</th>
+                    <th scope="col" class="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Quantity</th>
+                    <th scope="col" class="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Eco score</th>
                 </tr>
-            </thead>
-            <tbody class="divide-y divide-border">
+            </x-slot:header>
+            <x-slot:body>
                 @foreach($meal->foods as $food)
-                    <tr>
-                        <td class="px-4 py-2 text-sm text-foreground">
-                            <a href="{{ route('foods.show', $food) }}" class="text-primary hover:underline">{{ $food->name }}</a>
+                    <tr class="border-b transition-colors last:border-0">
+                        <td class="p-4 align-middle text-sm text-foreground">
+                            <april:button-link href="{{ route('foods.show', $food) }}" variant="link" size="sm">
+                                {{ $food->name }}
+                            </april:button-link>
                         </td>
-                        <td class="px-4 py-2 text-sm text-muted-foreground">{{ $food->category->name ?? '—' }}</td>
-                        <td class="px-4 py-2 text-sm text-muted-foreground text-right">{{ $meal->quantityFor($food) }} g</td>
-                        <td class="px-4 py-2 text-right"><x-eco-score :score="$food->environmental_score?->value" /></td>
+                        <td class="p-4 align-middle text-sm text-muted-foreground">{{ $food->category->name ?? '—' }}</td>
+                        <td class="p-4 text-right align-middle text-sm text-muted-foreground">
+                            {{ $meal->quantityFor($food) }} g
+                        </td>
+                        <td class="p-4 text-right align-middle">
+                            <x-eco-score :score="$food->environmental_score?->value" />
+                        </td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
-    </div>
-</div>
+            </x-slot:body>
+        </april:data-table>
+    </x-slot:content>
+</april:card>
 @endsection

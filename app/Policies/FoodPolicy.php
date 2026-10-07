@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\Stage;
 use App\Models\Food;
 use App\Models\User;
 
@@ -32,18 +33,34 @@ class FoodPolicy
     }
 
     /**
-     * A product may be changed only by the professional who registered it.
+     * A product may be changed by the professional who registered it, or by an
+     * admin moderating the catalogue.
      *
-     * This mirrors ProAccess exactly: the policy never grants more than the
-     * middleware already allows, so the two layers cannot disagree.
+     * Ownership still requires a supply chain role, so an account whose role
+     * was changed after registering a product cannot keep editing it. This
+     * mirrors ProAccess exactly: the two layers grant the same set.
      */
     public function update(User $user, Food $food): bool
     {
-        return $user->isProfessional() && $food->producer_id === $user->id;
+        return $user->isAdmin()
+            || ($user->isProfessional() && $food->producer_id === $user->id);
     }
 
     public function delete(User $user, Food $food): bool
     {
         return $this->update($user, $food);
+    }
+
+    /**
+     * Record a hand-off in the chain of custody.
+     *
+     * Deliberately not the same rule as editing the product: a processor must
+     * not rewrite the producer's nutrition data, but they must be able to sign
+     * for the stage they actually perform. Admins moderate the chain outright
+     * so a mistaken entry can be corrected.
+     */
+    public function recordTransition(User $user, Food $food, Stage $stage): bool
+    {
+        return $user->isAdmin() || $user->role === $stage->requiredRole();
     }
 }

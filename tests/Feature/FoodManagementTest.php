@@ -109,7 +109,9 @@ class FoodManagementTest extends TestCase
 
     public function test_certifications_are_attached_from_validated_ids(): void
     {
-        $certification = Certification::factory()->create();
+        // Named explicitly: a "Local" certification fails validation unless the
+        // origin is Tunisie, and the factory picks that name at random.
+        $certification = Certification::factory()->create(['name' => 'Organic']);
 
         $this->actingAs($this->producer())->post(
             route('foods.store'),
@@ -225,31 +227,31 @@ class FoodManagementTest extends TestCase
 
     // ---------- Ownership and the policy/middleware agreement ----------
 
-    public function test_an_admin_cannot_update_a_product_the_supply_chain_owns(): void
+    public function test_an_admin_may_update_a_product_the_supply_chain_owns(): void
     {
         $food = Food::factory()->create(['producer_id' => $this->producer()->id, 'name' => 'Not Mine']);
+        $admin = User::factory()->create(['role' => 'admin']);
 
-        // ProAccess keeps an admin off these routes; the policy agrees.
-        $this->actingAs(User::factory()->create(['role' => 'admin']))
-            ->get(route('foods.edit', $food))
-            ->assertForbidden();
+        // Admins moderate the catalogue rather than originating products, so
+        // they may correct any product but may not register one.
+        $this->actingAs($admin)->get(route('foods.edit', $food))->assertOk();
 
-        $this->actingAs(User::factory()->create(['role' => 'admin']))
-            ->patch(route('foods.update', $food), $this->validPayload())
-            ->assertForbidden();
+        $this->actingAs($admin)
+            ->patch(route('foods.update', $food), $this->validPayload(['name' => 'Corrected By Admin']))
+            ->assertRedirect(route('foods.index'));
 
-        $this->assertDatabaseHas('foods', ['id' => $food->id, 'name' => 'Not Mine']);
+        $this->assertDatabaseHas('foods', ['id' => $food->id, 'name' => 'Corrected By Admin']);
     }
 
-    public function test_an_admin_cannot_delete_a_product_the_supply_chain_owns(): void
+    public function test_an_admin_may_delete_a_product_the_supply_chain_owns(): void
     {
         $food = Food::factory()->create(['producer_id' => $this->producer()->id]);
 
         $this->actingAs(User::factory()->create(['role' => 'admin']))
             ->delete(route('foods.destroy', $food))
-            ->assertForbidden();
+            ->assertRedirect(route('foods.index'));
 
-        $this->assertDatabaseHas('foods', ['id' => $food->id]);
+        $this->assertDatabaseMissing('foods', ['id' => $food->id]);
     }
 
     public function test_a_producer_cannot_update_another_producers_product(): void
@@ -282,7 +284,9 @@ class FoodManagementTest extends TestCase
 
     public function test_a_new_product_always_lands_with_its_chain_and_certifications(): void
     {
-        $certification = Certification::factory()->create();
+        // Named so the certification/origin coherence rule in FoodRequest
+        // cannot reject this payload: this test is about atomicity.
+        $certification = Certification::factory()->create(['name' => 'Organic']);
 
         $this->actingAs($this->producer())->post(
             route('foods.store'),
@@ -333,8 +337,10 @@ class FoodManagementTest extends TestCase
         $producer = $this->producer();
         $food = Food::factory()->create(['producer_id' => $producer->id]);
 
-        $old = Certification::factory()->create();
-        $new = Certification::factory()->create();
+        // Named so the certification/origin coherence rule in FoodRequest
+        // cannot fire: this test is about the pivot, not about geography.
+        $old = Certification::factory()->create(['name' => 'Organic']);
+        $new = Certification::factory()->create(['name' => 'Rainforest']);
         $food->certifications()->attach($old);
 
         $this->actingAs($producer)->patch(
@@ -342,7 +348,9 @@ class FoodManagementTest extends TestCase
             $this->validPayload(['certifications' => [$new->id]])
         );
 
-        $this->assertSame([$new->id], $food->fresh()->certifications()->pluck('certifications.id')->all());
+        // collect() so the assertion holds whether pluck() hands back a
+        // Collection or a plain array.
+        $this->assertSame([$new->id], collect($food->fresh()->certifications()->pluck('certifications.id'))->all());
     }
 
     public function test_omitting_the_certifications_key_also_clears_them(): void

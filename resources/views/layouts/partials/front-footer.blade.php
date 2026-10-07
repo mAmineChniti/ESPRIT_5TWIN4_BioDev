@@ -7,6 +7,7 @@
         </div>
         <nav class="flex items-center gap-1">
             <april:button-link href="{{ route('front.home') }}" variant="link" size="sm">Home</april:button-link>
+            <april:button-link href="{{ route('products.index') }}" variant="link" size="sm">Products</april:button-link>
             {{-- Point at the dashboard this visitor can actually reach: every
                  dashboard is role-restricted, so /admin would 403 for most
                  readers and bounce guests to the login screen. --}}
@@ -15,7 +16,7 @@
                     {{ $signedInUser->isAdmin() ? 'Back Office' : 'My Dashboard' }}
                 </april:button-link>
             @else
-                <april:button-link href="{{ route('login') }}" variant="link" size="sm">Log in</april:button-link>
+                <april:button-link href="{{ route('login') }}" variant="link" size="sm">Sign in</april:button-link>
             @endauth
         </nav>
     </div>

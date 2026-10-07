@@ -13,6 +13,15 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* April ships --chart-1..5 as plain custom properties but never maps them
+       into the Tailwind theme, so bg-chart-1 would silently not exist. Bind
+       them here so the utilities exist and still follow :root/.dark. */
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
 }
 
 :root {

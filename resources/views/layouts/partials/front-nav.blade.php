@@ -10,6 +10,11 @@
             <april:button-link href="{{ route('greenwashing') }}" variant="ghost"
                 @class(['bg-muted' => request()->routeIs('greenwashing')])>Spot greenwashing</april:button-link>
             @auth
+                {{-- Espace Consommateur: AI audit, assistant, recommendations. --}}
+                <april:button-link href="{{ route('consumer.space') }}" variant="ghost"
+                    @class(['bg-muted' => request()->routeIs('consumer.space', 'consumer.recommendations')])>
+                    Consumer Space
+                </april:button-link>
                 {{-- Resolved from the role: every dashboard is role-restricted,
                      so a fixed href would 403 for the reader who sees this. --}}
                 <april:button-link href="{{ auth()->user()->dashboardUrl() }}" variant="outline">My Dashboard</april:button-link>

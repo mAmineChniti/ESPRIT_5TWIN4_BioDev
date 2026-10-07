@@ -17,11 +17,12 @@ class StageTransitionController extends Controller
      */
     public function index(Food $food): View
     {
-        $this->authorize('view', $food);
-
         $food->load('transitions.actor');
 
-        return view('foods.transitions.index', ['food' => $food]);
+        return view('foods.transitions.index', [
+            'food' => $food,
+            'nextStage' => Stage::next($food->currentStage()),
+        ]);
     }
 
     /**
@@ -29,36 +30,36 @@ class StageTransitionController extends Controller
      */
     public function store(Request $request, Food $food): RedirectResponse
     {
-        $this->authorize('update', $food);
-
-        $food->load('transitions');
-
-        $current = $food->currentStage();
-
         $validated = $request->validate([
             'to_stage' => ['required', Rule::enum(Stage::class)],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $next = Stage::from($validated['to_stage']);
+        $current = $food->currentStage();
+        $expected = Stage::next($current);
 
-        if ($next === $current) {
+        // Only the role that performs a stage may sign for it, so the recorded
+        // actor always matches the hand-off being claimed.
+        $this->authorize('recordTransition', [$food, $next]);
+
+        if ($expected === null) {
             return back()->withErrors([
-                'to_stage' => "This product is already marked as {$next->label()}.",
+                'to_stage' => 'This product has already completed every supply chain stage.',
             ]);
         }
 
-        if ($current !== null && $next->position() <= $current->position()) {
+        if ($next !== $expected) {
             return back()->withErrors([
-                'to_stage' => "A product cannot move back from {$current->label()} to {$next->label()}.",
+                'to_stage' => "A product must move to {$expected->label()} next, not {$next->label()}.",
             ]);
         }
 
         StageTransition::create([
             'food_id' => $food->id,
             'actor_id' => $request->user()->id,
-            'from_stage' => $current,
-            'to_stage' => $next,
+            'from_stage' => $current?->value,
+            'to_stage' => $next->value,
             'notes' => $validated['notes'] ?? null,
             'occurred_at' => now(),
         ]);
