@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('farms', function (Blueprint $table) {
-            if (!Schema::hasColumn('farms', 'soil_type')) {
+            if (! Schema::hasColumn('farms', 'soil_type')) {
                 $table->string('soil_type')->nullable()->after('farming_type');
             }
-            if (!Schema::hasColumn('farms', 'status')) {
+            if (! Schema::hasColumn('farms', 'status')) {
                 $table->string('status')->default('validee')->after('soil_type');
             }
         });

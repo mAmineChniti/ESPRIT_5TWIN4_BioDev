@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\AgriculturalRegion;
 use App\Models\Farm;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class AgriculturalRegionSeeder extends Seeder
@@ -88,8 +89,8 @@ class AgriculturalRegionSeeder extends Seeder
             ],
         ];
 
-        $producerUser = \App\Models\User::where('role', 'producer')->first();
-        $adminUser = \App\Models\User::where('role', 'admin')->first();
+        $producerUser = User::where('role', 'producer')->first();
+        $adminUser = User::where('role', 'admin')->first();
 
         foreach ($regions as $data) {
             $farms = $data['farms'];
@@ -155,4 +156,3 @@ class AgriculturalRegionSeeder extends Seeder
         );
     }
 }
-

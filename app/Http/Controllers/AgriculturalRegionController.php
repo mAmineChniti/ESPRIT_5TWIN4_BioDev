@@ -95,7 +95,7 @@ class AgriculturalRegionController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:agricultural_regions,code,' . $region->id,
+            'code' => 'required|string|max:50|unique:agricultural_regions,code,'.$region->id,
             'climate' => 'nullable|string|max:255',
             'soil_type' => 'nullable|string|max:255',
             'description' => 'nullable|string',

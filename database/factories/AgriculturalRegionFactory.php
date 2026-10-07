@@ -18,8 +18,8 @@ class AgriculturalRegionFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->city() . ' Agricole',
-            'code' => 'REG-' . strtoupper(fake()->unique()->lexify('???-###')),
+            'name' => fake()->city().' Agricole',
+            'code' => 'REG-'.strtoupper(fake()->unique()->lexify('???-###')),
             'climate' => fake()->randomElement(['Méditerranéen', 'Subhumide', 'Semi-aride', 'Continental']),
             'soil_type' => fake()->randomElement(['Argilo-limoneux', 'Sableux-fertile', 'Calcaire', 'Alluvial']),
             'description' => fake()->paragraph(),

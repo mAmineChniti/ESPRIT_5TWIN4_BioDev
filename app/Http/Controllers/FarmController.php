@@ -27,11 +27,11 @@ class FarmController extends Controller
 
             // Statistics for admin
             $stats = [
-                'total'     => Farm::count(),
-                'validees'  => Farm::where('status', 'validee')->count(),
-                'en_attente'=> Farm::where('status', 'en_attente')->count(),
-                'refusees'  => Farm::where('status', 'refusee')->count(),
-                'surface'   => Farm::where('status', 'validee')->sum('surface_hectares'),
+                'total' => Farm::count(),
+                'validees' => Farm::where('status', 'validee')->count(),
+                'en_attente' => Farm::where('status', 'en_attente')->count(),
+                'refusees' => Farm::where('status', 'refusee')->count(),
+                'surface' => Farm::where('status', 'validee')->sum('surface_hectares'),
             ];
         } else {
             // Producer sees ONLY their own farms
@@ -43,11 +43,11 @@ class FarmController extends Controller
 
             // Statistics for producer
             $stats = [
-                'total'     => Farm::where('user_id', $user->id)->count(),
-                'validees'  => Farm::where('user_id', $user->id)->where('status', 'validee')->count(),
-                'en_attente'=> Farm::where('user_id', $user->id)->where('status', 'en_attente')->count(),
-                'refusees'  => Farm::where('user_id', $user->id)->where('status', 'refusee')->count(),
-                'surface'   => Farm::where('user_id', $user->id)->where('status', 'validee')->sum('surface_hectares'),
+                'total' => Farm::where('user_id', $user->id)->count(),
+                'validees' => Farm::where('user_id', $user->id)->where('status', 'validee')->count(),
+                'en_attente' => Farm::where('user_id', $user->id)->where('status', 'en_attente')->count(),
+                'refusees' => Farm::where('user_id', $user->id)->where('status', 'refusee')->count(),
+                'surface' => Farm::where('user_id', $user->id)->where('status', 'validee')->sum('surface_hectares'),
             ];
         }
 
@@ -116,6 +116,7 @@ class FarmController extends Controller
     public function create()
     {
         $regions = AgriculturalRegion::orderBy('name')->get();
+
         return view('back.farms.create', compact('regions'));
     }
 
@@ -170,6 +171,7 @@ class FarmController extends Controller
         }
 
         $farm->load(['region', 'user']);
+
         return view('back.farms.show', compact('farm'));
     }
 
@@ -185,6 +187,7 @@ class FarmController extends Controller
         }
 
         $regions = AgriculturalRegion::orderBy('name')->get();
+
         return view('back.farms.edit', compact('farm', 'regions'));
     }
 

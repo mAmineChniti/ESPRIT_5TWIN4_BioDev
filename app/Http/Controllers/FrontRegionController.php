@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\AgriculturalRegion;
 use App\Models\Farm;
-use Illuminate\Http\Request;
 
 class FrontRegionController extends Controller
 {
@@ -25,6 +24,7 @@ class FrontRegionController extends Controller
     public function show(AgriculturalRegion $agriculturalRegion)
     {
         $agriculturalRegion->load('farms');
+
         return view('front.regions.show', ['region' => $agriculturalRegion]);
     }
 }
