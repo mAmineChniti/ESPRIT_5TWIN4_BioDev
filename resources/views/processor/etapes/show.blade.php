@@ -10,11 +10,13 @@
     </div>
     <div class="flex gap-2">
         <a href="{{ route('processor.parcours.etapes.edit', [$parcours, $etape]) }}" class="rounded-md border border-input px-4 py-2 font-medium hover:bg-muted">Modifier</a>
-        <form action="{{ route('processor.parcours.etapes.destroy', [$parcours, $etape]) }}" method="POST" onsubmit="return confirm('Voulez-vous vraiment supprimer cette étape ?');">
-            @csrf
-            @method('DELETE')
-            <button type="submit" class="rounded-md bg-destructive px-4 py-2 font-medium text-destructive-foreground hover:bg-destructive/90">Supprimer</button>
-        </form>
+        <x-confirm-action
+            :action="route('processor.parcours.etapes.destroy', [$parcours, $etape])"
+            title="Supprimer cette étape ?"
+            description="Cette étape sera définitivement supprimée du parcours."
+            triggerVariant="destructive"
+            triggerSize="sm"
+        >Supprimer</x-confirm-action>
     </div>
 </div>
 

@@ -39,11 +39,13 @@
                 <div class="ml-4 flex shrink-0 gap-3 text-sm">
                     <a href="{{ route('processor.parcours.etapes.show', [$parcours, $etape]) }}" class="text-primary hover:underline">Détail</a>
                     <a href="{{ route('processor.parcours.etapes.edit', [$parcours, $etape]) }}" class="text-primary hover:underline">Modifier</a>
-                    <form action="{{ route('processor.parcours.etapes.destroy', [$parcours, $etape]) }}" method="POST" onsubmit="return confirm('Voulez-vous vraiment supprimer cette étape ?');">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="text-destructive hover:underline">Supprimer</button>
-                    </form>
+                    <x-confirm-action
+                        :action="route('processor.parcours.etapes.destroy', [$parcours, $etape])"
+                        title="Supprimer cette étape ?"
+                        description="Cette étape sera définitivement supprimée du parcours."
+                        triggerVariant="ghost"
+                        triggerSize="sm"
+                    >Supprimer</x-confirm-action>
                 </div>
             </li>
         @empty

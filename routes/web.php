@@ -6,17 +6,17 @@ use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\ConsumerDashboardController;
 use App\Http\Controllers\ConsumerIntelligenceController;
 use App\Http\Controllers\ConsumerSearchController;
+use App\Http\Controllers\EtapeParcoursController;
 use App\Http\Controllers\FarmController;
 use App\Http\Controllers\FoodController;
 use App\Http\Controllers\FrontRegionController;
 use App\Http\Controllers\GreenwashingReportController;
 use App\Http\Controllers\MealController;
 use App\Http\Controllers\ParcoursController;
-use App\Http\Controllers\PublicParcoursController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicParcoursController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\StageTransitionController;
-use App\Http\Controllers\EtapeParcoursController;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\ProAccess;
 use App\Models\Meal;
@@ -80,11 +80,19 @@ Route::middleware(['auth'])->group(function () {
         ->middleware(EnsureUserHasRole::class.':admin')
         ->name('admin.dashboard');
 
-    Route::get('/admin/users', function () {
-        $users = User::orderBy('role')->orderBy('name')->get();
+    Route::get('/admin/reports', [GreenwashingReportController::class, 'index'])
+        ->middleware(EnsureUserHasRole::class.':admin')
+        ->name('admin.reports');
 
-        return view('back.users', compact('users'));
-    })->middleware(EnsureUserHasRole::class.':admin')->name('admin.users');
+    Route::resource('admin/users', AdminUserController::class)
+        ->only(['index', 'edit', 'update', 'destroy'])
+        ->names([
+            'index' => 'admin.users',
+            'edit' => 'admin.users.edit',
+            'update' => 'admin.users.update',
+            'destroy' => 'admin.users.destroy',
+        ])
+        ->middleware(EnsureUserHasRole::class.':admin');
 
     foreach ([
         'producer' => 'producer.dashboard',
@@ -135,6 +143,12 @@ Route::middleware(['auth'])->group(function () {
     // "create" must be declared before "/foods/{food}" so it is not read as an
     // id. Everything that mutates a product lives in one ProAccess group placed
     // ahead of the read-only catalog routes for that reason.
+    Route::middleware(ProAccess::class)->group(function () {
+        Route::get('/foods/create', [FoodController::class, 'create'])->name('foods.create');
+        Route::post('/foods', [FoodController::class, 'store'])->name('foods.store');
+        Route::post('/foods/import', [FoodController::class, 'importCsv'])->name('foods.import');
+    });
+
     Route::middleware(ProAccess::class)->group(function () {
         Route::get('/foods/{food}/edit', [FoodController::class, 'edit'])->name('foods.edit');
         Route::match(['put', 'patch'], '/foods/{food}', [FoodController::class, 'update'])->name('foods.update');

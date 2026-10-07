@@ -12,10 +12,10 @@
     <table class="min-w-full divide-y divide-border">
         <thead class="bg-muted">
             <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Produit</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Score</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Étapes</th>
-                <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">Action</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Produit</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Score</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Étapes</th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">Action</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-border bg-card">

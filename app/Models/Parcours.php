@@ -31,7 +31,7 @@ class Parcours extends Model
 
     public function produit(): BelongsTo
     {
-        return $this->belongsTo(Produit::class, 'produit_id');
+        return $this->belongsTo(Food::class, 'produit_id');
     }
 
     public function etapes(): HasMany

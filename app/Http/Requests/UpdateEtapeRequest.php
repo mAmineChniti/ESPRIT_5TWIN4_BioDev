@@ -21,6 +21,7 @@ class UpdateEtapeRequest extends FormRequest
                 'required',
                 'integer',
                 'min:1',
+                'max:65535',
                 Rule::unique('etapes_parcours', 'ordre')
                     ->where(fn ($query) => $query->where('parcours_id', $this->route('parcours')->id))
                     ->ignore($etape->id),
@@ -38,6 +39,7 @@ class UpdateEtapeRequest extends FormRequest
             'ordre.required' => 'L’ordre est obligatoire.',
             'ordre.integer' => 'L’ordre doit être un nombre entier.',
             'ordre.min' => 'L’ordre doit être supérieur ou égal à 1.',
+            'ordre.max' => 'L’ordre ne peut pas dépasser 65535.',
             'ordre.unique' => 'Cet ordre est déjà utilisé dans ce parcours.',
             'type.required' => 'Le type est obligatoire.',
             'type.in' => 'Le type sélectionné est invalide.',

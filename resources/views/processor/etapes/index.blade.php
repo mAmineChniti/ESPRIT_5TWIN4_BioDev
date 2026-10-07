@@ -16,11 +16,11 @@
     <table class="min-w-full divide-y divide-border">
         <thead class="bg-muted">
             <tr>
-                <th class="px-6 py-3 text-left text-xs uppercase text-muted-foreground">Ordre</th>
-                <th class="px-6 py-3 text-left text-xs uppercase text-muted-foreground">Type</th>
-                <th class="px-6 py-3 text-left text-xs uppercase text-muted-foreground">Lieu</th>
-                <th class="px-6 py-3 text-left text-xs uppercase text-muted-foreground">Date</th>
-                <th class="px-6 py-3 text-right text-xs uppercase text-muted-foreground">Actions</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs uppercase text-muted-foreground">Ordre</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs uppercase text-muted-foreground">Type</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs uppercase text-muted-foreground">Lieu</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs uppercase text-muted-foreground">Date</th>
+                <th scope="col" class="px-6 py-3 text-right text-xs uppercase text-muted-foreground">Actions</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-border">
@@ -33,11 +33,13 @@
                     <td class="space-x-3 px-6 py-4 text-right text-sm">
                         <a href="{{ route('processor.parcours.etapes.show', [$parcours, $etape]) }}" class="text-primary hover:underline">Détail</a>
                         <a href="{{ route('processor.parcours.etapes.edit', [$parcours, $etape]) }}" class="text-primary hover:underline">Modifier</a>
-                        <form action="{{ route('processor.parcours.etapes.destroy', [$parcours, $etape]) }}" method="POST" class="inline" onsubmit="return confirm('Voulez-vous vraiment supprimer cette étape ?');">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-destructive hover:underline">Supprimer</button>
-                        </form>
+                        <x-confirm-action
+                            :action="route('processor.parcours.etapes.destroy', [$parcours, $etape])"
+                            title="Supprimer cette étape ?"
+                            description="Cette étape sera définitivement supprimée du parcours."
+                            triggerVariant="ghost"
+                            triggerSize="sm"
+                        >Supprimer</x-confirm-action>
                     </td>
                 </tr>
             @empty
