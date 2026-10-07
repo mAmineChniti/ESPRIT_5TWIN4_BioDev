@@ -5,10 +5,14 @@
 @section('content')
     <april:breadcrumb>
         <x-slot:list>
-            <april:breadcrumb-item>
-                <april:breadcrumb-link href="{{ url('/admin') }}">Admin</april:breadcrumb-link>
-            </april:breadcrumb-item>
-            <april:breadcrumb-separator />
+            @auth
+                @if(auth()->user()->isAdmin())
+                    <april:breadcrumb-item>
+                        <april:breadcrumb-link href="{{ route('admin.dashboard') }}">Admin</april:breadcrumb-link>
+                    </april:breadcrumb-item>
+                    <april:breadcrumb-separator />
+                @endif
+            @endauth
             <april:breadcrumb-item>
                 <april:breadcrumb-page>Profile</april:breadcrumb-page>
             </april:breadcrumb-item>

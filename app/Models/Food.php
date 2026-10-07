@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\EnvironmentalScore;
 use App\Enums\ReportStatus;
 use App\Enums\Stage;
+use App\Enums\VerdictTone;
 use Database\Factories\FoodFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -86,11 +87,15 @@ class Food extends Model
     /**
      * Every hand-off this product made along the supply chain.
      *
+     * Ordered by insertion order rather than by occurred_at: two steps recorded in
+     * the same second have no reliable time order, so id is what makes
+     * "the latest step" unambiguous and agree with CatalogController::pendingByStage().
+     *
      * @return HasMany<StageTransition, $this>
      */
     public function transitions(): HasMany
     {
-        return $this->hasMany(StageTransition::class)->orderBy('occurred_at');
+        return $this->hasMany(StageTransition::class)->orderBy('id');
     }
 
     /**
@@ -107,10 +112,52 @@ class Food extends Model
 
     /**
      * The stage the product has most recently reached.
+     *
+     * Reads the loaded relation when there is one, so a page that has already
+     * eager-loaded the chain does not issue a second query.
      */
     public function currentStage(): ?Stage
     {
-        return $this->transitions->last()?->to_stage;
+        $transitions = $this->relationLoaded('transitions')
+            ? $this->transitions
+            : $this->transitions()->get();
+
+        return $transitions->last()?->to_stage;
+    }
+
+    /**
+     * The next stage the product may legitimately move to, or null once the
+     * chain is complete.
+     *
+     * The chain only ever moves forward, so this is simply the stage after the
+     * current one.
+     */
+    public function nextStage(): ?Stage
+    {
+        return Stage::next($this->currentStage());
+    }
+
+    /**
+     * How many hand-offs have been recorded.
+     */
+    public function recordedStageCount(): int
+    {
+        return $this->relationLoaded('transitions')
+            ? $this->transitions->count()
+            : $this->transitions()->count();
+    }
+
+    /**
+     * Whether every stage of the chain has been recorded. A chain that skipped
+     * a step does not count, however many rows it has.
+     */
+    public function hasFullChain(): bool
+    {
+        $recorded = $this->relationLoaded('transitions')
+            ? $this->transitions->pluck('to_stage')
+            : $this->transitions()->pluck('to_stage');
+
+        return Stage::isComplete($recorded->filter()->map->value->all());
     }
 
     /**
@@ -135,9 +182,18 @@ class Food extends Model
 
     /**
      * Mean rating across all reviews, or null when nobody has reviewed it.
+     *
+     * Prefers an aggregate already loaded by withAvg() so a listing sorted by
+     * rating does not then run one query per product.
      */
     public function averageRating(): ?float
     {
+        if (array_key_exists('reviews_avg_rating', $this->attributes)) {
+            $precomputed = $this->reviews_avg_rating;
+
+            return $precomputed === null ? null : round((float) $precomputed, 1);
+        }
+
         $average = $this->relationLoaded('reviews')
             ? $this->reviews->avg('rating')
             : $this->reviews()->avg('rating');
@@ -169,8 +225,8 @@ class Food extends Model
     {
         $score = 40;
 
-        $recorded = $this->transitions->count();
-        $score += min($recorded, count(Stage::order())) * 12;
+        $recorded = $this->recordedStageCount();
+        $score += min($recorded, Stage::total()) * 12;
 
         if ($this->certifications->isNotEmpty()) {
             $score += 15;
@@ -192,43 +248,60 @@ class Food extends Model
     /**
      * Plain language guidance shown to consumers alongside the score.
      *
-     * @return array{level: string, tone: string, message: string}
+     * The level is decided by how much of the chain is actually recorded, not
+     * by the score alone — a product with one of three stages can score above
+     * the "well traced" threshold on certifications alone, and telling a
+     * consumer its full chain is on file when it is not is precisely the
+     * greenwashing this product exists to catch.
+     *
+     * @return array{level: string, tone: VerdictTone, message: string}
      */
     public function trustVerdict(): array
     {
-        $score = $this->transparencyScore();
         $upheld = $this->upheldReportCount();
 
         if ($upheld > 0) {
             return [
                 'level' => 'At risk',
-                'tone' => 'high',
+                'tone' => VerdictTone::High,
                 'message' => $upheld === 1
                     ? 'One greenwashing report was upheld against this product.'
                     : "{$upheld} greenwashing reports were upheld against this product.",
             ];
         }
 
-        if ($this->transitions->isEmpty()) {
+        if ($this->recordedStageCount() === 0) {
             return [
                 'level' => 'Unverified',
-                'tone' => 'medium',
+                'tone' => VerdictTone::Medium,
                 'message' => 'No supply chain has been recorded for this product yet.',
             ];
         }
 
-        if ($score >= 80) {
+        if (! $this->hasFullChain()) {
+            $current = $this->currentStage()?->label() ?? 'an earlier stage';
+
+            return [
+                'level' => 'Partly traced',
+                'tone' => VerdictTone::Medium,
+                'message' => "Recorded up to {$current}. The later steps of the chain have not been recorded yet.",
+            ];
+        }
+
+        if ($this->transparencyScore() >= 80) {
             return [
                 'level' => 'Well traced',
-                'tone' => 'low',
-                'message' => 'The full chain is recorded and every certification is on file.',
+                'tone' => VerdictTone::Low,
+                'message' => $this->certifications->isNotEmpty()
+                    ? 'The full chain is recorded and every certification is on file.'
+                    : 'The full chain is recorded, but no certification backs it up.',
             ];
         }
 
         return [
             'level' => 'Partly traced',
-            'tone' => 'medium',
-            'message' => 'Some steps are recorded but the picture is incomplete.',
+            'tone' => VerdictTone::Medium,
+            'message' => 'The full chain is recorded, but certifications or other evidence are missing.',
         ];
     }
 }

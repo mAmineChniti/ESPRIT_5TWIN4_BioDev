@@ -4,8 +4,9 @@
 
         <div class="space-y-2">
             <april:label for="password">Password</april:label>
-            <april:input id="password" type="password" name="password" placeholder="••••••••" required autocomplete="current-password" />
-            <x-input-error :messages="$errors->get('password')" />
+            <april:input id="password" type="password" name="password" placeholder="••••••••" required autocomplete="current-password"  aria-describedby="password-error"
+                 :aria-invalid="$errors->has('password') ? 'true' : 'false'"/>
+            <x-input-error id="password-error" :messages="$errors->get('password')" />
         </div>
 
         <div class="flex items-center justify-end pt-1">

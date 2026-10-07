@@ -1,3 +1,5 @@
+import { Chart } from 'chart.js';
+
 /**
  * Reads the theme tokens straight from CSS so the charts use exactly the same
  * colours as the rest of the UI, and follow the theme if it ever changes.
@@ -82,10 +84,64 @@ export function axisTheme(theme) {
  */
 const registered = [];
 
+/**
+ * A canvas can only back one Chart instance, and re-running a renderer (a live
+ * reload, or a Turbo-style visit) would otherwise throw "Canvas is already in
+ * use". The live instance and its recolour callback are tracked per canvas so
+ * both are torn down together — leaving a callback behind would keep a destroyed
+ * chart alive, repainting into a detached canvas on every theme change.
+ */
+const mounted = new WeakMap();
+
 export function registerChart(recolour) {
     registered.push(recolour);
 
     recolour(readTheme());
+}
+
+function unregisterChart(recolour) {
+    const index = registered.indexOf(recolour);
+
+    if (index !== -1) {
+        registered.splice(index, 1);
+    }
+}
+
+/**
+ * Build a chart bound to a canvas, replacing whatever was there before.
+ *
+ * @param {HTMLCanvasElement} canvas
+ * @param {object} config        Chart.js configuration
+ * @param {(theme: object) => void} recolour  Repaint callback, called once now
+ *                                           and again on every theme change
+ */
+export function mountChart(canvas, config, recolour) {
+    const previous = mounted.get(canvas);
+
+    if (previous) {
+        previous.chart.destroy();
+        unregisterChart(previous.recolour);
+    }
+
+    const chart = new Chart(canvas, config);
+
+    mounted.set(canvas, { chart, recolour });
+
+    // Register after construction: the callback paints the chart it was given,
+    // so it must run only once the instance exists.
+    registerChart(recolour);
+
+    return chart;
+}
+
+export function destroyChart(canvas) {
+    const previous = mounted.get(canvas);
+
+    if (previous) {
+        previous.chart.destroy();
+        unregisterChart(previous.recolour);
+        mounted.delete(canvas);
+    }
 }
 
 function refreshAll() {

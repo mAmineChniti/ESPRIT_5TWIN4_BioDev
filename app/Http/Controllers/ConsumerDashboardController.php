@@ -14,6 +14,12 @@ use Illuminate\Http\Request;
 class ConsumerDashboardController extends Controller
 {
     /**
+     * How far back the energy trend reaches. A window rather than a row limit,
+     * so the chart cannot silently cover less than the meal count implies.
+     */
+    private const ENERGY_CHART_DAYS = 30;
+
+    /**
      * The consumer's own space: what they ate, what they rated, and what they
      * flagged. Everything here is scoped to the signed in user.
      */
@@ -21,11 +27,15 @@ class ConsumerDashboardController extends Controller
     {
         $user = $request->user();
 
+        // The chart covers a rolling window rather than the last N rows: taking
+        // a row limit made the trend silently disagree with the meal count.
+        $chartFrom = now()->subDays(self::ENERGY_CHART_DAYS)->startOfDay();
+
         $meals = $user->meals()
             ->with('foods')
+            ->where('consumed_on', '>=', $chartFrom->toDateString())
             ->latest('consumed_on')
             ->latest('id')
-            ->take(30)
             ->get();
 
         // Energy per day, for the line chart.
@@ -79,6 +89,7 @@ class ConsumerDashboardController extends Controller
             'myReports' => $myReports,
             'stats' => [
                 'mealsLogged' => $user->meals()->count(),
+                'chartWindowDays' => self::ENERGY_CHART_DAYS,
                 'reviewsWritten' => Review::where('user_id', $user->id)->count(),
                 'reportsFiled' => GreenwashingReport::where('user_id', $user->id)->count(),
                 'reportsUpheld' => GreenwashingReport::where('user_id', $user->id)

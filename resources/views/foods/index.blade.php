@@ -3,89 +3,134 @@
 @section('title', 'Food List')
 
 @section('content')
-@php $canManage = in_array(auth()->user()?->role, ['producer', 'processor', 'distributor']); @endphp
-
 @if(session('success'))
-    <div class="mb-4 p-3 rounded-md bg-green-900/30 border border-green-700 text-green-300 text-sm">
-        {{ session('success') }}
-    </div>
+    <april:alert class="mb-4" aria-live="polite">
+        <x-slot:icon><x-lucide-circle-check class="size-4" /></x-slot:icon>
+        <x-slot:description>{{ session('success') }}</x-slot:description>
+    </april:alert>
 @endif
 
 @if(session('error'))
-    <div class="mb-4 p-3 rounded-md bg-red-900/30 border border-red-700 text-red-300 text-sm">
-        {{ session('error') }}
-    </div>
+    <april:alert variant="destructive" class="mb-4" aria-live="polite">
+        <x-slot:icon><x-lucide-circle-alert class="size-4" /></x-slot:icon>
+        <x-slot:description>{{ session('error') }}</x-slot:description>
+    </april:alert>
 @endif
 
 @if($errors->any())
-    <div class="mb-4 p-3 rounded-md bg-red-900/30 border border-red-700 text-red-300 text-sm">
-        {{ $errors->first() }}
-    </div>
+    <april:alert variant="destructive" class="mb-4" aria-live="polite">
+        <x-slot:icon><x-lucide-circle-alert class="size-4" /></x-slot:icon>
+        <x-slot:description>{{ $errors->first() }}</x-slot:description>
+    </april:alert>
 @endif
 
-<div class="flex justify-between items-center mb-6">
+<div class="mb-6 flex items-center justify-between">
     <h1 class="text-2xl font-bold">Products</h1>
-    @if($canManage)
+    @can('create', App\Models\Food::class)
         <div class="flex items-center gap-3">
-            <form action="{{ route('foods.import') }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-2">
+            {{-- The file input stays visible rather than hidden or sr-only:
+                 a hidden input is out of the tab order, and sr-only competes
+                 with the component's own w-full for the cascade. An explicit
+                 submit also means a bulk import is never triggered by merely
+                 picking a file. --}}
+            <form action="{{ route('foods.import') }}" method="POST" enctype="multipart/form-data"
+                  class="flex items-end gap-2">
                 @csrf
-                <label for="csv_file" class="cursor-pointer bg-muted hover:bg-muted/80 text-foreground font-medium py-2 px-4 rounded-md border border-border text-sm transition">
-                    📥 Import CSV
-                </label>
-                <input type="file" name="csv_file" id="csv_file" accept=".csv,.txt" class="hidden"
-                       onchange="this.form.submit()">
+                <div>
+                    <april:label for="csv_file" class="sr-only">CSV file to import</april:label>
+                    <april:input id="csv_file" name="csv_file" type="file" accept=".csv,.txt"
+                                 class="w-auto" aria-describedby="csv_file-hint" />
+                    <p id="csv_file-hint" class="mt-1 text-xs text-muted-foreground">CSV or TXT, up to 2 MB</p>
+                </div>
+                <april:button type="submit" variant="outline" size="sm">
+                    <x-lucide-upload class="size-4" />
+                    Import CSV
+                </april:button>
             </form>
-            <a href="{{ route('foods.create') }}" class="bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2 px-4 rounded-md">
-                + Add a product
-            </a>
+            <april:button-link href="{{ route('foods.create') }}">
+                <x-lucide-plus class="size-4" />
+                Add a product
+            </april:button-link>
         </div>
-    @endif
+    @endcan
 </div>
 
-<div class="bg-card rounded-lg shadow overflow-hidden">
-    <table class="min-w-full divide-y divide-border">
-        <thead class="bg-muted">
-            <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Nom</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Category</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Origin</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Eco score</th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
-            </tr>
-        </thead>
-        <tbody class="bg-card divide-y divide-border">
-            @forelse($foods as $food)
-            <tr>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">{{ $food->name }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{{ $food->category->name ?? 'Not set' }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{{ $food->origin ?? '-' }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+<april:data-table>
+    <x-slot:header>
+        <tr>
+            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Product</th>
+            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Category</th>
+            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Origin</th>
+            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Eco score</th>
+            <th scope="col" class="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Actions</th>
+        </tr>
+    </x-slot:header>
+
+    <x-slot:body>
+        @forelse($foods as $food)
+            <tr class="border-b transition-colors last:border-0 hover:bg-muted/50">
+                <td class="whitespace-nowrap p-4 align-middle text-sm font-medium text-foreground">{{ $food->name }}</td>
+                <td class="whitespace-nowrap p-4 align-middle text-sm text-muted-foreground">
+                    {{ $food->category->name ?? 'Not set' }}
+                </td>
+                <td class="whitespace-nowrap p-4 align-middle text-sm text-muted-foreground">{{ $food->origin ?? '—' }}</td>
+                <td class="whitespace-nowrap p-4 align-middle text-sm text-muted-foreground">
                     <x-eco-score :score="$food->environmental_score" />
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                    <a href="{{ route('foods.show', $food) }}" class="text-primary hover:underline">View</a>
-                    @if($canManage)
-                        <a href="{{ route('foods.edit', $food) }}" class="text-primary hover:underline">Edit</a>
-                        <form action="{{ route('foods.destroy', $food) }}" method="POST" class="inline" onsubmit="return confirm('Delete this product?');">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-destructive hover:underline">Delete</button>
-                        </form>
-                    @endif
+                <td class="whitespace-nowrap p-4 text-right align-middle">
+                    <div class="inline-flex items-center gap-2">
+                        <april:button-link href="{{ route('foods.show', $food) }}" variant="link" size="sm">
+                            View
+                        </april:button-link>
+                        @can('update', $food)
+                            <april:button-link href="{{ route('foods.edit', $food) }}" variant="link" size="sm">
+                                Edit
+                            </april:button-link>
+                        @endcan
+
+                        @can('delete', $food)
+                                <april:alert-dialog>
+                                    <x-slot:trigger>
+                                        <april:button type="button" variant="link" size="sm"
+                                                      class="text-destructive">
+                                            Delete
+                                        </april:button>
+                                    </x-slot:trigger>
+                                    <x-slot:content>
+                                        <div>
+                                            <h2 class="text-lg font-semibold" x-bind="title">Delete this product?</h2>
+                                            <p class="mt-2 text-sm text-muted-foreground" x-bind="description">
+                                                <strong>{{ $food->name }}</strong> and its recorded supply chain
+                                                will be removed. This cannot be undone.
+                                            </p>
+                                        </div>
+                                        <april:alert-dialog-footer>
+                                            <april:alert-dialog-cancel>Cancel</april:alert-dialog-cancel>
+                                            <form action="{{ route('foods.destroy', $food) }}" method="POST">
+                                                @csrf
+                                                @method('DELETE')
+                                                <april:button type="submit" variant="destructive" x-bind="action">
+                                                    Delete product
+                                                </april:button>
+                                            </form>
+                                        </april:alert-dialog-footer>
+                                    </x-slot:content>
+                                </april:alert-dialog>
+                        @endcan
+                    </div>
                 </td>
             </tr>
-            @empty
+        @empty
             <tr>
-                <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground text-center">No products found.</td>
+                <td colspan="5" class="p-4 text-center align-middle text-sm text-muted-foreground">
+                    No products found.
+                </td>
             </tr>
-            @endforelse
-        </tbody>
-    </table>
-    
-    @if($foods->hasPages())
-        <div class="px-6 py-4 border-t border-border bg-card">
-            {{ $foods->links() }}
-        </div>
-    @endif
-</div>
+        @endforelse
+    </x-slot:body>
+</april:data-table>
+
+@if($foods->hasPages())
+    <div class="mt-6">{{ $foods->links() }}</div>
+@endif
 @endsection

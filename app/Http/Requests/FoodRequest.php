@@ -70,7 +70,9 @@ class FoodRequest extends FormRequest
     {
         return [
             function (Validator $validator) {
-                $origin = strtolower(trim((string) $this->input('origin', '')));
+                // mb_strtolower, not strtolower: the latter is ASCII only, so
+                // "Tunisie" variants with accents would skip the check entirely.
+                $origin = mb_strtolower(trim((string) $this->input('origin', '')));
                 $certifications = $this->certificationIds();
 
                 if (empty($origin) || empty($certifications)) {
@@ -80,7 +82,7 @@ class FoodRequest extends FormRequest
                 $certs = Certification::whereIn('id', $certifications)->get();
 
                 foreach ($certs as $cert) {
-                    $certName = strtolower($cert->name);
+                    $certName = mb_strtolower($cert->name);
 
                     // Règle métier 1 : "Local" = Tunisie
                     if ($certName === 'local' && $origin !== 'tunisie') {
