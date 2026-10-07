@@ -9,13 +9,14 @@ use App\Models\GreenwashingReport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 class GreenwashingReportController extends Controller
 {
     /**
      * List all reports for the admin.
      */
-    public function index(Request $request): \Illuminate\View\View
+    public function index(Request $request): View
     {
         abort_unless($request->user()->isAdmin(), 403, 'Only admins can view reports.');
 

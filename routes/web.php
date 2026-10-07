@@ -58,7 +58,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/users/{user}/edit', [AdminUserController::class, 'edit'])->name('admin.users.edit');
         Route::patch('/admin/users/{user}', [AdminUserController::class, 'update'])->name('admin.users.update');
         Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy'])->name('admin.users.destroy');
-        
+
         Route::get('/admin/reports', [GreenwashingReportController::class, 'index'])->name('admin.reports');
     });
 

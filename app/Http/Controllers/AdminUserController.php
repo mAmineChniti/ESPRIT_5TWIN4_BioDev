@@ -11,6 +11,7 @@ class AdminUserController extends Controller
     public function index()
     {
         $users = User::orderBy('role')->orderBy('name')->get();
+
         return view('back.users', compact('users'));
     }
 

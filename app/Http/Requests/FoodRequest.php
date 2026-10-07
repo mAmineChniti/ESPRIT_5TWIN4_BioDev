@@ -3,10 +3,10 @@
 namespace App\Http\Requests;
 
 use App\Enums\EnvironmentalScore;
+use App\Models\Certification;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
-use App\Models\Certification;
 
 class FoodRequest extends FormRequest
 {
@@ -79,7 +79,7 @@ class FoodRequest extends FormRequest
 
                 foreach ($certs as $cert) {
                     $certName = strtolower($cert->name);
-                    
+
                     // Règle métier 1 : "Local" = Tunisie
                     if ($certName === 'local' && $origin !== 'tunisie') {
                         $validator->errors()->add(
@@ -96,7 +96,7 @@ class FoodRequest extends FormRequest
                         );
                     }
                 }
-            }
+            },
         ];
     }
 }
