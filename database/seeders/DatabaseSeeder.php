@@ -129,7 +129,7 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-                $this->call(LogisticsSeeder::class);
+        $this->call(LogisticsSeeder::class);
     }
 
     /**

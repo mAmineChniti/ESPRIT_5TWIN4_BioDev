@@ -232,7 +232,7 @@ class Food extends Model
         ];
     }
 
-        /**
+    /**
      * Shipments that carried this product.
      *
      * @return HasMany<Shipment, $this>
