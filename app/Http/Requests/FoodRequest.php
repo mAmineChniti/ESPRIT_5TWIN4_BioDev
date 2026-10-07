@@ -58,7 +58,7 @@ class FoodRequest extends FormRequest
     public function certificationIds(): array
     {
         $certs = $this->input('certifications', []);
-        
+
         return array_map('intval', is_array($certs) ? $certs : []);
     }
 
