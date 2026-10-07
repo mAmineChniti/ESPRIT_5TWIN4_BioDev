@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
@@ -77,6 +77,26 @@ class User extends Authenticatable
     public function transitions(): HasMany
     {
         return $this->hasMany(StageTransition::class, 'actor_id');
+    }
+
+    /**
+     * Greenwashing reports this user filed.
+     *
+     * @return HasMany<GreenwashingReport, $this>
+     */
+    public function reports(): HasMany
+    {
+        return $this->hasMany(GreenwashingReport::class);
+    }
+
+    /**
+     * Reviews this user left.
+     *
+     * @return HasMany<Review, $this>
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
     }
 
     /**

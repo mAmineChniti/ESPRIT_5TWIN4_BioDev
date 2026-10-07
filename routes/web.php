@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\ConsumerDashboardController;
+use App\Http\Controllers\ConsumerIntelligenceController;
 use App\Http\Controllers\ConsumerSearchController;
 use App\Http\Controllers\FoodController;
 use App\Http\Controllers\GreenwashingReportController;
@@ -29,12 +30,30 @@ Route::get('/greenwashing', function () {
     return view('front.greenwashing');
 })->name('greenwashing');
 
+// ---------- AI greenwashing detection & product assistant (public reads) ----------
+Route::get('/products/{food}/analysis', [ConsumerIntelligenceController::class, 'analyze'])
+    ->name('products.analysis');
+Route::get('/products/{food}/alternatives', [ConsumerIntelligenceController::class, 'alternatives'])
+    ->name('products.alternatives');
+Route::post('/products/{food}/ask', [ConsumerIntelligenceController::class, 'ask'])
+    ->name('products.ask');
+Route::get('/products/{food}/ask/suggestions', [ConsumerIntelligenceController::class, 'suggestions'])
+    ->name('products.ask.suggestions');
+
 Route::middleware(['auth'])->group(function () {
     // Reviewing and reporting are consumer actions.
     Route::post('/products/{food}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
     Route::delete('/products/{food}/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
     Route::post('/products/{food}/reports', [GreenwashingReportController::class, 'store'])->name('reports.store');
     Route::patch('/reports/{report}', [GreenwashingReportController::class, 'update'])->name('reports.update');
+
+    // The consumer's own space: AI detection, the assistant, recommendations
+    // and one-click escalation of anything the detector flags.
+    Route::get('/consumer/space', [ConsumerIntelligenceController::class, 'index'])->name('consumer.space');
+    Route::get('/consumer/recommendations', [ConsumerIntelligenceController::class, 'recommendations'])
+        ->name('consumer.recommendations');
+    Route::post('/products/{food}/report-finding', [ConsumerIntelligenceController::class, 'reportFinding'])
+        ->name('products.reportFinding');
 
     Route::get('/dashboard', function () {
         $role = Auth::user()?->role ?? 'consumer';
@@ -80,18 +99,9 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // "create" must be declared before "/foods/{food}" so it is not read as an id.
-    Route::middleware(ProAccess::class)->group(function () {
-        Route::get('/foods/create', [FoodController::class, 'create'])->name('foods.create');
-        Route::post('/foods', [FoodController::class, 'store'])->name('foods.store');
-    });
-
-    // The catalog is readable by any signed in user.
-    Route::get('/foods', [FoodController::class, 'index'])->name('foods.index');
-    Route::get('/foods/{food}', [FoodController::class, 'show'])->name('foods.show');
-    Route::get('/foods/{food}/trace', [StageTransitionController::class, 'index'])->name('foods.transitions.index');
-
-    // Editing and moving products is limited to supply chain professionals.
+    // "create" must be declared before "/foods/{food}" so it is not read as an
+    // id. Everything that mutates a product lives in one ProAccess group placed
+    // ahead of the read-only catalog routes for that reason.
     Route::middleware(ProAccess::class)->group(function () {
         Route::get('/foods/create', [FoodController::class, 'create'])->name('foods.create');
         Route::post('/foods', [FoodController::class, 'store'])->name('foods.store');
@@ -101,6 +111,11 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/foods/import', [FoodController::class, 'importCsv'])->name('foods.import');
         Route::post('/foods/{food}/transitions', [StageTransitionController::class, 'store'])->name('foods.transitions.store');
     });
+
+    // The catalog is readable by any signed in user.
+    Route::get('/foods', [FoodController::class, 'index'])->name('foods.index');
+    Route::get('/foods/{food}', [FoodController::class, 'show'])->name('foods.show');
+    Route::get('/foods/{food}/trace', [StageTransitionController::class, 'index'])->name('foods.transitions.index');
 
     // Meal logging belongs to consumers.
     Route::middleware(EnsureUserHasRole::class.':consumer')->group(function () {

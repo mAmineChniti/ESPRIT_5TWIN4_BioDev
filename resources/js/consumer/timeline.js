@@ -8,8 +8,7 @@
  *
  * Colours come from the theme tokens and are refreshed when the theme changes.
  */
-import { Chart } from 'chart.js';
-import { axisTheme, readTheme, registerChart, stageColour } from './theme';
+import { axisTheme, mountChart, readTheme, stageColour } from './theme';
 
 function readJson(id) {
     const node = document.getElementById(id);
@@ -43,12 +42,8 @@ export function renderTimeline() {
     const data = readJson('trace-timeline-data');
 
     if (!data || !Array.isArray(data.steps) || data.steps.length === 0) {
-        const empty = document.getElementById('trace-timeline-empty');
-
-        if (empty) {
-            empty.classList.remove('hidden');
-        }
-
+        // The "nothing recorded" message is rendered server side; all that is
+        // left to do here is keep the empty canvas out of the layout.
         canvas.classList.add('hidden');
 
         return;
@@ -63,75 +58,86 @@ export function renderTimeline() {
         return { ...step, start, end: start + Math.max(step.daysInStage, 1) };
     });
 
-    const chart = new Chart(canvas, {
-        type: 'bar',
-        data: {
-            labels: windows.map((step) => step.stage),
-            datasets: [
-                {
-                    label: 'Days in stage',
-                    data: windows.map((step) => [step.start, step.end]),
-                    backgroundColor: [],
-                    borderRadius: 6,
-                    borderSkipped: false,
-                    barPercentage: 0.6,
-                },
-            ],
-        },
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Days since the product was registered',
-                        color: readTheme().mutedForeground,
-                    },
-                    ...axisTheme(readTheme()),
-                },
-                y: {
-                    ticks: { color: readTheme().foreground },
-                    grid: { display: false },
-                },
-            },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: (context) => {
-                            const step = windows[context.dataIndex];
+    // Read the tokens once per render. Each readTheme() walks the whole custom
+    // property set through getComputedStyle, so calling it per option built a
+    // surprising amount of layout work on every paint.
+    const theme = readTheme();
 
-                            return [
-                                `Recorded ${formatDate(step.date)}`,
-                                `By ${step.actor ?? 'unknown'}`,
-                                step.notes ? `Note: ${step.notes}` : 'No note recorded',
-                            ];
+    const chart = mountChart(
+        canvas,
+        {
+            type: 'bar',
+            data: {
+                labels: windows.map((step) => step.stage),
+                datasets: [
+                    {
+                        label: 'Days in stage',
+                        data: windows.map((step) => [step.start, step.end]),
+                        // Painted up front rather than left empty for the
+                        // recolour callback to fill in.
+                        backgroundColor: windows.map((step) => stageColour(step.stage, theme)),
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        barPercentage: 0.6,
+                    },
+                ],
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Days since the product was registered',
+                            color: theme.mutedForeground,
+                        },
+                        ...axisTheme(theme),
+                    },
+                    y: {
+                        ticks: { color: theme.foreground },
+                        grid: { display: false },
+                    },
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                const step = windows[context.dataIndex];
+
+                                return [
+                                    `Recorded ${formatDate(step.date)}`,
+                                    `By ${step.actor ?? 'unknown'}`,
+                                    step.notes ? `Note: ${step.notes}` : 'No note recorded',
+                                ];
+                            },
                         },
                     },
                 },
-            },
-            onClick: (event, elements) => {
-                if (elements.length === 0) {
-                    return;
-                }
+                onClick: (event, elements) => {
+                    if (elements.length === 0) {
+                        return;
+                    }
 
-                window.dispatchEvent(
-                    new CustomEvent('trace-step-selected', {
-                        detail: windows[elements[0].index],
-                    })
-                );
+                    window.dispatchEvent(
+                        new CustomEvent('trace-step-selected', {
+                            detail: windows[elements[0].index],
+                        })
+                    );
+                },
             },
         },
-    });
+        (next) => {
+            chart.data.datasets[0].backgroundColor = windows.map((step) => stageColour(step.stage, next));
+            chart.options.scales.x.ticks.color = next.mutedForeground;
+            chart.options.scales.x.grid.color = axisTheme(next).grid.color;
+            chart.options.scales.x.title.color = next.mutedForeground;
+            chart.options.scales.y.ticks.color = next.foreground;
+            chart.update('none');
+        }
+    );
 
-    registerChart((theme) => {
-        chart.data.datasets[0].backgroundColor = windows.map((step) => stageColour(step.stage, theme));
-        chart.options.scales.x.ticks.color = theme.mutedForeground;
-        chart.options.scales.x.grid.color = `color-mix(in srgb, ${theme.border} 60%, transparent)`;
-        chart.options.scales.x.title.color = theme.mutedForeground;
-        chart.options.scales.y.ticks.color = theme.foreground;
-        chart.update('none');
-    });
+    return chart;
 }

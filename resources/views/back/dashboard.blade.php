@@ -5,10 +5,14 @@
 @section('content')
     <april:breadcrumb>
         <x-slot:list>
-            <april:breadcrumb-item>
-                <april:breadcrumb-link href="{{ url('/admin') }}">Admin</april:breadcrumb-link>
-            </april:breadcrumb-item>
-            <april:breadcrumb-separator />
+            {{-- This dashboard is shared by every role, so the Admin crumb is
+                 only rendered where /admin actually resolves. --}}
+            @if(Auth::user()->isAdmin())
+                <april:breadcrumb-item>
+                    <april:breadcrumb-link href="{{ route('admin.dashboard') }}">Admin</april:breadcrumb-link>
+                </april:breadcrumb-item>
+                <april:breadcrumb-separator />
+            @endif
             <april:breadcrumb-item>
                 <april:breadcrumb-page>Dashboard</april:breadcrumb-page>
             </april:breadcrumb-item>
@@ -23,44 +27,22 @@
                 @if(Auth::user()->role === 'producer') You are logged in as a <span class="font-semibold text-primary">Producer</span>. Manage your food catalog below.
                 @elseif(Auth::user()->role === 'processor') You are logged in as a <span class="font-semibold text-primary">Processor</span>. Track transformation steps below.
                 @elseif(Auth::user()->role === 'distributor') You are logged in as a <span class="font-semibold text-primary">Distributor</span>. Monitor distribution data below.
-                @elseif(Auth::user()->role === 'consumer') You are logged in as a <span class="font-semibold text-primary">Consumer</span>. Track your meals and nutritional intake below.
                 @else You are logged in as an <span class="font-semibold text-destructive">Administrator</span>. Full access enabled.
                 @endif
             </p>
         </div>
-        <span class="px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider
-            @if(Auth::user()->role === 'producer') bg-primary/10 text-primary
-            @elseif(Auth::user()->role === 'processor') bg-primary/10 text-primary
-            @elseif(Auth::user()->role === 'distributor') bg-primary/10 text-primary
-            @elseif(Auth::user()->role === 'consumer') bg-primary/10 text-primary
-            @else bg-destructive/10 text-destructive @endif">
+        <april:badge variant="none"
+                     class="uppercase tracking-wider {{ Auth::user()->isAdmin() ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary' }}">
             {{ Auth::user()->role }}
-        </span>
+        </april:badge>
     </div>
 
     {{-- Stats: different per role --}}
+    {{-- This view is only routed for admin, producer, processor and distributor;
+         consumers land on their own dashboard, so there is no consumer branch
+         here and $myMeals is never read. --}}
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 mt-2">
-        @if(Auth::user()->role === 'consumer')
-            @foreach ([
-                ['icon' => 'utensils', 'tint' => 'bg-primary/10 text-primary', 'label' => 'Meals logged', 'value' => $mealCount],
-                ['icon' => 'flame', 'tint' => 'bg-secondary/50 text-secondary-foreground', 'label' => 'Avg. energy', 'value' => $avgCalories . ' kcal'],
-                ['icon' => 'apple', 'tint' => 'bg-primary/10 text-primary', 'label' => 'Products in catalog', 'value' => $foodCount],
-                ['icon' => 'shield-check', 'tint' => 'bg-primary/10 text-primary', 'label' => 'Certified products', 'value' => $certifiedCount],
-            ] as $stat)
-                <april:card>
-                    <x-slot:content>
-                        <div class="flex items-center justify-between">
-                            <p class="text-sm font-medium text-muted-foreground">{{ $stat['label'] }}</p>
-                            <span class="flex h-9 w-9 items-center justify-center rounded-lg {{ $stat['tint'] }}">
-                                <x-dynamic-component :component="'lucide-' . $stat['icon']" class="size-4.5" />
-                            </span>
-                        </div>
-                        <p class="mt-2 text-3xl font-extrabold tracking-tight tabular-nums">{{ $stat['value'] }}</p>
-                    </x-slot:content>
-                </april:card>
-            @endforeach
-        @else
-            @foreach ([
+        @foreach ([
                 ['icon' => 'apple', 'tint' => 'bg-primary/10 text-primary', 'label' => Auth::user()->role === 'admin' ? 'Products tracked' : 'My products', 'value' => Auth::user()->role === 'admin' ? $foodCount : $myFoodCount],
                 ['icon' => 'utensils', 'tint' => 'bg-primary/10 text-primary', 'label' => 'Meals logged', 'value' => $mealCount],
                 ['icon' => 'flame', 'tint' => 'bg-secondary/50 text-secondary-foreground', 'label' => 'Avg. energy', 'value' => $avgCalories . ' kcal'],
@@ -77,18 +59,14 @@
                         <p class="mt-2 text-3xl font-extrabold tracking-tight tabular-nums">{{ $stat['value'] }}</p>
                     </x-slot:content>
                 </april:card>
-            @endforeach
-        @endif
+        @endforeach
     </div>
 
     <div class="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
 
         {{-- Main card: depends on role --}}
         <april:card>
-            @if(Auth::user()->role === 'consumer')
-                <x-slot:title>Browse the catalog</x-slot:title>
-                <x-slot:description>Discover products and their environmental footprint.</x-slot:description>
-            @elseif(Auth::user()->role === 'producer')
+            @if(Auth::user()->role === 'producer')
                 <x-slot:title>My food products</x-slot:title>
                 <x-slot:description>Products you have added to the NutriTrace catalog.</x-slot:description>
             @elseif(Auth::user()->role === 'processor')
@@ -125,38 +103,12 @@
         </april:card>
 
         <div class="space-y-6">
-            {{-- Consumer: their own meals --}}
-            @if(Auth::user()->role === 'consumer')
-                <april:card>
-                    <x-slot:title>Your meals</x-slot:title>
-                    <x-slot:description>What you have been eating.</x-slot:description>
-                    <x-slot:content>
-                        @if($myMeals->isNotEmpty())
-                            <ul class="space-y-3">
-                                @foreach($myMeals as $meal)
-                                    <li class="flex items-center justify-between gap-3">
-                                        <div>
-                                            <p class="text-sm font-semibold">{{ $meal->name }}</p>
-                                            <p class="text-xs text-muted-foreground">{{ $meal->consumed_on?->format('M d, Y') ?? 'Undated' }}</p>
-                                        </div>
-                                        <april:badge variant="secondary" class="capitalize">{{ $meal->type }}</april:badge>
-                                    </li>
-                                @endforeach
-                            </ul>
-                            <a href="{{ route('meals.index') }}" class="mt-3 inline-block text-sm text-primary hover:underline">View all meals</a>
-                        @else
-                            <p class="text-sm text-muted-foreground">You have not logged a meal yet.</p>
-                            <a href="{{ route('meals.create') }}" class="mt-3 inline-block text-sm text-primary hover:underline">Log your first meal</a>
-                        @endif
-                    </x-slot:content>
-                </april:card>
-            @else
-                {{-- Supply chain professionals: what is moving through the chain --}}
-                <april:card>
-                    <x-slot:title>Supply chain</x-slot:title>
-                    <x-slot:description>Where products currently sit.</x-slot:description>
-                    <x-slot:content>
-                        @if($pendingStage->isNotEmpty())
+            {{-- Supply chain professionals: what is moving through the chain --}}
+            <april:card>
+                <x-slot:title>Supply chain</x-slot:title>
+                <x-slot:description>Where products currently sit.</x-slot:description>
+                <x-slot:content>
+                    @if($pendingStage->isNotEmpty())
                             <ul class="space-y-2 mb-4">
                                 @foreach(\App\Enums\Stage::cases() as $stage)
                                     <li class="flex items-center justify-between gap-3">
@@ -165,10 +117,10 @@
                                     </li>
                                 @endforeach
                             </ul>
-                        @endif
+                    @endif
 
-                        @if($recentTransitions->isNotEmpty())
-                            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">Latest movements</p>
+                    @if($recentTransitions->isNotEmpty())
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">Latest movements</p>
                             <ul class="space-y-2">
                                 @foreach($recentTransitions as $transition)
                                     <li class="flex items-center justify-between gap-3">
@@ -181,37 +133,19 @@
                                     </li>
                                 @endforeach
                             </ul>
-                        @else
-                            <p class="text-sm text-muted-foreground">No supply chain steps recorded yet.</p>
-                        @endif
-                    </x-slot:content>
-                </april:card>
-            @endif
+                    @else
+                        <p class="text-sm text-muted-foreground">No supply chain steps recorded yet.</p>
+                    @endif
+                </x-slot:content>
+            </april:card>
 
             {{-- Quick actions card --}}
             <april:card>
                 <x-slot:title>Quick actions</x-slot:title>
-                <x-slot:description>
-                    @if(Auth::user()->role === 'consumer') Things you can do as a consumer.
-                    @else Things you can do as a {{ Auth::user()->role }}.
-                    @endif
-                </x-slot:description>
+                <x-slot:description>Things you can do as a {{ Auth::user()->role }}.</x-slot:description>
                 <x-slot:content>
                     <ul class="space-y-2.5 text-sm">
-                        @if(Auth::user()->role === 'consumer')
-                            <li class="flex items-center gap-2 text-muted-foreground">
-                                <x-lucide-search class="size-4 text-primary" />
-                                Browse the food catalog for certified products.
-                            </li>
-                            <li class="flex items-center gap-2 text-muted-foreground">
-                                <x-lucide-utensils class="size-4 text-primary" />
-                                Log your meals to track your carbon footprint.
-                            </li>
-                            <li class="flex items-center gap-2 text-muted-foreground">
-                                <x-lucide-shield-check class="size-4 text-primary" />
-                                Check certifications to fight greenwashing.
-                            </li>
-                        @elseif(Auth::user()->role === 'producer')
+                        @if(Auth::user()->role === 'producer')
                             <li class="flex items-center gap-2 text-muted-foreground">
                                 <x-lucide-plus-circle class="size-4 text-primary" />
                                 <a href="{{ route('foods.create') }}" class="text-primary hover:underline">Add a new product to the catalog.</a>

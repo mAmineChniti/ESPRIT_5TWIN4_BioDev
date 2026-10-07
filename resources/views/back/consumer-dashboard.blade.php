@@ -9,14 +9,8 @@
         <p class="text-sm text-muted-foreground">What you have eaten, rated and flagged.</p>
     </div>
     <div class="flex gap-2">
-        <a href="{{ route('products.index') }}"
-           class="rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-muted">
-            Browse products
-        </a>
-        <a href="{{ route('meals.create') }}"
-           class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">
-            Log a meal
-        </a>
+        <april:button-link href="{{ route('products.index') }}" variant="outline">Browse products</april:button-link>
+        <april:button-link href="{{ route('meals.create') }}">Log a meal</april:button-link>
     </div>
 </div>
 
@@ -44,7 +38,7 @@
 <div class="mt-6 grid gap-6 lg:grid-cols-2">
     <april:card>
         <x-slot:title>Energy per day</x-slot:title>
-        <x-slot:description>Estimated from the products you logged.</x-slot:description>
+        <x-slot:description>Estimated from the products you logged, over the last {{ $stats['chartWindowDays'] }} days.</x-slot:description>
         <x-slot:content>
             @if($energy->isNotEmpty())
                 <div class="h-56">
@@ -107,10 +101,16 @@
                            class="truncate text-sm font-semibold hover:text-primary hover:underline">
                             {{ $report->food?->name ?? 'Removed product' }}
                         </a>
-                        <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium
-                            {{ $report->status->value === 'upheld' ? 'bg-destructive/15 text-destructive' : ($report->status->value === 'dismissed' ? 'bg-muted text-muted-foreground' : 'bg-secondary/50 text-secondary-foreground') }}">
+                        @php
+                            [$variant, $extra] = match ($report->status->value) {
+                                'upheld' => ['destructive', ''],
+                                'dismissed' => ['none', 'bg-muted text-muted-foreground'],
+                                default => ['secondary', ''],
+                            };
+                        @endphp
+                        <april:badge variant="{{ $variant }}" class="shrink-0 {{ $extra }}">
                             {{ $report->status->label() }}
-                        </span>
+                        </april:badge>
                     </div>
                     <p class="mt-0.5 text-xs text-muted-foreground">
                         {{ $report->reason->label() }} · {{ $report->created_at->diffForHumans() }}
