@@ -1,15 +1,17 @@
 <?php
 
-use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\ConsumerDashboardController;
 use App\Http\Controllers\ConsumerSearchController;
 use App\Http\Controllers\FoodController;
 use App\Http\Controllers\GreenwashingReportController;
 use App\Http\Controllers\MealController;
+use App\Http\Controllers\ParcoursController;
+use App\Http\Controllers\PublicParcoursController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\StageTransitionController;
+use App\Http\Controllers\EtapeParcoursController;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\ProAccess;
 use App\Models\Meal;
@@ -53,14 +55,11 @@ Route::middleware(['auth'])->group(function () {
         ->middleware(EnsureUserHasRole::class.':admin')
         ->name('admin.dashboard');
 
-    Route::middleware(EnsureUserHasRole::class.':admin')->group(function () {
-        Route::get('/admin/users', [AdminUserController::class, 'index'])->name('admin.users');
-        Route::get('/admin/users/{user}/edit', [AdminUserController::class, 'edit'])->name('admin.users.edit');
-        Route::patch('/admin/users/{user}', [AdminUserController::class, 'update'])->name('admin.users.update');
-        Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy'])->name('admin.users.destroy');
+    Route::get('/admin/users', function () {
+        $users = User::orderBy('role')->orderBy('name')->get();
 
-        Route::get('/admin/reports', [GreenwashingReportController::class, 'index'])->name('admin.reports');
-    });
+        return view('back.users', compact('users'));
+    })->middleware(EnsureUserHasRole::class.':admin')->name('admin.users');
 
     foreach ([
         'producer' => 'producer.dashboard',
@@ -70,6 +69,34 @@ Route::middleware(['auth'])->group(function () {
         Route::get("/{$role}/dashboard", CatalogController::class)
             ->middleware(EnsureUserHasRole::class.':'.$role)
             ->name($name);
+
+        if ($role === 'processor') {
+            Route::get('processor/parcours/{parcours}/qr', [ParcoursController::class, 'qrCode'])
+                ->name('processor.parcours.qr')
+                ->middleware(EnsureUserHasRole::class.':processor');
+
+            Route::resource('processor/parcours', ParcoursController::class)
+                ->only(['index', 'show'])
+                ->parameters(['parcours' => 'parcours'])
+                ->names([
+                    'index' => 'processor.parcours.index',
+                    'show' => 'processor.parcours.show',
+                ])
+                ->middleware(EnsureUserHasRole::class.':processor');
+
+            Route::resource('processor/parcours.etapes', EtapeParcoursController::class)
+                ->parameters(['parcours' => 'parcours', 'etapes' => 'etape'])
+                ->names([
+                    'index' => 'processor.parcours.etapes.index',
+                    'create' => 'processor.parcours.etapes.create',
+                    'store' => 'processor.parcours.etapes.store',
+                    'show' => 'processor.parcours.etapes.show',
+                    'edit' => 'processor.parcours.etapes.edit',
+                    'update' => 'processor.parcours.etapes.update',
+                    'destroy' => 'processor.parcours.etapes.destroy',
+                ])
+                ->middleware(EnsureUserHasRole::class.':processor');
+        }
     }
 
     Route::get('/consumer/dashboard', ConsumerDashboardController::class)
@@ -93,12 +120,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Editing and moving products is limited to supply chain professionals.
     Route::middleware(ProAccess::class)->group(function () {
-        Route::get('/foods/create', [FoodController::class, 'create'])->name('foods.create');
-        Route::post('/foods', [FoodController::class, 'store'])->name('foods.store');
         Route::get('/foods/{food}/edit', [FoodController::class, 'edit'])->name('foods.edit');
         Route::match(['put', 'patch'], '/foods/{food}', [FoodController::class, 'update'])->name('foods.update');
         Route::delete('/foods/{food}', [FoodController::class, 'destroy'])->name('foods.destroy');
-        Route::post('/foods/import', [FoodController::class, 'importCsv'])->name('foods.import');
         Route::post('/foods/{food}/transitions', [StageTransitionController::class, 'store'])->name('foods.transitions.store');
     });
 
@@ -111,5 +135,8 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/meals/{meal}', [MealController::class, 'destroy'])->name('meals.destroy');
     });
 });
+
+Route::get('/parcours/{code}', [PublicParcoursController::class, 'show'])
+    ->name('parcours.public');
 
 require __DIR__.'/auth.php';
