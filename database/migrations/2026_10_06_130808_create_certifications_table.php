@@ -14,7 +14,7 @@ return new class extends Migration
     {
         Schema::create('certifications', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
+            $table->string('name', 191)->unique();
             $table->string('issuer')->nullable();
             $table->string('certificate_number')->nullable();
             $table->date('valid_until')->nullable();

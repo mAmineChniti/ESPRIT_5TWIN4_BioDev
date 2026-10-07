@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $consumer = $this->user('test@example.com', 'Test User', 'consumer');
-        $admin = $this->user('admin@example.com', 'Admin User', 'admin');
+        $admin = $this->user('admin@nutritrace.com', 'Admin NutriTrace', 'admin');
         $producer = $this->user('producer@example.com', 'Producer User', 'producer');
         $processor = $this->user('processor@example.com', 'Processor User', 'processor');
         $distributor = $this->user('distributor@example.com', 'Distributor User', 'distributor');

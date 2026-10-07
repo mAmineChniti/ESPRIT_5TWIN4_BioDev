@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\ConsumerDashboardController;
 use App\Http\Controllers\ConsumerSearchController;
@@ -52,11 +53,14 @@ Route::middleware(['auth'])->group(function () {
         ->middleware(EnsureUserHasRole::class.':admin')
         ->name('admin.dashboard');
 
-    Route::get('/admin/users', function () {
-        $users = User::orderBy('role')->orderBy('name')->get();
+    Route::middleware(EnsureUserHasRole::class.':admin')->group(function () {
+        Route::get('/admin/users', [AdminUserController::class, 'index'])->name('admin.users');
+        Route::get('/admin/users/{user}/edit', [AdminUserController::class, 'edit'])->name('admin.users.edit');
+        Route::patch('/admin/users/{user}', [AdminUserController::class, 'update'])->name('admin.users.update');
+        Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy'])->name('admin.users.destroy');
 
-        return view('back.users', compact('users'));
-    })->middleware(EnsureUserHasRole::class.':admin')->name('admin.users');
+        Route::get('/admin/reports', [GreenwashingReportController::class, 'index'])->name('admin.reports');
+    });
 
     foreach ([
         'producer' => 'producer.dashboard',
@@ -89,9 +93,12 @@ Route::middleware(['auth'])->group(function () {
 
     // Editing and moving products is limited to supply chain professionals.
     Route::middleware(ProAccess::class)->group(function () {
+        Route::get('/foods/create', [FoodController::class, 'create'])->name('foods.create');
+        Route::post('/foods', [FoodController::class, 'store'])->name('foods.store');
         Route::get('/foods/{food}/edit', [FoodController::class, 'edit'])->name('foods.edit');
         Route::match(['put', 'patch'], '/foods/{food}', [FoodController::class, 'update'])->name('foods.update');
         Route::delete('/foods/{food}', [FoodController::class, 'destroy'])->name('foods.destroy');
+        Route::post('/foods/import', [FoodController::class, 'importCsv'])->name('foods.import');
         Route::post('/foods/{food}/transitions', [StageTransitionController::class, 'store'])->name('foods.transitions.store');
     });
 

@@ -18,6 +18,7 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Email</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Role</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Registered</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
             </tr>
         </thead>
         <tbody class="bg-card divide-y divide-border">
@@ -44,6 +45,18 @@
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                     {{ $user->created_at?->format('d M Y') ?? 'N/A' }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                    <a href="{{ route('admin.users.edit', $user) }}" class="text-primary hover:underline">Edit</a>
+                    @if(auth()->id() !== $user->id)
+                    <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this user?');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="text-destructive hover:underline">Delete</button>
+                    </form>
+                    @else
+                        <span class="text-muted-foreground opacity-50 cursor-not-allowed">Delete</span>
+                    @endif
                 </td>
             </tr>
             @empty

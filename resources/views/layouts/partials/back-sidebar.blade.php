@@ -35,6 +35,12 @@
                     <span>Manage Users</span>
                 </april:sidebar-menu-button-link>
             </april:sidebar-menu-item>
+            <april:sidebar-menu-item>
+                <april:sidebar-menu-button-link href="{{ route('admin.reports') }}" :active="request()->routeIs('admin.reports')">
+                    <x-lucide-flag />
+                    <span>Greenwashing Reports</span>
+                </april:sidebar-menu-button-link>
+            </april:sidebar-menu-item>
         </april:sidebar-menu>
         @endif
 
