@@ -3,10 +3,13 @@
 namespace Tests\Feature;
 
 use App\Enums\EnvironmentalScore;
+use App\Enums\FarmStatus;
 use App\Enums\ReportStatus;
 use App\Enums\Stage;
+use App\Models\AgriculturalRegion;
 use App\Models\Category;
 use App\Models\Certification;
+use App\Models\Farm;
 use App\Models\Food;
 use App\Models\GreenwashingReport;
 use App\Models\Meal;
@@ -163,5 +166,79 @@ class DatabaseSeederTest extends TestCase
             $this->assertGreaterThanOrEqual(0, $score, "[{$food->name}] scored below zero.");
             $this->assertLessThanOrEqual(100, $score, "[{$food->name}] scored above 100.");
         }
+    }
+
+    // ---------- Farms and regions ----------
+
+    public function test_every_seeded_farm_carries_a_status_the_enum_understands(): void
+    {
+        $this->seed();
+
+        $farms = Farm::all();
+
+        $this->assertNotEmpty($farms, 'The seeder produced no farms.');
+
+        foreach ($farms as $farm) {
+            $this->assertInstanceOf(
+                FarmStatus::class,
+                $farm->status,
+                "[{$farm->name}] has a status the FarmStatus enum cannot represent."
+            );
+        }
+    }
+
+    public function test_only_approved_farms_are_publishable(): void
+    {
+        $this->seed();
+
+        // The scope the public pages use must never return a farm that is
+        // still awaiting review or has been turned down.
+        $published = Farm::query()->approved()->get();
+
+        foreach ($published as $farm) {
+            $this->assertSame(FarmStatus::Approved, $farm->status, "[{$farm->name}] was published unapproved.");
+        }
+
+        $this->assertSame(
+            Farm::where('status', FarmStatus::Approved->value)->count(),
+            $published->count()
+        );
+    }
+
+    public function test_a_region_exposes_only_its_approved_farms(): void
+    {
+        $this->seed();
+
+        $region = AgriculturalRegion::firstOrFail();
+
+        $this->assertGreaterThanOrEqual($region->farms()->count(), $region->approvedFarms()->count());
+
+        foreach ($region->approvedFarms()->get() as $farm) {
+            $this->assertSame(FarmStatus::Approved, $farm->status);
+        }
+    }
+
+    public function test_every_seeded_farm_belongs_to_a_region(): void
+    {
+        $this->seed();
+
+        foreach (Farm::all() as $farm) {
+            $this->assertNotNull($farm->region, "[{$farm->name}] is not attached to a region.");
+        }
+    }
+
+    public function test_a_rejected_farm_records_why_it_was_rejected(): void
+    {
+        $farm = Farm::factory()->create([
+            'status' => FarmStatus::Rejected,
+            'rejection_reason' => 'Adresse incomplète',
+        ]);
+
+        $this->assertTrue($farm->isRejected());
+        $this->assertNotEmpty($farm->rejection_reason);
+        $this->assertFalse($farm->canBeEdited(), 'A rejected farm must not be editable.');
+
+        // And it stays out of the public listing.
+        $this->get(route('front.regions.show', $farm->region))->assertDontSee($farm->address);
     }
 }

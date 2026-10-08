@@ -9,6 +9,8 @@ use App\Enums\Stage;
 use App\Models\Category;
 use App\Models\Food;
 use App\Models\Review;
+use App\Services\Greenwashing\GreenwashingDetector;
+use App\Services\Recommendations\ProductRecommender;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -18,6 +20,11 @@ use Illuminate\Validation\Rule;
 
 class ConsumerSearchController extends Controller
 {
+    public function __construct(
+        private readonly GreenwashingDetector $detector,
+        private readonly ProductRecommender $recommender,
+    ) {}
+
     /**
      * Public search. This is the page a consumer lands on after scanning a code.
      */
@@ -30,8 +37,12 @@ class ConsumerSearchController extends Controller
             'certified' => ['nullable', 'boolean'],
         ]);
 
+        // Rule::enum() validates but does not cast, so the raw value is still a
+        // string here. Convert once rather than type-hinting the closure.
+        $grade = EnvironmentalScore::tryFrom((string) ($validated['grade'] ?? ''));
+
         $query = Food::query()
-            ->with(['category', 'certifications', 'producer'])
+            ->with(['category', 'certifications', 'producer', 'transitions'])
             ->withCount([
                 'reviews',
                 'reports as upheld_reports_count' => fn (Builder $reports) => $reports->where('status', ReportStatus::Upheld->value),
@@ -45,7 +56,7 @@ class ConsumerSearchController extends Controller
                 });
             })
             ->when($validated['category'] ?? null, fn (Builder $query, $id) => $query->where('category_id', $id))
-            ->when($validated['grade'] ?? null, fn (Builder $query, EnvironmentalScore $grade) => $query->where('environmental_score', $grade->value))
+            ->when($grade, fn (Builder $query, EnvironmentalScore $grade) => $query->where('environmental_score', $grade->value))
             ->when($request->boolean('certified'), fn (Builder $query) => $query->whereHas('certifications'));
 
         match ($request->query('sort', 'recent')) {
@@ -61,7 +72,7 @@ class ConsumerSearchController extends Controller
             'foods' => $foods,
             'categories' => Category::orderBy('name')->get(),
             'grades' => EnvironmentalScore::cases(),
-            'filters' => $validated,
+            'filters' => [...$validated, 'grade' => $grade?->value],
             'sort' => $request->query('sort', 'recent'),
         ]);
     }
@@ -147,8 +158,12 @@ class ConsumerSearchController extends Controller
             'myReview' => $request->user()
                 ? Review::where('food_id', $food->id)->where('user_id', $request->user()->id)->first()
                 : null,
-            'completedStages' => $steps->pluck('to_stage')->filter()->pluck('value')->all(),
-            'totalStages' => count(Stage::order()),
+            'recordedStages' => $food->recordedStageCount(),
+            'lastStage' => $food->currentStage(),
+            'totalStages' => Stage::total(),
+            'analysis' => $this->detector->analyze($food),
+            'alternatives' => $this->recommender->alternativesTo($food),
+            'assistantEnabled' => filled(config('services.ai.key')),
         ]);
     }
 }

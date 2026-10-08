@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{-- The product assistant posts JSON from the page, which has no form to
+         carry a token, so the token is published here for it to read. --}}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     @php($pageTitle = trim($__env->yieldContent('title')))
     <title>{{ $pageTitle === '' ? 'NutriTrace' : "NutriTrace - {$pageTitle}" }}</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">

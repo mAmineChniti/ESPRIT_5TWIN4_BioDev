@@ -3,33 +3,57 @@
 @section('title', 'Food Details')
 
 @section('content')
-<div class="mb-6">
-    <div class="flex items-center justify-between">
-        <div class="flex items-center gap-4">
-            <a href="{{ route('foods.index') }}" class="text-muted-foreground hover:text-foreground">← Back</a>
-            <h1 class="text-2xl font-bold">Product details</h1>
-        </div>
-        <div class="space-x-2">
-            <a href="{{ route('foods.edit', $food) }}" class="bg-card border border-input text-foreground hover:bg-muted font-medium py-2 px-4 rounded-md">
-                Edit
-            </a>
-            <form action="{{ route('foods.destroy', $food) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure?');">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-medium py-2 px-4 rounded-md">
-                    Delete
-                </button>
-            </form>
-        </div>
+<div class="mb-6 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+        <april:button-link href="{{ route('foods.index') }}" variant="link" size="sm" class="text-muted-foreground">
+            <x-lucide-arrow-left class="size-4" />
+            Back
+        </april:button-link>
+        <h1 class="text-2xl font-bold">Product details</h1>
+    </div>
+
+    {{-- The route is readable by any signed in user, so the actions are
+         gated on the policy rather than assumed. --}}
+    <div class="flex items-center gap-2">
+        <april:button-link href="{{ route('products.show', $food) }}" variant="outline">
+            Public page
+        </april:button-link>
+        @can('update', $food)
+            <april:button-link href="{{ route('foods.edit', $food) }}" variant="outline">Edit</april:button-link>
+        @endcan
+        @can('delete', $food)
+            <april:alert-dialog>
+                <x-slot:trigger>
+                    <april:button type="button" variant="destructive">Delete</april:button>
+                </x-slot:trigger>
+                <x-slot:content>
+                    <div>
+                        <h2 class="text-lg font-semibold" x-bind="title">Delete this product?</h2>
+                        <p class="mt-2 text-sm text-muted-foreground" x-bind="description">
+                            <strong>{{ $food->name }}</strong> and its recorded supply chain will be removed.
+                            This cannot be undone.
+                        </p>
+                    </div>
+                    <april:alert-dialog-footer>
+                        <april:alert-dialog-cancel>Cancel</april:alert-dialog-cancel>
+                        <form action="{{ route('foods.destroy', $food) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+                            <april:button type="submit" variant="destructive" x-bind="action">
+                                Delete product
+                            </april:button>
+                        </form>
+                    </april:alert-dialog-footer>
+                </x-slot:content>
+            </april:alert-dialog>
+        @endcan
     </div>
 </div>
 
-<div class="bg-card rounded-lg shadow overflow-hidden max-w-3xl">
-    <div class="px-6 py-5 border-b border-border">
-        <h3 class="text-lg font-medium leading-6 text-foreground">Traceability information</h3>
-        <p class="mt-1 max-w-2xl text-sm text-muted-foreground">From farm to plate.</p>
-    </div>
-    <div class="px-6 py-5">
+<april:card class="max-w-3xl">
+    <x-slot:title class="text-lg">Traceability information</x-slot:title>
+    <x-slot:description>From farm to plate.</x-slot:description>
+    <x-slot:content>
         <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
             <div class="sm:col-span-1">
                 <dt class="text-sm font-medium text-muted-foreground">Nom du produit</dt>
@@ -95,10 +119,11 @@
                 </dd>
             </div>
         </dl>
-    </div>
 
-    <div class="px-6 py-5 border-t border-border">
-        <h3 class="text-md font-medium leading-6 text-foreground mb-4">Origin Map 🗺️</h3>
+        <april:separator />
+
+        <div class="py-5">
+        <h3 class="mb-4 text-base font-medium leading-6 text-foreground">Origin Map 🗺️</h3>
         
         @if($food->origin)
             <div id="origin-map" class="h-64 w-full rounded-lg z-0 relative shadow-inner border border-border"></div>
@@ -109,7 +134,9 @@
             
             <script>
                 document.addEventListener('DOMContentLoaded', function() {
-                    const origin = "{{ strtolower(trim($food->origin)) }}";
+                    // mb_strtolower so accented origins such as "BRÉSIL" still
+                    // match the dictionary keys below.
+                    const origin = @js(mb_strtolower(trim($food->origin)));
                     
                     // Dictionnaire de coordonnées (Lat, Lng) enrichi pour la démo
                     const coordinates = {
@@ -136,6 +163,17 @@
                         'royaume-uni': [55.3781, -3.4360],
                     };
 
+                    // Colours come from the theme tokens so the map follows the
+                    // light/dark palette instead of hardcoded literals.
+                    const styles = getComputedStyle(document.documentElement);
+                    const token = (name) => `hsl(${styles.getPropertyValue(name).trim()})`;
+                    const tone = {
+                        primary: token('--primary'),
+                        destructive: token('--destructive'),
+                        foreground: token('--foreground'),
+                        background: token('--background'),
+                    };
+
                     const coord = coordinates[origin];
                     const homeCoord = coordinates['tunisie']; // Destination par défaut (Ex: L'utilisateur est en Tunisie)
                     
@@ -156,9 +194,9 @@
                             // Produit importé : On trace la ligne et on calcule la distance
                             const distanceKm = Math.round(map.distance(coord, homeCoord) / 1000);
                             
-                            // Ligne rouge pointillée
+                            // Dashed line from origin to destination
                             const polyline = L.polyline([coord, homeCoord], {
-                                color: 'red',
+                                color: tone.destructive,
                                 weight: 3,
                                 dashArray: '10, 10'
                             }).addTo(map);
@@ -168,11 +206,11 @@
 
                             // Marqueur d'origine avec la distance
                             L.marker(coord).addTo(map)
-                                .bindPopup(`<b>Origine :</b> {{ $food->origin }}<br><b>Distance :</b> ~${distanceKm} km ✈️<br><span class="text-xs text-red-500">Fort impact transport</span>`)
+                                .bindPopup(`<b>Origine :</b> {{ $food->origin }}<br><b>Distance :</b> ~${distanceKm} km ✈️<br><span style="color:${tone.destructive};font-size:12px">Fort impact transport</span>`)
                                 .openPopup();
                                 
                             // Marqueur d'arrivée (Maison)
-                            L.circleMarker(homeCoord, { color: 'green', radius: 5 }).addTo(map)
+                            L.circleMarker(homeCoord, { color: tone.primary, radius: 5 }).addTo(map)
                                 .bindPopup('Destination (Vous)');
                         }
                     } else {
@@ -186,8 +224,10 @@
         @endif
     </div>
 
-    <div class="px-6 py-5 border-t border-border">
-        <h3 class="text-md font-medium leading-6 text-foreground mb-4">Nutritional values (per 100g)</h3>
+    <april:separator />
+
+    <div class="pt-5">
+        <h3 class="mb-4 text-base font-medium leading-6 text-foreground">Nutritional values (per 100g)</h3>
         <div class="grid grid-cols-4 text-center gap-4">
             <div class="bg-muted p-4 rounded-lg">
                 <span class="block text-2xl font-bold text-primary">{{ $food->calories }}</span>
@@ -202,10 +242,13 @@
                 <span class="text-xs text-muted-foreground uppercase font-semibold">Carbs</span>
             </div>
             <div class="bg-muted p-4 rounded-lg">
-                <span class="block text-2xl font-bold text-destructive">{{ $food->fat }}g</span>
+                {{-- Fat is a nutrient, not a fault: it uses the same primary
+                     token as the other three rather than destructive. --}}
+                <span class="block text-2xl font-bold text-primary">{{ $food->fat }}g</span>
                 <span class="text-xs text-muted-foreground uppercase font-semibold">Fat</span>
             </div>
         </div>
     </div>
-</div>
+    </x-slot:content>
+</april:card>
 @endsection

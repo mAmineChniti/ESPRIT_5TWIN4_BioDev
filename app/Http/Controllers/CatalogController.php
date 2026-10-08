@@ -61,15 +61,14 @@ class CatalogController extends Controller
     {
         return [
             ...self::catalogData(),
-            'myFoods' => $user->isProfessional() && ! $user->isAdmin()
+            // isProfessional() is false for an admin by definition, so the
+            // extra admin check that used to sit here was unreachable.
+            'myFoods' => $user->isProfessional()
                 ? Food::where('producer_id', $user->id)->with('category')->latest()->take(6)->get()
                 : new Collection,
-            'myFoodCount' => $user->isProfessional() && ! $user->isAdmin()
+            'myFoodCount' => $user->isProfessional()
                 ? Food::where('producer_id', $user->id)->count()
                 : 0,
-            'myMeals' => $user->role === 'consumer'
-                ? $user->meals()->with('foods')->latest('consumed_on')->take(5)->get()
-                : new Collection,
             'pendingStage' => self::pendingByStage(),
             'recentTransitions' => StageTransition::with(['food', 'actor'])
                 ->latest('occurred_at')
