@@ -38,18 +38,20 @@
 
 {{-- Filters --}}
 <form method="GET" class="flex flex-wrap gap-3 mb-4">
-    <select name="status" class="rounded-md border-input shadow-sm text-sm">
+    <april:label for="shipment-status-filter" class="sr-only">Filter by status</april:label>
+    <april:native-select id="shipment-status-filter" name="status" class="text-sm">
         <option value="">All statuses</option>
         @foreach($statuses as $status)
             <option value="{{ $status->value }}" @selected($filters['status'] === $status->value)>{{ $status->label() }}</option>
         @endforeach
-    </select>
-    <select name="mode" class="rounded-md border-input shadow-sm text-sm">
+    </april:native-select>
+    <april:label for="shipment-mode-filter" class="sr-only">Filter by transport mode</april:label>
+    <april:native-select id="shipment-mode-filter" name="mode" class="text-sm">
         <option value="">All transport modes</option>
         @foreach($modes as $mode)
             <option value="{{ $mode->value }}" @selected($filters['mode'] === $mode->value)>{{ $mode->label() }}</option>
         @endforeach
-    </select>
+    </april:native-select>
     <button type="submit" class="bg-primary text-primary-foreground text-sm font-medium px-4 rounded-md">Filter</button>
     <a href="{{ route('logistics.shipments.index') }}" class="text-sm text-muted-foreground self-center hover:underline">Reset</a>
 </form>
@@ -58,13 +60,13 @@
     <table class="min-w-full divide-y divide-border">
         <thead class="bg-muted">
             <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Reference</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Warehouse</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Destination</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Mode</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">CO₂ (kg)</th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Reference</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Warehouse</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Destination</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Mode</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">CO₂ (kg)</th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
             </tr>
         </thead>
         <tbody class="bg-card divide-y divide-border">
@@ -79,12 +81,13 @@
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     <a href="{{ route('logistics.shipments.show', $shipment) }}" class="text-primary hover:underline">View</a>
                     <a href="{{ route('logistics.shipments.edit', $shipment) }}" class="text-primary hover:underline">Edit</a>
-                    <form action="{{ route('logistics.shipments.destroy', $shipment) }}" method="POST" class="inline"
-                          onsubmit="return confirm('Delete shipment {{ $shipment->reference }}?');">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="text-destructive hover:underline">Delete</button>
-                    </form>
+                    <x-confirm-action
+                        :action="route('logistics.shipments.destroy', $shipment)"
+                        title="Delete this shipment?"
+                        description="Shipment {{ $shipment->reference }} will be permanently deleted."
+                        triggerVariant="ghost"
+                        triggerSize="sm"
+                    >Delete</x-confirm-action>
                 </td>
             </tr>
             @empty

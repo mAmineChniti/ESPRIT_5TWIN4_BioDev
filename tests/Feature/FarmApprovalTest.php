@@ -71,7 +71,7 @@ class FarmApprovalTest extends TestCase
         $producer = $this->user('producer');
         $farm = $this->farm(FarmStatus::Pending, $producer, $region);
 
-        $html = $this->get(route('front.regions.show', $region))->assertOk()->getContent();
+        $html = $this->get(route('front.agricultural-regions.show', $region))->assertOk()->getContent();
 
         $this->assertStringNotContainsString($farm->name, $html);
         $this->assertStringNotContainsString($farm->address, $html);
@@ -82,7 +82,7 @@ class FarmApprovalTest extends TestCase
         $region = AgriculturalRegion::factory()->create();
         $farm = $this->farm(FarmStatus::Rejected, $this->user('producer'), $region);
 
-        $this->get(route('front.regions.show', $region))
+        $this->get(route('front.agricultural-regions.show', $region))
             ->assertOk()
             ->assertDontSee($farm->name);
     }
@@ -92,7 +92,7 @@ class FarmApprovalTest extends TestCase
         $region = AgriculturalRegion::factory()->create();
         $farm = $this->farm(FarmStatus::Approved, $this->user('producer'), $region);
 
-        $this->get(route('front.regions.show', $region))
+        $this->get(route('front.agricultural-regions.show', $region))
             ->assertOk()
             ->assertSee($farm->name);
     }
@@ -102,18 +102,19 @@ class FarmApprovalTest extends TestCase
         $region = AgriculturalRegion::factory()->create(['name' => 'Counted Region']);
         $producer = $this->user('producer');
 
-        $this->farm(FarmStatus::Approved, $producer);
-        $this->farm(FarmStatus::Pending, $producer);
-        $this->farm(FarmStatus::Rejected, $producer);
+        $this->farm(FarmStatus::Approved, $producer, $region);
+        $this->farm(FarmStatus::Pending, $producer, $region);
+        $this->farm(FarmStatus::Rejected, $producer, $region);
 
-        $html = $this->get(route('front.regions.index'))->assertOk()->getContent();
+        $html = $this->get(route('front.agricultural-regions.index'))->assertOk()->getContent();
 
-        // Exactly one farm is publishable, so the badge reads 1 and not 3.
-        $this->assertMatchesRegularExpression(
-            '/Counted Region.*?1 ferme/s',
-            $html,
-            'The public farm count included a farm that has not been approved.'
-        );
+        // All three farms sit in one region and exactly one is publishable, so
+        // the single badge on the page must read 1. Counting the badges too
+        // keeps the number from being read off a neighbouring region, and
+        // pins it to this region rather than to the page in general.
+        $this->assertSame(1, substr_count($html, 'farm(s)'));
+        $this->assertStringContainsString('1 farm(s)', $html);
+        $this->assertStringNotContainsString('3 farm(s)', $html);
     }
 
     public function test_the_public_region_page_reports_an_empty_region_rather_than_leaking(): void
@@ -121,9 +122,9 @@ class FarmApprovalTest extends TestCase
         $region = AgriculturalRegion::factory()->create();
         $this->farm(FarmStatus::Pending, $this->user('producer'));
 
-        $this->get(route('front.regions.show', $region))
+        $this->get(route('front.agricultural-regions.show', $region))
             ->assertOk()
-            ->assertSee('Aucune ferme enregistrée');
+            ->assertSee('No farms recorded in this region yet.');
     }
 
     // ---------- Back office reach ----------
@@ -166,11 +167,11 @@ class FarmApprovalTest extends TestCase
         $user = $this->user($role);
         $region = AgriculturalRegion::factory()->create();
 
-        $this->actingAs($user)->get(route('back.regions.create'))->assertForbidden();
-        $this->actingAs($user)->post(route('back.regions.store'), ['name' => 'X', 'code' => 'X1'])->assertForbidden();
-        $this->actingAs($user)->get(route('back.regions.edit', $region))->assertForbidden();
-        $this->actingAs($user)->patch(route('back.regions.update', $region), ['name' => 'X', 'code' => 'X1'])->assertForbidden();
-        $this->actingAs($user)->delete(route('back.regions.destroy', $region))->assertForbidden();
+        $this->actingAs($user)->get(route('back.agricultural-regions.create'))->assertForbidden();
+        $this->actingAs($user)->post(route('back.agricultural-regions.store'), ['name' => 'X', 'code' => 'X1'])->assertForbidden();
+        $this->actingAs($user)->get(route('back.agricultural-regions.edit', $region))->assertForbidden();
+        $this->actingAs($user)->patch(route('back.agricultural-regions.update', $region), ['name' => 'X', 'code' => 'X1'])->assertForbidden();
+        $this->actingAs($user)->delete(route('back.agricultural-regions.destroy', $region))->assertForbidden();
 
         $this->assertDatabaseHas('agricultural_regions', ['id' => $region->id]);
     }
@@ -178,7 +179,7 @@ class FarmApprovalTest extends TestCase
     #[DataProvider('roleProvider')]
     public function test_only_admin_and_producer_may_list_regions(string $role): void
     {
-        $response = $this->actingAs($this->user($role))->get(route('back.regions.index'));
+        $response = $this->actingAs($this->user($role))->get(route('back.agricultural-regions.index'));
 
         in_array($role, ['admin', 'producer'], true)
             ? $response->assertOk()
@@ -264,7 +265,7 @@ class FarmApprovalTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $this->assertSame(FarmStatus::Approved, $farm->fresh()->status);
-        $this->get(route('front.regions.show', $region))->assertSee($farm->name);
+        $this->get(route('front.agricultural-regions.show', $region))->assertSee($farm->name);
     }
 
     public function test_rejecting_a_farm_records_the_reason_and_unpublishes_it(): void
@@ -283,7 +284,7 @@ class FarmApprovalTest extends TestCase
         // Assert on the address rather than the name: the rejection flash
         // message quotes the farm name, so asserting on it would pass or fail
         // for the wrong reason.
-        $this->get(route('front.regions.show', $region))
+        $this->get(route('front.agricultural-regions.show', $region))
             ->assertOk()
             ->assertDontSee($farm->address);
     }

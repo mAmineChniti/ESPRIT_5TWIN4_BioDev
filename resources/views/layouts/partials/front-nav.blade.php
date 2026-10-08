@@ -5,8 +5,8 @@
             {{-- The logo is the only link home; no duplicate "Home" entry. --}}
             <april:button-link href="{{ route('products.index') }}" variant="ghost"
                 @class(['bg-muted' => request()->routeIs('products.*')])>Products</april:button-link>
-            <april:button-link href="{{ route('front.regions.index') }}" variant="ghost"
-                @class(['bg-muted' => request()->routeIs('front.regions.*')])>Régions & Fermes</april:button-link>
+            <april:button-link href="{{ route('front.agricultural-regions.index') }}" variant="ghost"
+                @class(['bg-muted' => request()->routeIs('front.agricultural-regions.*')])>Agricultural Regions & Farms</april:button-link>
             <april:button-link href="{{ route('greenwashing') }}" variant="ghost"
                 @class(['bg-muted' => request()->routeIs('greenwashing')])>Spot greenwashing</april:button-link>
             @auth

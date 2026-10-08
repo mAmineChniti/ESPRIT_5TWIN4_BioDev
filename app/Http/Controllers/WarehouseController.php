@@ -31,9 +31,11 @@ class WarehouseController extends Controller
 
     public function show(Warehouse $warehouse): View
     {
-        $warehouse->load(['shipments' => fn ($query) => $query->latest('shipped_on')]);
+        $shipments = $warehouse->shipments()
+            ->latest('shipped_on')
+            ->paginate(10);
 
-        return view('logistics.warehouses.show', compact('warehouse'));
+        return view('logistics.warehouses.show', compact('warehouse', 'shipments'));
     }
 
     public function edit(Warehouse $warehouse): View

@@ -6,15 +6,15 @@ use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\ConsumerDashboardController;
 use App\Http\Controllers\ConsumerIntelligenceController;
 use App\Http\Controllers\ConsumerSearchController;
-use App\Http\Controllers\EtapeParcoursController;
 use App\Http\Controllers\FarmController;
 use App\Http\Controllers\FoodController;
 use App\Http\Controllers\FrontRegionController;
 use App\Http\Controllers\GreenwashingReportController;
+use App\Http\Controllers\JourneyController;
+use App\Http\Controllers\JourneyStepController;
 use App\Http\Controllers\MealController;
-use App\Http\Controllers\ParcoursController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\PublicParcoursController;
+use App\Http\Controllers\PublicJourneyController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\StageTransitionController;
 use App\Http\Middleware\EnsureUserHasRole;
@@ -35,8 +35,8 @@ Route::get('/products/{food}', [ConsumerSearchController::class, 'show'])->name(
 Route::get('/greenwashing', function () {
     return view('front.greenwashing');
 })->name('greenwashing');
-Route::get('/regions-agricoles', [FrontRegionController::class, 'index'])->name('front.regions.index');
-Route::get('/regions-agricoles/{agriculturalRegion}', [FrontRegionController::class, 'show'])->name('front.regions.show');
+Route::get('/agricultural-regions', [FrontRegionController::class, 'index'])->name('front.agricultural-regions.index');
+Route::get('/agricultural-regions/{agriculturalRegion}', [FrontRegionController::class, 'show'])->name('front.agricultural-regions.show');
 
 // ---------- AI greenwashing detection & product assistant (public reads) ----------
 Route::get('/products/{food}/analysis', [ConsumerIntelligenceController::class, 'analyze'])
@@ -104,29 +104,29 @@ Route::middleware(['auth'])->group(function () {
             ->name($name);
 
         if ($role === 'processor') {
-            Route::get('processor/parcours/{parcours}/qr', [ParcoursController::class, 'qrCode'])
-                ->name('processor.parcours.qr')
+            Route::get('processor/journeys/{journey}/qr', [JourneyController::class, 'qrCode'])
+                ->name('processor.journeys.qr')
                 ->middleware(EnsureUserHasRole::class.':processor');
 
-            Route::resource('processor/parcours', ParcoursController::class)
+            Route::resource('processor/journeys', JourneyController::class)
                 ->only(['index', 'show'])
-                ->parameters(['parcours' => 'parcours'])
+                ->parameters(['journeys' => 'journey'])
                 ->names([
-                    'index' => 'processor.parcours.index',
-                    'show' => 'processor.parcours.show',
+                    'index' => 'processor.journeys.index',
+                    'show' => 'processor.journeys.show',
                 ])
                 ->middleware(EnsureUserHasRole::class.':processor');
 
-            Route::resource('processor/parcours.etapes', EtapeParcoursController::class)
-                ->parameters(['parcours' => 'parcours', 'etapes' => 'etape'])
+            Route::resource('processor/journeys.steps', JourneyStepController::class)
+                ->parameters(['journeys' => 'journey', 'steps' => 'step'])
                 ->names([
-                    'index' => 'processor.parcours.etapes.index',
-                    'create' => 'processor.parcours.etapes.create',
-                    'store' => 'processor.parcours.etapes.store',
-                    'show' => 'processor.parcours.etapes.show',
-                    'edit' => 'processor.parcours.etapes.edit',
-                    'update' => 'processor.parcours.etapes.update',
-                    'destroy' => 'processor.parcours.etapes.destroy',
+                    'index' => 'processor.journeys.steps.index',
+                    'create' => 'processor.journeys.steps.create',
+                    'store' => 'processor.journeys.steps.store',
+                    'show' => 'processor.journeys.steps.show',
+                    'edit' => 'processor.journeys.steps.edit',
+                    'update' => 'processor.journeys.steps.update',
+                    'destroy' => 'processor.journeys.steps.destroy',
                 ])
                 ->middleware(EnsureUserHasRole::class.':processor');
         }
@@ -177,25 +177,27 @@ Route::middleware(['auth'])->group(function () {
         Route::patch('/farms/{farm}/approve', [FarmController::class, 'approve'])->name('back.farms.approve');
         Route::patch('/farms/{farm}/reject', [FarmController::class, 'reject'])->name('back.farms.reject');
 
-        Route::resource('regions', AgriculturalRegionController::class)
+        Route::resource('admin/agricultural-regions', AgriculturalRegionController::class)
             ->only(['create', 'store', 'edit', 'update', 'destroy'])
+            ->parameters(['agricultural-regions' => 'region'])
             ->names([
-                'create' => 'back.regions.create',
-                'store' => 'back.regions.store',
-                'edit' => 'back.regions.edit',
-                'update' => 'back.regions.update',
-                'destroy' => 'back.regions.destroy',
+                'create' => 'back.agricultural-regions.create',
+                'store' => 'back.agricultural-regions.store',
+                'edit' => 'back.agricultural-regions.edit',
+                'update' => 'back.agricultural-regions.update',
+                'destroy' => 'back.agricultural-regions.destroy',
             ]);
     });
 
     // Both admins and producers browse farms and regions, but only an admin
     // approves, rejects, or changes the shape of the region list.
     Route::middleware(EnsureUserHasRole::class.':admin,producer')->group(function () {
-        Route::resource('regions', AgriculturalRegionController::class)
+        Route::resource('admin/agricultural-regions', AgriculturalRegionController::class)
             ->only(['index', 'show'])
+            ->parameters(['agricultural-regions' => 'region'])
             ->names([
-                'index' => 'back.regions.index',
-                'show' => 'back.regions.show',
+                'index' => 'back.agricultural-regions.index',
+                'show' => 'back.agricultural-regions.show',
             ]);
 
         Route::resource('farms', FarmController::class)->names([
@@ -210,8 +212,8 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
-Route::get('/parcours/{code}', [PublicParcoursController::class, 'show'])
-    ->name('parcours.public');
+Route::get('/journeys/{code}', [PublicJourneyController::class, 'show'])
+    ->name('journeys.public');
 
 require __DIR__.'/auth.php';
 require __DIR__.'/logistics.php';

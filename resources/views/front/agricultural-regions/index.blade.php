@@ -1,18 +1,18 @@
 @extends('layouts.front')
 
-@section('title', 'Régions Agricoles & Fermes')
+@section('title', 'Agricultural Regions & Farms')
 
 @section('content')
 <div class="space-y-8">
     <div class="text-center max-w-2xl mx-auto space-y-3">
         <span class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-            Traçabilité du Champ à l'Assiette
+            Farm-to-table traceability
         </span>
         <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl">
-            Découvrez nos Régions Agricoles
+            Explore our agricultural regions
         </h1>
         <p class="text-muted-foreground text-sm sm:text-base">
-            Explorez les bassins de production et les fermes d'origine de vos aliments pour une transparence totale.
+            Explore production areas and the farms behind your food for complete transparency.
         </p>
     </div>
 
@@ -20,7 +20,7 @@
         <april:card>
             <x-slot:content>
                 <p class="py-10 text-center text-sm text-muted-foreground">
-                    Aucune région agricole n'est publiée pour le moment.
+                    No agricultural regions are published yet.
                 </p>
             </x-slot:content>
         </april:card>
@@ -34,7 +34,7 @@
                             {{ $region->code }}
                         </span>
                         <span class="text-xs font-semibold text-primary">
-                            {{ $region->approved_farms_count }} ferme(s)
+                            {{ $region->approved_farms_count }} farm(s)
                         </span>
                     </div>
 
@@ -44,7 +44,7 @@
 
                     @if($region->climate)
                         <p class="text-xs text-muted-foreground">
-                            <strong>Climat :</strong> {{ $region->climate }}
+                            <strong>Climate:</strong> {{ $region->climate }}
                         </p>
                     @endif
 
@@ -56,8 +56,8 @@
                 </div>
 
                 <div class="pt-4 border-t border-border">
-                    <april:button-link href="{{ route('front.regions.show', $region) }}" variant="outline" class="w-full justify-between">
-                        <span>Voir la région et ses fermes</span>
+                    <april:button-link href="{{ route('front.agricultural-regions.show', $region) }}" variant="outline" class="w-full justify-between">
+                        <span>View region and farms</span>
                         <x-lucide-arrow-right class="size-4" />
                     </april:button-link>
                 </div>

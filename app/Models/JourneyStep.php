@@ -6,33 +6,33 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class EtapeParcours extends Model
+class JourneyStep extends Model
 {
     use HasFactory;
 
-    protected $table = 'etapes_parcours';
+    protected $table = 'journey_steps';
 
     protected $fillable = [
-        'parcours_id',
-        'ordre',
+        'journey_id',
+        'step_order',
         'type',
-        'lieu',
-        'date_etape',
+        'location',
+        'step_date',
         'description',
-        'ferme_id',
-        'expedition_id',
+        'farm_id',
+        'shipment_id',
     ];
 
     protected function casts(): array
     {
         return [
-            'ordre' => 'integer',
-            'date_etape' => 'date',
+            'step_order' => 'integer',
+            'step_date' => 'date',
         ];
     }
 
-    public function parcours(): BelongsTo
+    public function journey(): BelongsTo
     {
-        return $this->belongsTo(Parcours::class);
+        return $this->belongsTo(Journey::class);
     }
 }

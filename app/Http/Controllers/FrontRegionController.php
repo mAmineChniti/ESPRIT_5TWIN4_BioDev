@@ -29,7 +29,7 @@ class FrontRegionController extends Controller
             ->paginate(9)
             ->withQueryString();
 
-        return view('front.regions.index', [
+        return view('front.agricultural-regions.index', [
             'regions' => $regions,
             'totalFarms' => Farm::query()->approved()->count(),
         ]);
@@ -44,7 +44,7 @@ class FrontRegionController extends Controller
             ->latest()
             ->paginate(self::FARMS_PER_PAGE);
 
-        return view('front.regions.show', [
+        return view('front.agricultural-regions.show', [
             'region' => $agriculturalRegion,
             'farms' => $farms,
         ]);

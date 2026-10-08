@@ -11,9 +11,9 @@ namespace App\Enums;
  */
 enum FarmStatus: string
 {
-    case Pending = 'en_attente';
-    case Approved = 'validee';
-    case Rejected = 'refusee';
+    case Pending = 'pending';
+    case Approved = 'approved';
+    case Rejected = 'rejected';
 
     /**
      * The label shown in the back office.
@@ -21,9 +21,9 @@ enum FarmStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Pending => 'En attente',
-            self::Approved => 'Validée',
-            self::Rejected => 'Refusée',
+            self::Pending => 'Pending',
+            self::Approved => 'Approved',
+            self::Rejected => 'Rejected',
         };
     }
 
@@ -48,9 +48,9 @@ enum FarmStatus: string
     public function statKey(): string
     {
         return match ($this) {
-            self::Pending => 'en_attente',
-            self::Approved => 'validees',
-            self::Rejected => 'refusees',
+            self::Pending => 'pending',
+            self::Approved => 'approved',
+            self::Rejected => 'rejected',
         };
     }
 

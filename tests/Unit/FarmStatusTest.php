@@ -11,17 +11,17 @@ class FarmStatusTest extends TestCase
     public function test_the_stored_values_are_the_ones_the_database_column_uses(): void
     {
         $this->assertSame(
-            ['en_attente', 'validee', 'refusee'],
+            ['pending', 'approved', 'rejected'],
             FarmStatus::values(),
-            'Changing these values would orphan every existing farm row.'
+            'Changing these values requires the accompanying data migration.'
         );
     }
 
     public function test_each_status_has_a_human_label(): void
     {
-        $this->assertSame('En attente', FarmStatus::Pending->label());
-        $this->assertSame('Validée', FarmStatus::Approved->label());
-        $this->assertSame('Refusée', FarmStatus::Rejected->label());
+        $this->assertSame('Pending', FarmStatus::Pending->label());
+        $this->assertSame('Approved', FarmStatus::Approved->label());
+        $this->assertSame('Rejected', FarmStatus::Rejected->label());
     }
 
     public function test_each_status_has_a_distinct_statistic_key(): void
@@ -81,7 +81,7 @@ class FarmStatusTest extends TestCase
 
     public function test_a_status_can_be_resolved_from_its_stored_value(): void
     {
-        $this->assertSame(FarmStatus::Pending, FarmStatus::from('en_attente'));
+        $this->assertSame(FarmStatus::Pending, FarmStatus::from('pending'));
         $this->assertNull(FarmStatus::tryFrom('nope'));
     }
 }

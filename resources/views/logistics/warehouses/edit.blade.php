@@ -12,7 +12,7 @@
     <form action="{{ route('logistics.warehouses.update', $warehouse) }}" method="POST" class="space-y-6">
         @csrf
         @method('PUT')
-        @include('logistics.warehouses._form')
+        @include('logistics.warehouses.form')
 
         <div class="pt-4 flex justify-end">
             <button type="submit" class="bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2 px-6 rounded-md">Update</button>

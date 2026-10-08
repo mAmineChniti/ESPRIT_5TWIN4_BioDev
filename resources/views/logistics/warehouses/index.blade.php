@@ -14,12 +14,12 @@
     <table class="min-w-full divide-y divide-border">
         <thead class="bg-muted">
             <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Name</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">City</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Capacity</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Refrigerated</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Shipments</th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Name</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">City</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Capacity</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Refrigerated</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Shipments</th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
             </tr>
         </thead>
         <tbody class="bg-card divide-y divide-border">
@@ -33,12 +33,13 @@
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     <a href="{{ route('logistics.warehouses.show', $warehouse) }}" class="text-primary hover:underline">View</a>
                     <a href="{{ route('logistics.warehouses.edit', $warehouse) }}" class="text-primary hover:underline">Edit</a>
-                    <form action="{{ route('logistics.warehouses.destroy', $warehouse) }}" method="POST" class="inline"
-                          onsubmit="return confirm('Delete this warehouse and its {{ $warehouse->shipments_count }} shipment(s)?');">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="text-destructive hover:underline">Delete</button>
-                    </form>
+                    <x-confirm-action
+                        :action="route('logistics.warehouses.destroy', $warehouse)"
+                        title="Delete this warehouse?"
+                        description="This warehouse and its {{ $warehouse->shipments_count }} shipment(s) will be permanently deleted."
+                        triggerVariant="ghost"
+                        triggerSize="sm"
+                    >Delete</x-confirm-action>
                 </td>
             </tr>
             @empty

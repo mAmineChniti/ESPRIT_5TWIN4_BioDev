@@ -138,7 +138,7 @@
                     // match the dictionary keys below.
                     const origin = @js(mb_strtolower(trim($food->origin)));
                     
-                    // Dictionnaire de coordonnées (Lat, Lng) enrichi pour la démo
+                    // Coordinate dictionary (lat, lng), expanded for the demo.
                     const coordinates = {
                         'tunisie': [33.8869, 9.5375],
                         'france': [46.2276, 2.2137],
@@ -175,7 +175,7 @@
                     };
 
                     const coord = coordinates[origin];
-                    const homeCoord = coordinates['tunisie']; // Destination par défaut (Ex: L'utilisateur est en Tunisie)
+                    const homeCoord = coordinates['tunisie']; // Default destination for the local market.
                     
                     if (coord) {
                         const map = L.map('origin-map');
@@ -185,13 +185,13 @@
                         }).addTo(map);
 
                         if (origin === 'tunisie') {
-                            // Produit Local
+                            // Local product.
                             map.setView(coord, 5);
                             L.marker(coord).addTo(map)
-                                .bindPopup('<b>🌿 Produit Local</b><br>Circuit court (Tunisie)')
+                                .bindPopup('<b>🌿 Local product</b><br>Short supply chain (Tunisia)')
                                 .openPopup();
                         } else {
-                            // Produit importé : On trace la ligne et on calcule la distance
+                            // Imported product: draw the route and calculate distance.
                             const distanceKm = Math.round(map.distance(coord, homeCoord) / 1000);
                             
                             // Dashed line from origin to destination
@@ -201,17 +201,17 @@
                                 dashArray: '10, 10'
                             }).addTo(map);
                             
-                            // Zoomer pour voir toute la ligne
+                            // Fit the full route in the viewport.
                             map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
 
-                            // Marqueur d'origine avec la distance
+                            // Origin marker with distance.
                             L.marker(coord).addTo(map)
-                                .bindPopup(`<b>Origine :</b> {{ $food->origin }}<br><b>Distance :</b> ~${distanceKm} km ✈️<br><span style="color:${tone.destructive};font-size:12px">Fort impact transport</span>`)
+                                .bindPopup(`<b>Origin:</b> {{ $food->origin }}<br><b>Distance:</b> ~${distanceKm} km ✈️<br><span style="color:${tone.destructive};font-size:12px">High transport impact</span>`)
                                 .openPopup();
                                 
-                            // Marqueur d'arrivée (Maison)
+                            // Destination marker.
                             L.circleMarker(homeCoord, { color: tone.primary, radius: 5 }).addTo(map)
-                                .bindPopup('Destination (Vous)');
+                                .bindPopup('Destination (you)');
                         }
                     } else {
                         const map = L.map('origin-map').setView([20, 0], 2);
@@ -220,7 +220,7 @@
                 });
             </script>
         @else
-            <p class="text-sm text-muted-foreground">Aucune origine définie pour ce produit.</p>
+            <p class="text-sm text-muted-foreground">No origin is defined for this product.</p>
         @endif
     </div>
 

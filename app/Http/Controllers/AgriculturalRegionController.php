@@ -43,7 +43,7 @@ class AgriculturalRegionController extends Controller
             ->latest()
             ->paginate(self::PER_PAGE);
 
-        return view('back.regions.index', compact('regions'));
+        return view('back.agricultural-regions.index', compact('regions'));
     }
 
     /**
@@ -51,7 +51,7 @@ class AgriculturalRegionController extends Controller
      */
     public function create(): View
     {
-        return view('back.regions.create');
+        return view('back.agricultural-regions.create');
     }
 
     /**
@@ -61,8 +61,8 @@ class AgriculturalRegionController extends Controller
     {
         AgriculturalRegion::create($request->validate($this->regionRules()));
 
-        return redirect()->route('back.regions.index')
-            ->with('success', 'Région agricole créée avec succès.');
+        return redirect()->route('back.agricultural-regions.index')
+            ->with('success', 'Agricultural region created successfully.');
     }
 
     /**
@@ -81,7 +81,7 @@ class AgriculturalRegionController extends Controller
                 ->latest(),
         ]);
 
-        return view('back.regions.show', compact('region'));
+        return view('back.agricultural-regions.show', compact('region'));
     }
 
     /**
@@ -89,7 +89,7 @@ class AgriculturalRegionController extends Controller
      */
     public function edit(AgriculturalRegion $region): View
     {
-        return view('back.regions.edit', compact('region'));
+        return view('back.agricultural-regions.edit', compact('region'));
     }
 
     /**
@@ -99,8 +99,8 @@ class AgriculturalRegionController extends Controller
     {
         $region->update($request->validate($this->regionRules($region)));
 
-        return redirect()->route('back.regions.index')
-            ->with('success', 'Région agricole mise à jour avec succès.');
+        return redirect()->route('back.agricultural-regions.index')
+            ->with('success', 'Agricultural region updated successfully.');
     }
 
     /**
@@ -110,7 +110,7 @@ class AgriculturalRegionController extends Controller
     {
         $region->delete();
 
-        return redirect()->route('back.regions.index')
-            ->with('success', 'Région agricole supprimée avec succès.');
+        return redirect()->route('back.agricultural-regions.index')
+            ->with('success', 'Agricultural region deleted successfully.');
     }
 }

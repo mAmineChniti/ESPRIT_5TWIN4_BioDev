@@ -17,20 +17,28 @@ class ShipmentController extends Controller
 {
     public function index(Request $request): View
     {
-        $status = $request->query('status');
-        $mode = $request->query('mode');
+        $statusInput = $request->query('status');
+        $modeInput = $request->query('mode');
+        $status = is_string($statusInput) && ShipmentStatus::tryFrom($statusInput) !== null
+            ? $statusInput
+            : null;
+        $mode = is_string($modeInput) && TransportMode::tryFrom($modeInput) !== null
+            ? $modeInput
+            : null;
 
-        $shipments = Shipment::query()
-            ->with(['warehouse', 'food'])
+        $filteredShipments = Shipment::query()
             ->when($status, fn ($query) => $query->where('status', $status))
-            ->when($mode, fn ($query) => $query->where('transport_mode', $mode))
+            ->when($mode, fn ($query) => $query->where('transport_mode', $mode));
+
+        $shipments = (clone $filteredShipments)
+            ->with(['warehouse', 'food'])
             ->latest('shipped_on')
             ->paginate(10)
             ->withQueryString();
 
         // Value added: total footprint and breakdown by transport mode.
-        $totalCo2 = (float) Shipment::sum('carbon_footprint_kg');
-        $byMode = Shipment::query()
+        $totalCo2 = (float) (clone $filteredShipments)->sum('carbon_footprint_kg');
+        $byMode = (clone $filteredShipments)
             ->selectRaw('transport_mode, COUNT(*) as shipments_count, SUM(carbon_footprint_kg) as co2')
             ->groupBy('transport_mode')
             ->orderByDesc('co2')

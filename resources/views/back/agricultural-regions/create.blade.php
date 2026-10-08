@@ -1,25 +1,25 @@
 @extends('layouts.back')
 
-@section('title', 'Créer une Région Agricole')
+@section('title', 'Create Agricultural Region')
 
 @section('content')
 <div class="max-w-2xl mx-auto space-y-6">
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight">Nouvelle Région Agricole</h1>
-            <p class="text-sm text-muted-foreground">Ajoutez une zone géographique de production à la plateforme.</p>
+            <h1 class="text-2xl font-bold tracking-tight">New Agricultural Region</h1>
+            <p class="text-sm text-muted-foreground">Add a geographic production area to the platform.</p>
         </div>
-        <april:button-link href="{{ route('back.regions.index') }}" variant="outline">
-            Retour à la liste
+        <april:button-link href="{{ route('back.agricultural-regions.index') }}" variant="outline">
+            Back to list
         </april:button-link>
     </div>
 
     <div class="rounded-xl border border-border bg-card p-6 shadow-sm">
-        <form method="POST" action="{{ route('back.regions.store') }}" class="space-y-5">
+        <form method="POST" action="{{ route('back.agricultural-regions.store') }}" class="space-y-5">
             @csrf
 
             <div class="space-y-2">
-                <label for="name" class="text-sm font-medium">Nom de la Région <span class="text-destructive">*</span></label>
+                <label for="name" class="text-sm font-medium">Region name <span class="text-destructive">*</span></label>
                 <input type="text" id="name" name="name" value="{{ old('name') }}" required
                        class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                        placeholder="Ex: Cap Bon - Nabeul">
@@ -39,7 +39,7 @@
                     <label for="climate" class="text-sm font-medium">Climat Dominant</label>
                     <input type="text" id="climate" name="climate" value="{{ old('climate') }}"
                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                           placeholder="Ex: Méditerranéen doux">
+                           placeholder="Example: Mild Mediterranean">
                     @error('climate') <p class="text-xs text-destructive mt-1">{{ $message }}</p> @enderror
                 </div>
 
@@ -53,16 +53,16 @@
             </div>
 
             <div class="space-y-2">
-                <label for="description" class="text-sm font-medium">Description et Particularités</label>
+                <label for="description" class="text-sm font-medium">Description and features</label>
                 <textarea id="description" name="description" rows="4"
                           class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                          placeholder="Décrivez les cultures principales, spécificités géographiques, etc.">{{ old('description') }}</textarea>
+                          placeholder="Describe the main crops, geographic features, and more.">{{ old('description') }}</textarea>
                 @error('description') <p class="text-xs text-destructive mt-1">{{ $message }}</p> @enderror
             </div>
 
             <div class="pt-4 flex justify-end gap-3">
-                <april:button-link href="{{ route('back.regions.index') }}" variant="ghost">Annuler</april:button-link>
-                <april:button type="submit">Enregistrer la Région</april:button>
+                <april:button-link href="{{ route('back.agricultural-regions.index') }}" variant="ghost">Cancel</april:button-link>
+                <april:button type="submit">Save region</april:button>
             </div>
         </form>
     </div>

@@ -59,17 +59,17 @@
 
         @if(in_array($role, ['admin', 'producer'], true))
             <april:sidebar-menu>
-                <april:sidebar-group-label>Gestion Agricole</april:sidebar-group-label>
+                <april:sidebar-group-label>Agriculture</april:sidebar-group-label>
                 <april:sidebar-menu-item>
-                    <april:sidebar-menu-button-link href="{{ route('back.regions.index') }}" :active="request()->routeIs('back.regions.*')">
+                    <april:sidebar-menu-button-link href="{{ route('back.agricultural-regions.index') }}" :active="request()->routeIs('back.agricultural-regions.*')">
                         <x-lucide-map-pin />
-                        <span>Régions Agricoles</span>
+                        <span>Agricultural Regions</span>
                     </april:sidebar-menu-button-link>
                 </april:sidebar-menu-item>
                 <april:sidebar-menu-item>
                     <april:sidebar-menu-button-link href="{{ route('back.farms.index') }}" :active="request()->routeIs('back.farms.*') && ! request()->routeIs('back.farms.requests')">
                         <x-lucide-tractor />
-                        <span>Fermes & Exploitations</span>
+                        <span>Farms</span>
                     </april:sidebar-menu-button-link>
                 </april:sidebar-menu-item>
                 @if($isAdmin)
@@ -77,7 +77,7 @@
                         <april:sidebar-menu-button-link href="{{ route('back.farms.requests') }}" :active="request()->routeIs('back.farms.requests')">
                             <x-lucide-clipboard-check />
                             <span class="flex flex-1 items-center justify-between gap-2">
-                                <span>Demandes de Fermes</span>
+                                <span>Farm Requests</span>
                                 @if($pendingRequestsCount > 0)
                                     <april:badge variant="secondary" class="rounded-full px-2 py-0.5 text-xs font-bold leading-none">
                                         {{ $pendingRequestsCount }}

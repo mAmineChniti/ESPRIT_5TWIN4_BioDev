@@ -211,16 +211,18 @@ class NavigationAccessTest extends TestCase
 
     public function test_a_producer_is_not_offered_the_admin_only_region_actions(): void
     {
-        $html = $this->actingAs($this->user('producer'))->get(route('back.regions.index'))->assertOk()->getContent();
+        $html = $this->actingAs($this->user('producer'))->get(route('back.agricultural-regions.index'))->assertOk()->getContent();
 
-        $this->assertStringNotContainsString('Ajouter une Région', $html);
+        $this->assertStringNotContainsString('Add a region', $html);
+        $this->assertStringNotContainsString(route('back.agricultural-regions.create'), $html);
     }
 
     public function test_an_admin_is_offered_the_admin_only_region_actions(): void
     {
-        $html = $this->actingAs($this->user('admin'))->get(route('back.regions.index'))->assertOk()->getContent();
+        $html = $this->actingAs($this->user('admin'))->get(route('back.agricultural-regions.index'))->assertOk()->getContent();
 
-        $this->assertStringContainsString('Ajouter une Région', $html);
+        $this->assertStringContainsString('Add a region', $html);
+        $this->assertStringContainsString(route('back.agricultural-regions.create'), $html);
     }
 
     public function test_a_producer_is_not_offered_the_pending_request_queue(): void
