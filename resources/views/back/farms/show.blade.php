@@ -3,9 +3,7 @@
 @section('title', $farm->name)
 
 @section('content')
-    @php($viewer = auth()->user())
-    @php($isAdmin = $viewer->isAdmin())
-    @php($isOwner = $farm->user_id === $viewer->id)
+    @php($isAdmin = auth()->user()->isAdmin())
 
     <div class="mx-auto max-w-4xl space-y-6">
         {{-- The rejection reason the admin recorded, so the producer knows
@@ -38,7 +36,7 @@
                 {{-- Approving and rejecting are admin-only and offered only
                      while the request is actually open. --}}
                 @if($isAdmin && $farm->isPending())
-                    <form method="POST" action="{{ route('back.farms.approve', $farm) }}">
+                    <form method="POST" action="{{ route('farms.approve', $farm) }}">
                         @csrf
                         @method('PATCH')
                         <april:button type="submit" size="sm">
@@ -47,22 +45,15 @@
                         </april:button>
                     </form>
 
-                    <x-confirm-action
-                        :action="route('back.farms.reject', $farm)"
-                        method="PATCH"
-                        label="Confirm rejection"
-                        title="Reject this request?"
-                        description="The reason will be shared with the producer. The farm will not be published."
-                        trigger-variant="destructive"
-
-                    >
-                        <x-lucide-x class="mr-1 size-4" />
-                        Reject
-                    </x-confirm-action>
+                    <x-farm-reject-action
+                        :action="route('farms.reject', $farm)"
+                        :farm-name="$farm->name"
+                        :farm-id="$farm->id"
+                    />
                 @endif
 
                 @if($farm->canBeEdited())
-                    <april:button-link href="{{ route('back.farms.edit', $farm) }}" variant="outline">
+                    <april:button-link href="{{ route('farms.edit', $farm) }}" variant="outline">
                         <x-lucide-pencil class="mr-2 size-4" />
                         Edit
                     </april:button-link>
@@ -81,7 +72,7 @@
                     </april:button>
                 @endif
 
-                <april:button-link href="{{ route('back.farms.index') }}" variant="ghost">
+                <april:button-link href="{{ route('farms.index') }}" variant="ghost">
                     Back
                 </april:button-link>
             </div>
@@ -93,7 +84,7 @@
                     <span class="text-xs font-semibold uppercase text-muted-foreground">Agricultural region</span>
                     @if($farm->region)
                         <p class="mt-1 text-lg font-bold text-primary">
-                            <a href="{{ route('back.agricultural-regions.show', $farm->region) }}" class="hover:underline">
+                            <a href="{{ route('regions.show', $farm->region) }}" class="hover:underline">
                                 {{ $farm->region->name }}
                             </a>
                         </p>

@@ -49,8 +49,10 @@ class AgriculturalRegionController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create(): View
+    public function create(Request $request): View
     {
+        $this->ensureAdmin($request);
+
         return view('back.agricultural-regions.create');
     }
 
@@ -59,9 +61,11 @@ class AgriculturalRegionController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        $this->ensureAdmin($request);
+
         AgriculturalRegion::create($request->validate($this->regionRules()));
 
-        return redirect()->route('back.agricultural-regions.index')
+        return redirect()->route('regions.index')
             ->with('success', 'Agricultural region created successfully.');
     }
 
@@ -87,8 +91,10 @@ class AgriculturalRegionController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(AgriculturalRegion $region): View
+    public function edit(Request $request, AgriculturalRegion $region): View
     {
+        $this->ensureAdmin($request);
+
         return view('back.agricultural-regions.edit', compact('region'));
     }
 
@@ -97,20 +103,34 @@ class AgriculturalRegionController extends Controller
      */
     public function update(Request $request, AgriculturalRegion $region): RedirectResponse
     {
+        $this->ensureAdmin($request);
+
         $region->update($request->validate($this->regionRules($region)));
 
-        return redirect()->route('back.agricultural-regions.index')
+        return redirect()->route('regions.index')
             ->with('success', 'Agricultural region updated successfully.');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(AgriculturalRegion $region): RedirectResponse
+    public function destroy(Request $request, AgriculturalRegion $region): RedirectResponse
     {
+        $this->ensureAdmin($request);
+
         $region->delete();
 
-        return redirect()->route('back.agricultural-regions.index')
+        return redirect()->route('regions.index')
             ->with('success', 'Agricultural region deleted successfully.');
+    }
+
+    /**
+     * Route-level middleware already restricts these actions to an admin; this
+     * is the second layer, so a route accidentally moved out of the group still
+     * fails closed.
+     */
+    private function ensureAdmin(Request $request): void
+    {
+        abort_unless($request->user()?->isAdmin(), 403, 'Only an administrator can manage agricultural regions.');
     }
 }

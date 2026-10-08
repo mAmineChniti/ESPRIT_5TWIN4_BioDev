@@ -9,13 +9,13 @@
             <h1 class="text-2xl font-bold tracking-tight">New Agricultural Region</h1>
             <p class="text-sm text-muted-foreground">Add a geographic production area to the platform.</p>
         </div>
-        <april:button-link href="{{ route('back.agricultural-regions.index') }}" variant="outline">
+        <april:button-link href="{{ route('regions.index') }}" variant="outline">
             Back to list
         </april:button-link>
     </div>
 
     <div class="rounded-xl border border-border bg-card p-6 shadow-sm">
-        <form method="POST" action="{{ route('back.agricultural-regions.store') }}" class="space-y-5">
+        <form method="POST" action="{{ route('regions.store') }}" class="space-y-5">
             @csrf
 
             <div class="space-y-2">
@@ -61,7 +61,7 @@
             </div>
 
             <div class="pt-4 flex justify-end gap-3">
-                <april:button-link href="{{ route('back.agricultural-regions.index') }}" variant="ghost">Cancel</april:button-link>
+                <april:button-link href="{{ route('regions.index') }}" variant="ghost">Cancel</april:button-link>
                 <april:button type="submit">Save region</april:button>
             </div>
         </form>

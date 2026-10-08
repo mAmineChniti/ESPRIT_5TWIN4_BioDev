@@ -56,7 +56,7 @@
                 </div>
 
                 <div class="pt-4 border-t border-border">
-                    <april:button-link href="{{ route('front.agricultural-regions.show', $region) }}" variant="outline" class="w-full justify-between">
+                    <april:button-link href="{{ route('agricultural-regions.show', $region) }}" variant="outline" class="w-full justify-between">
                         <span>View region and farms</span>
                         <x-lucide-arrow-right class="size-4" />
                     </april:button-link>

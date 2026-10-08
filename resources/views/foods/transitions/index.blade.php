@@ -4,9 +4,9 @@
 
 @section('content')
 <div class="mb-6">
-    <april:button-link href="{{ route('foods.index') }}" variant="link" size="sm" class="text-muted-foreground">
+    <april:button-link href="{{ route('foods.show', $food) }}" variant="link" size="sm" class="text-muted-foreground">
         <x-lucide-arrow-left class="size-4" />
-        Back
+        Back to {{ $food->name }}
     </april:button-link>
     <h1 class="text-2xl font-bold">Supply chain — {{ $food->name }}</h1>
 </div>

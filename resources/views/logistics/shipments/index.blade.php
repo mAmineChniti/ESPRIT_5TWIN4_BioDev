@@ -5,9 +5,10 @@
 @section('content')
 <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold">Shipments</h1>
-    <a href="{{ route('logistics.shipments.create') }}" class="bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2 px-4 rounded-md">
-        + Add a shipment
-    </a>
+    <april:button-link href="{{ route('logistics.shipments.create') }}">
+        <x-lucide-plus class="size-4" />
+        Add a shipment
+    </april:button-link>
 </div>
 
 {{-- Carbon footprint overview --}}
@@ -27,8 +28,8 @@
                         <span>{{ number_format((float) $row->co2, 1) }} kg</span>
                     </div>
                                         @php $pct = round(((float) $row->co2 / $max) * 100); @endphp
-                    <div class="h-2 rounded bg-muted">
-                        <div class="h-2 rounded bg-primary" @style(["width: {$pct}%"])></div>
+                    <div class="h-2 rounded-md bg-muted">
+                        <div class="h-2 rounded-md bg-primary" @style(["width: {$pct}%"])></div>
                     </div>
                 </div>
             @endforeach
@@ -52,50 +53,57 @@
             <option value="{{ $mode->value }}" @selected($filters['mode'] === $mode->value)>{{ $mode->label() }}</option>
         @endforeach
     </april:native-select>
-    <button type="submit" class="bg-primary text-primary-foreground text-sm font-medium px-4 rounded-md">Filter</button>
+    <april:button type="submit">Filter</april:button>
     <a href="{{ route('logistics.shipments.index') }}" class="text-sm text-muted-foreground self-center hover:underline">Reset</a>
 </form>
 
-<div class="bg-card rounded-lg shadow overflow-hidden">
-    <table class="min-w-full divide-y divide-border">
-        <thead class="bg-muted">
-            <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Reference</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Warehouse</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Destination</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Mode</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
-                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">CO₂ (kg)</th>
-                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
-            </tr>
-        </thead>
-        <tbody class="bg-card divide-y divide-border">
-            @forelse($shipments as $shipment)
-            <tr>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">{{ $shipment->reference }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{{ $shipment->warehouse->name }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{{ $shipment->destination }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{{ $shipment->transport_mode->label() }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{{ $shipment->status->label() }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-right">{{ number_format((float) $shipment->carbon_footprint_kg, 2) }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                    <a href="{{ route('logistics.shipments.show', $shipment) }}" class="text-primary hover:underline">View</a>
-                    <a href="{{ route('logistics.shipments.edit', $shipment) }}" class="text-primary hover:underline">Edit</a>
-                    <x-confirm-action
-                        :action="route('logistics.shipments.destroy', $shipment)"
-                        title="Delete this shipment?"
-                        description="Shipment {{ $shipment->reference }} will be permanently deleted."
-                        triggerVariant="ghost"
-                        triggerSize="sm"
-                    >Delete</x-confirm-action>
-                </td>
-            </tr>
-            @empty
-            <tr><td colspan="7" class="px-6 py-4 text-sm text-muted-foreground text-center">No shipments found.</td></tr>
-            @endforelse
-        </tbody>
-    </table>
-</div>
+<april:card class="overflow-hidden">
+    <x-slot:content>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <caption class="sr-only">Shipments</caption>
+                <thead class="border-b border-border bg-muted/50 text-xs font-semibold uppercase text-muted-foreground">
+                    <tr>
+                        <th scope="col" class="px-6 py-3">Reference</th>
+                        <th scope="col" class="px-6 py-3">Warehouse</th>
+                        <th scope="col" class="px-6 py-3">Destination</th>
+                        <th scope="col" class="px-6 py-3">Mode</th>
+                        <th scope="col" class="px-6 py-3">Status</th>
+                        <th scope="col" class="px-6 py-3 text-right">CO₂ (kg)</th>
+                        <th scope="col" class="px-6 py-3 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border">
+                    @forelse($shipments as $shipment)
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">{{ $shipment->reference }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{{ $shipment->warehouse->name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{{ $shipment->destination }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{{ $shipment->transport_mode->label() }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{{ $shipment->status->label() }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm tabular-nums">{{ number_format((float) $shipment->carbon_footprint_kg, 2) }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                            <a href="{{ route('logistics.shipments.show', $shipment) }}" class="text-primary hover:underline">View</a>
+                            <a href="{{ route('logistics.shipments.edit', $shipment) }}" class="text-primary hover:underline">Edit</a>
+                            <x-confirm-action
+                                :action="route('logistics.shipments.destroy', $shipment)"
+                                title="Delete this shipment?"
+                                description="Shipment {{ $shipment->reference }} will be permanently deleted."
+                                triggerVariant="ghost"
+                                triggerSize="sm"
+                            >Delete</x-confirm-action>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="7" class="px-6 py-6 text-center text-sm text-muted-foreground">No shipments found.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </x-slot:content>
+</april:card>
 
 <div class="mt-4">{{ $shipments->links() }}</div>
 @endsection

@@ -24,28 +24,30 @@
     </april:alert>
 @endif
 
-<div class="mb-6 flex items-center justify-between">
+<div class="mb-6 flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-2xl font-bold">Products</h1>
     @can('create', App\Models\Food::class)
-        <div class="flex items-center gap-3">
+        {{-- One row, one baseline. The file input, the import button and the add
+             button are all h-10 (the button's default size, so it was left off),
+             and the hint sits inline rather than stacked under the input, which
+             is what used to push the import button below the others. --}}
+        <div class="flex flex-wrap items-center gap-3">
             {{-- The file input stays visible rather than hidden or sr-only:
                  a hidden input is out of the tab order, and sr-only competes
                  with the component's own w-full for the cascade. An explicit
                  submit also means a bulk import is never triggered by merely
                  picking a file. --}}
             <form action="{{ route('foods.import') }}" method="POST" enctype="multipart/form-data"
-                  class="flex items-end gap-2">
+                  class="flex flex-wrap items-center gap-2">
                 @csrf
-                <div>
-                    <april:label for="csv_file" class="sr-only">CSV file to import</april:label>
-                    <april:input id="csv_file" name="csv_file" type="file" accept=".csv,.txt"
-                                 class="w-auto" aria-describedby="csv_file-hint" />
-                    <p id="csv_file-hint" class="mt-1 text-xs text-muted-foreground">CSV or TXT, up to 2 MB</p>
-                </div>
-                <april:button type="submit" variant="outline" size="sm">
+                <april:label for="csv_file" class="sr-only">CSV file to import</april:label>
+                <april:input id="csv_file" name="csv_file" type="file" accept=".csv,.txt"
+                             class="w-auto" aria-describedby="csv_file-hint" />
+                <april:button type="submit" variant="outline">
                     <x-lucide-upload class="size-4" />
                     Import CSV
                 </april:button>
+                <span id="csv_file-hint" class="text-xs text-muted-foreground">CSV or TXT, up to 2 MB</span>
             </form>
             <april:button-link href="{{ route('foods.create') }}">
                 <x-lucide-plus class="size-4" />

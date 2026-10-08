@@ -15,7 +15,7 @@
                 A farm is published publicly only after approval.
             </p>
         </div>
-        <april:button-link href="{{ route('back.farms.index') }}" variant="outline">
+        <april:button-link href="{{ route('farms.index') }}" variant="outline">
             Back to list
         </april:button-link>
     </div>
@@ -52,7 +52,7 @@
                                 </td>
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex items-center justify-end gap-2">
-                                        <form method="POST" action="{{ route('back.farms.approve', $farm) }}" class="inline">
+                                        <form method="POST" action="{{ route('farms.approve', $farm) }}" class="inline">
                                             @csrf
                                             @method('PATCH')
                                             <april:button type="submit" size="sm">
@@ -61,21 +61,14 @@
                                             </april:button>
                                         </form>
 
-                                        <x-confirm-action
-                                            :action="route('back.farms.reject', $farm)"
-                                            method="PATCH"
-                                            label="Confirm rejection"
-                                            title="Reject this request?"
-                                            description="The reason will be shared with the producer. The farm will not be published."
-                                            trigger-variant="destructive"
-
-                                        >
-                                            <x-lucide-x class="mr-1 size-3.5" />
-                                            Reject
-                                        </x-confirm-action>
+                                        <x-farm-reject-action
+                                            :action="route('farms.reject', $farm)"
+                                            :farm-name="$farm->name"
+                                            :farm-id="$farm->id"
+                                        />
 
                                         <april:button-link
-                                            href="{{ route('back.farms.show', $farm) }}"
+                                            href="{{ route('farms.show', $farm) }}"
                                             variant="ghost"
                                             size="sm"
                                             aria-label="View details for {{ $farm->name }}"

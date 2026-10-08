@@ -27,7 +27,8 @@
 
     <div class="bg-card rounded-lg shadow p-6">
         <h2 class="font-semibold mb-3">Same load, other transport modes</h2>
-        <table class="w-full text-sm">
+        <table class="w-full text-left text-sm">
+            <caption class="sr-only">Carbon footprint of the same load by transport mode</caption>
             <tbody class="divide-y divide-border">
                 @foreach($comparison as $row)
                 <tr class="{{ $row['mode'] === $shipment->transport_mode ? 'font-semibold' : '' }}">

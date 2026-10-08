@@ -239,6 +239,6 @@ class DatabaseSeederTest extends TestCase
         $this->assertFalse($farm->canBeEdited(), 'A rejected farm must not be editable.');
 
         // And it stays out of the public listing.
-        $this->get(route('front.agricultural-regions.show', $farm->region))->assertDontSee($farm->address);
+        $this->get(route('agricultural-regions.show', $farm->region))->assertDontSee($farm->address);
     }
 }

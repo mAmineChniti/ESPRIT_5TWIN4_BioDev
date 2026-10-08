@@ -37,6 +37,6 @@
 </div>
 
 <div class="mt-6 flex gap-3">
-    <button type="submit" class="rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-primary/90">{{ $submitLabel }}</button>
-    <a href="{{ route('processor.journeys.steps.index', $journey) }}" class="rounded-md border border-input px-4 py-2 font-medium hover:bg-muted">Cancel</a>
+    <april:button type="submit">{{ $submitLabel }}</april:button>
+    <april:button-link href="{{ route('processor.journeys.steps.index', $journey) }}" variant="outline">Cancel</april:button-link>
 </div>

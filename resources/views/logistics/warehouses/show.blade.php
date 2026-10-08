@@ -18,32 +18,39 @@
 </div>
 
 <h2 class="text-lg font-semibold mb-3">Shipments from this warehouse ({{ $shipments->total() }})</h2>
-<div class="bg-card rounded-lg shadow overflow-hidden">
-    <table class="min-w-full divide-y divide-border">
-        <thead class="bg-muted">
-            <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Reference</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Destination</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Mode</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Status</th>
-                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase">CO₂ (kg)</th>
-            </tr>
-        </thead>
-        <tbody class="divide-y divide-border">
-            @forelse($shipments as $shipment)
-            <tr>
-                <td class="px-6 py-3 text-sm"><a href="{{ route('logistics.shipments.show', $shipment) }}" class="text-primary hover:underline">{{ $shipment->reference }}</a></td>
-                <td class="px-6 py-3 text-sm text-muted-foreground">{{ $shipment->destination }}</td>
-                <td class="px-6 py-3 text-sm text-muted-foreground">{{ $shipment->transport_mode->label() }}</td>
-                <td class="px-6 py-3 text-sm text-muted-foreground">{{ $shipment->status->label() }}</td>
-                <td class="px-6 py-3 text-sm text-right">{{ number_format((float) $shipment->carbon_footprint_kg, 2) }}</td>
-            </tr>
-            @empty
-            <tr><td colspan="5" class="px-6 py-4 text-sm text-muted-foreground text-center">No shipments yet.</td></tr>
-            @endforelse
-        </tbody>
-    </table>
-</div>
+<april:card class="overflow-hidden">
+    <x-slot:content>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <caption class="sr-only">Shipments from this warehouse</caption>
+                <thead class="border-b border-border bg-muted/50 text-xs font-semibold uppercase text-muted-foreground">
+                    <tr>
+                        <th scope="col" class="px-6 py-3">Reference</th>
+                        <th scope="col" class="px-6 py-3">Destination</th>
+                        <th scope="col" class="px-6 py-3">Mode</th>
+                        <th scope="col" class="px-6 py-3">Status</th>
+                        <th scope="col" class="px-6 py-3 text-right">CO₂ (kg)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border">
+                    @forelse($shipments as $shipment)
+                    <tr>
+                        <td class="px-6 py-4 text-sm"><a href="{{ route('logistics.shipments.show', $shipment) }}" class="text-primary hover:underline">{{ $shipment->reference }}</a></td>
+                        <td class="px-6 py-4 text-sm text-muted-foreground">{{ $shipment->destination }}</td>
+                        <td class="px-6 py-4 text-sm text-muted-foreground">{{ $shipment->transport_mode->label() }}</td>
+                        <td class="px-6 py-4 text-sm text-muted-foreground">{{ $shipment->status->label() }}</td>
+                        <td class="px-6 py-4 text-right text-sm tabular-nums">{{ number_format((float) $shipment->carbon_footprint_kg, 2) }}</td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="5" class="px-6 py-6 text-center text-sm text-muted-foreground">No shipments yet.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </x-slot:content>
+</april:card>
 
 <div class="mt-4">{{ $shipments->links() }}</div>
 @endsection

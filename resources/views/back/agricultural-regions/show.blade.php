@@ -16,12 +16,12 @@
             </div>
             <div class="flex gap-2">
                 @if($isAdmin)
-                    <april:button-link href="{{ route('back.agricultural-regions.edit', $region) }}" variant="outline">
+                    <april:button-link href="{{ route('regions.edit', $region) }}" variant="outline">
                         <x-lucide-pencil class="mr-2 size-4" />
                         Edit
                     </april:button-link>
                 @endif
-                <april:button-link href="{{ route('back.agricultural-regions.index') }}" variant="ghost">
+                <april:button-link href="{{ route('regions.index') }}" variant="ghost">
                     Back
                 </april:button-link>
             </div>
@@ -63,7 +63,7 @@
                  the viewer is an admin, so a producer never sees another's. --}}
             <x-slot:content>
                 <div class="mb-4">
-                    <april:button-link href="{{ route('back.farms.create') }}?region_id={{ $region->id }}" size="sm">
+                    <april:button-link href="{{ route('farms.create') }}?region_id={{ $region->id }}" size="sm">
                         <x-lucide-plus class="mr-2 size-4" />
                         Add a farm
                     </april:button-link>
@@ -92,7 +92,7 @@
                                     </td>
                                     <td class="px-4 py-3 text-right">
                                         <april:button-link
-                                            href="{{ route('back.farms.show', $farm) }}"
+                                            href="{{ route('farms.show', $farm) }}"
                                             variant="ghost"
                                             size="sm"
                                             aria-label="View {{ $farm->name }}"

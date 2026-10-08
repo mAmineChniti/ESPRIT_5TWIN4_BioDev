@@ -26,7 +26,7 @@
                 <div class="flex items-center justify-between">
                     <p class="text-sm font-medium text-muted-foreground">{{ $stat['label'] }}</p>
                     <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                        <x-dynamic-component :component="'lucide-'.$stat['icon']" class="size-4.5" />
+                        <x-dynamic-component :component="'lucide-'.$stat['icon']" class="size-4" />
                     </span>
                 </div>
                 <p class="mt-2 text-3xl font-extrabold tabular-nums">{{ $stat['value'] }}</p>

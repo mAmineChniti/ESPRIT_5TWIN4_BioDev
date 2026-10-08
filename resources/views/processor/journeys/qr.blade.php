@@ -15,6 +15,8 @@
 </div>
 
 <div class="max-w-2xl rounded-lg bg-card p-6 shadow">
+    {{-- A QR code needs a light quiet zone to stay scannable, so this panel
+         deliberately does not follow the theme tokens. --}}
     <div class="flex justify-center rounded-md bg-white p-6">
         {!! $qrSvg !!}
     </div>

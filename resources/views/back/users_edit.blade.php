@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="mb-6 flex items-center gap-4">
-    <april:button-link href="{{ route('admin.users') }}" variant="link" size="sm" class="text-muted-foreground">
+    <april:button-link href="{{ route('admin.users.index') }}" variant="link" size="sm" class="text-muted-foreground">
         <x-lucide-arrow-left class="size-4" />
         Back to users
     </april:button-link>
@@ -54,7 +54,7 @@
             </div>
 
             <div class="flex justify-end gap-3 border-t border-border pt-4">
-                <april:button-link href="{{ route('admin.users') }}" variant="outline">Cancel</april:button-link>
+                <april:button-link href="{{ route('admin.users.index') }}" variant="outline">Cancel</april:button-link>
                 <april:button type="submit">Save Changes</april:button>
             </div>
         </form>

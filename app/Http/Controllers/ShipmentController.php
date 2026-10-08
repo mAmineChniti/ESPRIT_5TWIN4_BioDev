@@ -17,6 +17,8 @@ class ShipmentController extends Controller
 {
     public function index(Request $request): View
     {
+        $user = $request->user();
+
         $statusInput = $request->query('status');
         $modeInput = $request->query('mode');
         $status = is_string($statusInput) && ShipmentStatus::tryFrom($statusInput) !== null
@@ -26,7 +28,13 @@ class ShipmentController extends Controller
             ? $modeInput
             : null;
 
+        // A distributor only ever sees their own shipments, because
+        // ensureOwnership() refuses every other record. Scoping the query is
+        // what keeps the listing honest: a row that 403s when clicked is a
+        // broken link, and the footprint totals below must not count another
+        // distributor's freight as this distributor's.
         $filteredShipments = Shipment::query()
+            ->when(! $user->isAdmin(), fn ($query) => $query->where('user_id', $user->id))
             ->when($status, fn ($query) => $query->where('status', $status))
             ->when($mode, fn ($query) => $query->where('transport_mode', $mode));
 
@@ -51,6 +59,7 @@ class ShipmentController extends Controller
             'statuses' => ShipmentStatus::cases(),
             'modes' => TransportMode::cases(),
             'filters' => ['status' => $status, 'mode' => $mode],
+            'isAdmin' => $user->isAdmin(),
         ]);
     }
 
@@ -70,8 +79,10 @@ class ShipmentController extends Controller
             ->with('success', 'Shipment added successfully.');
     }
 
-    public function show(Shipment $shipment): View
+    public function show(Request $request, Shipment $shipment): View
     {
+        $this->ensureOwnership($request, $shipment);
+
         $shipment->load(['warehouse', 'food', 'creator']);
 
         $comparison = CarbonFootprintCalculator::compare(
@@ -82,25 +93,50 @@ class ShipmentController extends Controller
         return view('logistics.shipments.show', compact('shipment', 'comparison'));
     }
 
-    public function edit(Shipment $shipment): View
+    public function edit(Request $request, Shipment $shipment): View
     {
+        $this->ensureOwnership($request, $shipment);
+
         return view('logistics.shipments.edit', $this->formData() + compact('shipment'));
     }
 
     public function update(ShipmentRequest $request, Shipment $shipment): RedirectResponse
     {
+        $this->ensureOwnership($request, $shipment);
+
         $shipment->update($request->shipmentPayload());
 
         return redirect()->route('logistics.shipments.index')
             ->with('success', 'Shipment updated successfully.');
     }
 
-    public function destroy(Shipment $shipment): RedirectResponse
+    public function destroy(Request $request, Shipment $shipment): RedirectResponse
     {
+        $this->ensureOwnership($request, $shipment);
+
         $shipment->delete();
 
         return redirect()->route('logistics.shipments.index')
             ->with('success', 'Shipment deleted.');
+    }
+
+    /**
+     * A shipment is recorded against the distributor who created it.
+     *
+     * The route group admits both `distributor` and `admin`, so middleware
+     * alone lets any distributor reach any shipment. An admin supervises the
+     * whole area; a distributor only sees and edits their own records, which is
+     * why index() scopes its query the same way.
+     */
+    private function ensureOwnership(Request $request, Shipment $shipment): void
+    {
+        $isAdmin = $request->user()?->isAdmin() ?? false;
+
+        abort_unless(
+            $isAdmin || $shipment->user_id === $request->user()?->id,
+            403,
+            'You can only manage your own shipments.',
+        );
     }
 
     /**

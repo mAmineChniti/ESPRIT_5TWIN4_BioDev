@@ -24,7 +24,7 @@
 
         {{-- Creating a region is admin-only; the route enforces it too. --}}
         @if($isAdmin)
-            <april:button-link href="{{ route('back.agricultural-regions.create') }}">
+            <april:button-link href="{{ route('regions.create') }}">
                 <x-lucide-plus class="mr-2 size-4" />
                 Add a region
             </april:button-link>
@@ -61,7 +61,7 @@
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex items-center justify-end gap-2">
                                         <april:button-link
-                                            href="{{ route('back.agricultural-regions.show', $region) }}"
+                                            href="{{ route('regions.show', $region) }}"
                                             variant="ghost"
                                             size="sm"
                                             aria-label="View {{ $region->name }}"
@@ -71,7 +71,7 @@
 
                                         @if($isAdmin)
                                             <april:button-link
-                                                href="{{ route('back.agricultural-regions.edit', $region) }}"
+                                                href="{{ route('regions.edit', $region) }}"
                                                 variant="ghost"
                                                 size="sm"
                                                 aria-label="Edit {{ $region->name }}"
@@ -80,7 +80,7 @@
                                             </april:button-link>
 
                                             <x-confirm-action
-                                                :action="route('back.agricultural-regions.destroy', $region)"
+                                                :action="route('regions.destroy', $region)"
                                                 label="Delete region"
                                                 title="Delete this region?"
                                                 description="{{ $region->name }} and its {{ $region->farms_count }} farm(s) will be permanently deleted. This action cannot be undone."

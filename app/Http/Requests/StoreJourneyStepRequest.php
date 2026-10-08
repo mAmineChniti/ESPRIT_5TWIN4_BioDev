@@ -23,7 +23,7 @@ class StoreJourneyStepRequest extends FormRequest
                 Rule::unique('journey_steps', 'step_order')
                     ->where(fn ($query) => $query->where('journey_id', $this->route('journey')->id)),
             ],
-            'type' => ['required', Rule::in(['origine', 'transport', 'stockage', 'vente'])],
+            'type' => ['required', Rule::in(['origin', 'transport', 'storage', 'sale'])],
             'location' => ['required', 'string', 'max:120'],
             'step_date' => ['required', 'date'],
             'description' => ['nullable', 'string', 'max:255'],
@@ -38,7 +38,7 @@ class StoreJourneyStepRequest extends FormRequest
             'step_order.min' => 'The step order must be at least 1.',
             'step_order.max' => 'The step order cannot exceed 65535.',
             'step_order.unique' => 'This step order is already used in this journey.',
-            'type.required' => 'Le type est obligatoire.',
+            'type.required' => 'The step type is required.',
             'type.in' => 'The selected type is invalid.',
             'location.required' => 'The location is required.',
             'location.string' => 'The location must be a string.',

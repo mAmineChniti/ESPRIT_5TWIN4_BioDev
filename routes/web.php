@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AgriculturalRegionController;
+use App\Http\Controllers\AnalysisDisputeController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\ConsumerDashboardController;
 use App\Http\Controllers\ConsumerIntelligenceController;
@@ -19,122 +20,191 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\StageTransitionController;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\ProAccess;
-use App\Models\Meal;
-use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
+/*
+|-------------------------------------------------------------------------------
+| Route naming
+|-------------------------------------------------------------------------------
+|
+| One namespace per module, no audience prefix and no role prefix on a shared
+| resource. The audience is expressed by the middleware group, not the name, so
+| `farms.index` is the same route for an admin and a producer and
+| `agricultural-regions.index` is the public read.
+|
+| The exceptions are the two dashboards that own a role: `admin.dashboard` and
+| `processor.dashboard` and friends are named after the role that may reach
+| them, because the URL is role-specific too. A resource is never named after
+| a role when more than one role may read it — that is why the back office
+| regions live at /regions as `regions.*` rather than under /admin.
+|
+*/
+
+// ---------- Public storefront ----------
 Route::get('/', function () {
     return view('front.home', CatalogController::catalogData());
-})->name('front.home');
+})->name('home');
 
-// ---------- Public consumer space ----------
 Route::get('/products', [ConsumerSearchController::class, 'index'])->name('products.index');
 Route::get('/products/scan', [ConsumerSearchController::class, 'scan'])->name('products.scan');
 Route::get('/products/{food}', [ConsumerSearchController::class, 'show'])->name('products.show');
 Route::get('/greenwashing', function () {
     return view('front.greenwashing');
 })->name('greenwashing');
-Route::get('/agricultural-regions', [FrontRegionController::class, 'index'])->name('front.agricultural-regions.index');
-Route::get('/agricultural-regions/{agriculturalRegion}', [FrontRegionController::class, 'show'])->name('front.agricultural-regions.show');
+Route::get('/agricultural-regions', [FrontRegionController::class, 'index'])->name('agricultural-regions.index');
+Route::get('/agricultural-regions/{agriculturalRegion}', [FrontRegionController::class, 'show'])->name('agricultural-regions.show');
 
 // ---------- AI greenwashing detection & product assistant (public reads) ----------
+// These are the JSON endpoints behind the product page, so they stay open.
 Route::get('/products/{food}/analysis', [ConsumerIntelligenceController::class, 'analyze'])
     ->name('products.analysis');
 Route::get('/products/{food}/alternatives', [ConsumerIntelligenceController::class, 'alternatives'])
     ->name('products.alternatives');
+// The assistant calls a paid provider, and this route is deliberately open to
+// guests because the product page shows it before sign-in. Throttling bounds
+// the cost without closing the feature.
 Route::post('/products/{food}/ask', [ConsumerIntelligenceController::class, 'ask'])
+    ->middleware('throttle:20,1')
     ->name('products.ask');
 Route::get('/products/{food}/ask/suggestions', [ConsumerIntelligenceController::class, 'suggestions'])
     ->name('products.ask.suggestions');
 
 Route::middleware(['auth'])->group(function () {
-    // Reviewing and reporting are consumer actions. Deciding a report is an
-    // admin action.
+    // Challenging our own analysis is open to every signed in role, not just
+    // consumers: a producer disputing a verdict on their own product is the
+    // clearest case, and the report is about NutriTrace, not the product.
+    Route::post('/products/{food}/analysis-disputes', [AnalysisDisputeController::class, 'store'])
+        ->name('products.analysis-disputes.store');
+
+    // Reviewing and reporting are consumer actions.
+    // Deciding a report is an admin action.
     Route::middleware(EnsureUserHasRole::class.':consumer')->group(function () {
-        Route::post('/products/{food}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
-        Route::delete('/products/{food}/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
-        Route::post('/products/{food}/reports', [GreenwashingReportController::class, 'store'])->name('reports.store');
+        Route::post('/products/{food}/reviews', [ReviewController::class, 'store'])->name('products.reviews.store');
+        Route::delete('/products/{food}/reviews/{review}', [ReviewController::class, 'destroy'])->name('products.reviews.destroy');
+        Route::post('/products/{food}/reports', [GreenwashingReportController::class, 'store'])->name('products.reports.store');
+
+        // The consumer's own space: AI detection, the assistant, recommendations
+        // and one-click escalation of anything the detector flags.
+        Route::get('/consumer/space', [ConsumerIntelligenceController::class, 'index'])->name('consumer.space');
+        Route::get('/consumer/recommendations', [ConsumerIntelligenceController::class, 'recommendations'])
+            ->name('consumer.recommendations');
+        Route::post('/products/{food}/report-finding', [ConsumerIntelligenceController::class, 'reportFinding'])
+            ->name('products.reports.escalate');
+
+        Route::get('/meals', [MealController::class, 'index'])->name('meals.index');
+        Route::get('/meals/create', [MealController::class, 'create'])->name('meals.create');
+        Route::post('/meals', [MealController::class, 'store'])->name('meals.store');
+        Route::get('/meals/{meal}', [MealController::class, 'show'])->name('meals.show');
+        Route::delete('/meals/{meal}', [MealController::class, 'destroy'])->name('meals.destroy');
+
+        Route::get('/consumer/dashboard', ConsumerDashboardController::class)->name('consumer.dashboard');
     });
 
-    Route::patch('/reports/{report}', [GreenwashingReportController::class, 'update'])
-        ->middleware(EnsureUserHasRole::class.':admin')
-        ->name('reports.update');
-
-    // The consumer's own space: AI detection, the assistant, recommendations
-    // and one-click escalation of anything the detector flags.
-    Route::get('/consumer/space', [ConsumerIntelligenceController::class, 'index'])->name('consumer.space');
-    Route::get('/consumer/recommendations', [ConsumerIntelligenceController::class, 'recommendations'])
-        ->name('consumer.recommendations');
-    Route::post('/products/{food}/report-finding', [ConsumerIntelligenceController::class, 'reportFinding'])
-        ->name('products.reportFinding');
-
+    // The dispatch target every auth flow lands on: the role, not the request,
+    // picks the dashboard.
     Route::get('/dashboard', function () {
-        // Every dashboard is role-restricted, so the role picks the destination
-        // rather than the request picking a fixed one.
         return redirect()->route(Auth::user()->dashboardRouteName());
     })->name('dashboard');
 
-    // Each role dashboard is restricted to that role and shows its own data.
-    Route::get('/admin', CatalogController::class)
-        ->middleware(EnsureUserHasRole::class.':admin')
-        ->name('admin.dashboard');
+    // ---------- Administration ----------
+    Route::middleware(EnsureUserHasRole::class.':admin')->group(function () {
+        Route::get('/admin/dashboard', CatalogController::class)->name('admin.dashboard');
 
-    Route::get('/admin/reports', [GreenwashingReportController::class, 'index'])
-        ->middleware(EnsureUserHasRole::class.':admin')
-        ->name('admin.reports');
+        Route::get('/admin/reports', [GreenwashingReportController::class, 'index'])->name('admin.reports.index');
+        Route::patch('/admin/reports/{report}', [GreenwashingReportController::class, 'update'])->name('admin.reports.update');
 
-    Route::resource('admin/users', AdminUserController::class)
-        ->only(['index', 'edit', 'update', 'destroy'])
-        ->names([
-            'index' => 'admin.users',
-            'edit' => 'admin.users.edit',
-            'update' => 'admin.users.update',
-            'destroy' => 'admin.users.destroy',
-        ])
-        ->middleware(EnsureUserHasRole::class.':admin');
+        Route::get('/admin/analysis-disputes', [AnalysisDisputeController::class, 'index'])
+            ->name('admin.analysis-disputes.index');
+        Route::patch('/admin/analysis-disputes/{analysisDispute}', [AnalysisDisputeController::class, 'update'])
+            ->name('admin.analysis-disputes.update');
 
-    foreach ([
-        'producer' => 'producer.dashboard',
-        'processor' => 'processor.dashboard',
-        'distributor' => 'distributor.dashboard',
-    ] as $role => $name) {
+        Route::resource('admin/users', AdminUserController::class)
+            ->only(['index', 'edit', 'update', 'destroy'])
+            ->names([
+                'index' => 'admin.users.index',
+                'edit' => 'admin.users.edit',
+                'update' => 'admin.users.update',
+                'destroy' => 'admin.users.destroy',
+            ]);
+
+        // Farms & agricultural regions: an admin supervises every farm in the
+        // country, a producer only the ones they registered.
+        Route::get('/farms/requests', [FarmController::class, 'requests'])->name('farms.requests');
+        Route::patch('/farms/{farm}/approve', [FarmController::class, 'approve'])->name('farms.approve');
+        Route::patch('/farms/{farm}/reject', [FarmController::class, 'reject'])->name('farms.reject');
+
+        Route::resource('regions', AgriculturalRegionController::class)
+            ->only(['create', 'store', 'edit', 'update', 'destroy'])
+            ->parameters(['regions' => 'region'])
+            ->names([
+                'create' => 'regions.create',
+                'store' => 'regions.store',
+                'edit' => 'regions.edit',
+                'update' => 'regions.update',
+                'destroy' => 'regions.destroy',
+            ]);
+    });
+
+    // Both admins and producers browse farms and regions, so these are named
+    // for the module rather than the role.
+    Route::middleware(EnsureUserHasRole::class.':admin,producer')->group(function () {
+        Route::resource('regions', AgriculturalRegionController::class)
+            ->only(['index', 'show'])
+            ->parameters(['regions' => 'region'])
+            ->names([
+                'index' => 'regions.index',
+                'show' => 'regions.show',
+            ]);
+
+        Route::resource('farms', FarmController::class)->names([
+            'index' => 'farms.index',
+            'create' => 'farms.create',
+            'store' => 'farms.store',
+            'show' => 'farms.show',
+            'edit' => 'farms.edit',
+            'update' => 'farms.update',
+            'destroy' => 'farms.destroy',
+        ]);
+    });
+
+    // ---------- Supply chain role dashboards ----------
+    // Each role's dashboard is gated on that role, so the route file stays the
+    // single source of truth for who may reach which controller.
+    foreach (['producer', 'processor', 'distributor'] as $role) {
         Route::get("/{$role}/dashboard", CatalogController::class)
             ->middleware(EnsureUserHasRole::class.':'.$role)
-            ->name($name);
-
-        if ($role === 'processor') {
-            Route::get('processor/journeys/{journey}/qr', [JourneyController::class, 'qrCode'])
-                ->name('processor.journeys.qr')
-                ->middleware(EnsureUserHasRole::class.':processor');
-
-            Route::resource('processor/journeys', JourneyController::class)
-                ->only(['index', 'show'])
-                ->parameters(['journeys' => 'journey'])
-                ->names([
-                    'index' => 'processor.journeys.index',
-                    'show' => 'processor.journeys.show',
-                ])
-                ->middleware(EnsureUserHasRole::class.':processor');
-
-            Route::resource('processor/journeys.steps', JourneyStepController::class)
-                ->parameters(['journeys' => 'journey', 'steps' => 'step'])
-                ->names([
-                    'index' => 'processor.journeys.steps.index',
-                    'create' => 'processor.journeys.steps.create',
-                    'store' => 'processor.journeys.steps.store',
-                    'show' => 'processor.journeys.steps.show',
-                    'edit' => 'processor.journeys.steps.edit',
-                    'update' => 'processor.journeys.steps.update',
-                    'destroy' => 'processor.journeys.steps.destroy',
-                ])
-                ->middleware(EnsureUserHasRole::class.':processor');
-        }
+            ->name("{$role}.dashboard");
     }
 
-    Route::get('/consumer/dashboard', ConsumerDashboardController::class)
-        ->middleware(EnsureUserHasRole::class.':consumer')
-        ->name('consumer.dashboard');
+    // ---------- Traceability ----------
+    // The traceability chain is the processor's own work: the journeys and the
+    // steps that make each one up. Declared in one role-gated group so the two
+    // halves cannot drift apart.
+    Route::middleware(EnsureUserHasRole::class.':processor')->group(function (): void {
+        Route::get('processor/journeys/{journey}/qr', [JourneyController::class, 'qrCode'])
+            ->name('processor.journeys.qr');
+
+        Route::resource('processor/journeys', JourneyController::class)
+            ->only(['index', 'show'])
+            ->parameters(['journeys' => 'journey'])
+            ->names([
+                'index' => 'processor.journeys.index',
+                'show' => 'processor.journeys.show',
+            ]);
+
+        Route::resource('processor/journeys.steps', JourneyStepController::class)
+            ->parameters(['journeys' => 'journey', 'steps' => 'step'])
+            ->names([
+                'index' => 'processor.journeys.steps.index',
+                'create' => 'processor.journeys.steps.create',
+                'store' => 'processor.journeys.steps.store',
+                'show' => 'processor.journeys.steps.show',
+                'edit' => 'processor.journeys.steps.edit',
+                'update' => 'processor.journeys.steps.update',
+                'destroy' => 'processor.journeys.steps.destroy',
+            ]);
+    });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -157,59 +227,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/foods', [FoodController::class, 'index'])->name('foods.index');
     Route::get('/foods/{food}', [FoodController::class, 'show'])->name('foods.show');
     Route::get('/foods/{food}/trace', [StageTransitionController::class, 'index'])->name('foods.transitions.index');
-
-    // Meal logging belongs to consumers.
-    Route::middleware(EnsureUserHasRole::class.':consumer')->group(function () {
-        Route::get('/meals', [MealController::class, 'index'])->name('meals.index');
-        Route::get('/meals/create', [MealController::class, 'create'])->name('meals.create');
-        Route::post('/meals', [MealController::class, 'store'])->name('meals.store');
-        Route::get('/meals/{meal}', [MealController::class, 'show'])->name('meals.show');
-        Route::delete('/meals/{meal}', [MealController::class, 'destroy'])->name('meals.destroy');
-    });
-
-    // ---------- Farms & agricultural regions ----------
-    // Declared before the resources below because `farms/{farm}` and
-    // `regions/{region}` would otherwise swallow the literal `farms/requests`
-    // and `regions/create` paths, turning a 403 into a 404. Route::resource
-    // has the same trap for its own `create` route, which it orders for us.
-    Route::middleware(EnsureUserHasRole::class.':admin')->group(function () {
-        Route::get('/farms/requests', [FarmController::class, 'requests'])->name('back.farms.requests');
-        Route::patch('/farms/{farm}/approve', [FarmController::class, 'approve'])->name('back.farms.approve');
-        Route::patch('/farms/{farm}/reject', [FarmController::class, 'reject'])->name('back.farms.reject');
-
-        Route::resource('admin/agricultural-regions', AgriculturalRegionController::class)
-            ->only(['create', 'store', 'edit', 'update', 'destroy'])
-            ->parameters(['agricultural-regions' => 'region'])
-            ->names([
-                'create' => 'back.agricultural-regions.create',
-                'store' => 'back.agricultural-regions.store',
-                'edit' => 'back.agricultural-regions.edit',
-                'update' => 'back.agricultural-regions.update',
-                'destroy' => 'back.agricultural-regions.destroy',
-            ]);
-    });
-
-    // Both admins and producers browse farms and regions, but only an admin
-    // approves, rejects, or changes the shape of the region list.
-    Route::middleware(EnsureUserHasRole::class.':admin,producer')->group(function () {
-        Route::resource('admin/agricultural-regions', AgriculturalRegionController::class)
-            ->only(['index', 'show'])
-            ->parameters(['agricultural-regions' => 'region'])
-            ->names([
-                'index' => 'back.agricultural-regions.index',
-                'show' => 'back.agricultural-regions.show',
-            ]);
-
-        Route::resource('farms', FarmController::class)->names([
-            'index' => 'back.farms.index',
-            'create' => 'back.farms.create',
-            'store' => 'back.farms.store',
-            'show' => 'back.farms.show',
-            'edit' => 'back.farms.edit',
-            'update' => 'back.farms.update',
-            'destroy' => 'back.farms.destroy',
-        ]);
-    });
 });
 
 Route::get('/journeys/{code}', [PublicJourneyController::class, 'show'])

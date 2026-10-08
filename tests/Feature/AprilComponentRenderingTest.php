@@ -86,12 +86,12 @@ class AprilComponentRenderingTest extends TestCase
 
         $pages = [
             route('foods.index') => 'Products',
-            route('admin.reports') => 'Reported by',
+            route('admin.reports.index') => 'Reported by',
             route('meals.index') => 'Meal',
         ];
 
         foreach ($pages as $url => $headerText) {
-            $html = $this->actingAs($url === route('admin.reports') ? $admin : ($url === route('meals.index') ? $consumer : $admin))
+            $html = $this->actingAs($url === route('admin.reports.index') ? $admin : ($url === route('meals.index') ? $consumer : $admin))
                 ->get($url)->assertOk()->getContent();
 
             $this->assertStringContainsString('data-slot="data-table"', $html, "no data-table on {$url}");
@@ -108,7 +108,7 @@ class AprilComponentRenderingTest extends TestCase
     {
         $admin = $this->user('admin');
 
-        $html = $this->actingAs($admin)->get(route('admin.reports'))->assertOk()->getContent();
+        $html = $this->actingAs($admin)->get(route('admin.reports.index'))->assertOk()->getContent();
 
         $this->assertStringContainsString('No reports found', $html);
     }
@@ -121,7 +121,7 @@ class AprilComponentRenderingTest extends TestCase
         $food = $this->food();
         GreenwashingReport::factory()->count(2)->create(['food_id' => $food->id]);
 
-        $html = $this->actingAs($admin)->get(route('admin.reports'))->assertOk()->getContent();
+        $html = $this->actingAs($admin)->get(route('admin.reports.index'))->assertOk()->getContent();
 
         // Two pending reports, each with its own dialog for both decisions.
         $this->assertSame(4, substr_count($html, 'data-slot="alert-dialog-content"'));
@@ -136,7 +136,7 @@ class AprilComponentRenderingTest extends TestCase
         $admin = $this->user('admin');
         GreenwashingReport::factory()->upheld()->create();
 
-        $html = $this->actingAs($admin)->get(route('admin.reports'))->assertOk()->getContent();
+        $html = $this->actingAs($admin)->get(route('admin.reports.index'))->assertOk()->getContent();
 
         $this->assertStringNotContainsString('value="upheld"', $html);
         $this->assertStringContainsString('Reviewed', $html);
@@ -147,7 +147,7 @@ class AprilComponentRenderingTest extends TestCase
         $admin = $this->user('admin');
         GreenwashingReport::factory()->create();
 
-        $html = $this->actingAs($admin)->get(route('admin.reports'))->assertOk()->getContent();
+        $html = $this->actingAs($admin)->get(route('admin.reports.index'))->assertOk()->getContent();
 
         // x-bind="title"/"description" feed aria-labelledby/aria-describedby.
         $this->assertStringContainsString('x-bind="title"', $html);
@@ -346,7 +346,7 @@ class AprilComponentRenderingTest extends TestCase
     {
         $admin = $this->user('admin');
 
-        $html = $this->actingAs($admin)->get(route('admin.users'))->assertOk()->getContent();
+        $html = $this->actingAs($admin)->get(route('admin.users.index'))->assertOk()->getContent();
 
         $this->assertStringContainsString('data-slot="tooltip"', $html);
         $this->assertStringContainsString('You cannot delete your own account', $html);

@@ -28,13 +28,13 @@
 
         <div class="flex items-center gap-3">
             @if($isAdmin && $pendingCount > 0)
-                <april:button-link href="{{ route('back.farms.requests') }}">
+                <april:button-link href="{{ route('farms.requests') }}">
                     <x-lucide-clipboard-check class="mr-2 size-4" />
                     Pending requests ({{ $pendingCount }})
                 </april:button-link>
             @endif
 
-            <april:button-link href="{{ route('back.farms.create') }}">
+            <april:button-link href="{{ route('farms.create') }}">
                 <x-lucide-plus class="mr-2 size-4" />
                 Add a farm
             </april:button-link>
@@ -91,7 +91,7 @@
         <span class="mr-2 shrink-0 text-xs font-semibold uppercase text-muted-foreground">Filter by status:</span>
 
         <april:button-link
-            href="{{ route('back.farms.index') }}"
+            href="{{ route('farms.index') }}"
             size="sm"
             variant="{{ $statusFilter === null ? 'default' : 'ghost' }}"
         >
@@ -100,7 +100,7 @@
 
         @foreach(FarmStatus::cases() as $status)
             <april:button-link
-                href="{{ route('back.farms.index', ['status' => $status->value]) }}"
+                href="{{ route('farms.index', ['status' => $status->value]) }}"
                 size="sm"
                 variant="{{ $statusFilter === $status ? 'default' : 'ghost' }}"
                 @class([
@@ -137,7 +137,7 @@
                                 </td>
                                 <td class="px-6 py-4">
                                     @if($farm->region)
-                                        <a href="{{ route('back.agricultural-regions.show', $farm->region) }}" class="font-medium text-primary hover:underline">
+                                        <a href="{{ route('regions.show', $farm->region) }}" class="font-medium text-primary hover:underline">
                                             {{ $farm->region->name }}
                                         </a>
                                     @else
@@ -157,7 +157,7 @@
                                         {{-- Approve and reject are admin-only and
                                              only offered on an open request. --}}
                                         @if($isAdmin && $farm->isPending())
-                                            <form method="POST" action="{{ route('back.farms.approve', $farm) }}" class="inline">
+                                            <form method="POST" action="{{ route('farms.approve', $farm) }}" class="inline">
                                                 @csrf
                                                 @method('PATCH')
                                                 <april:button type="submit" size="sm">
@@ -166,22 +166,15 @@
                                                 </april:button>
                                             </form>
 
-                                            <x-confirm-action
-                                                :action="route('back.farms.reject', $farm)"
-                                                method="PATCH"
-                                                label="Confirm rejection"
-                                                title="Reject this request?"
-                                                description="The reason will be shared with the producer. The farm will not be published."
-                                                trigger-variant="destructive"
-
-                                            >
-                                                <x-lucide-x class="mr-1 size-3.5" />
-                                                Reject
-                                            </x-confirm-action>
+                                            <x-farm-reject-action
+                                                :action="route('farms.reject', $farm)"
+                                                :farm-name="$farm->name"
+                                                :farm-id="$farm->id"
+                                            />
                                         @endif
 
                                         <april:button-link
-                                            href="{{ route('back.farms.show', $farm) }}"
+                                            href="{{ route('farms.show', $farm) }}"
                                             variant="ghost"
                                             size="sm"
                                             aria-label="View details for {{ $farm->name }}"
@@ -191,7 +184,7 @@
 
                                         @if($farm->canBeEdited())
                                             <april:button-link
-                                                href="{{ route('back.farms.edit', $farm) }}"
+                                                href="{{ route('farms.edit', $farm) }}"
                                                 variant="ghost"
                                                 size="sm"
                                                 aria-label="Edit {{ $farm->name }}"
@@ -201,7 +194,7 @@
                                         @endif
 
                                         <x-confirm-action
-                                            :action="route('back.farms.destroy', $farm)"
+                                            :action="route('farms.destroy', $farm)"
                                             label="Delete farm"
                                             title="Delete this farm?"
                                             description="{{ $farm->name }} will be permanently deleted. This action cannot be undone."
@@ -221,7 +214,7 @@
                                             You have not created a farm yet. Use the button below to add your first farm.
                                         </p>
                                         <div class="mt-4">
-                                            <april:button-link href="{{ route('back.farms.create') }}">
+                                            <april:button-link href="{{ route('farms.create') }}">
                                                 <x-lucide-plus class="mr-2 size-4" />
                                                 Add a farm
                                             </april:button-link>

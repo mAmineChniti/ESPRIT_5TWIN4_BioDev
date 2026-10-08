@@ -58,7 +58,7 @@
         <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
             <div class="flex items-start gap-3">
                 <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <x-dynamic-component :component="'lucide-'.$flag['icon']" class="size-4.5" />
+                    <x-dynamic-component :component="'lucide-'.$flag['icon']" class="size-4" />
                 </span>
                 <div>
                     <h2 class="font-semibold">{{ $flag['title'] }}</h2>

@@ -137,8 +137,13 @@ class NavigationAccessTest extends TestCase
 
         $html = $this->actingAs($this->user('consumer'))->get(route('foods.show', $food))->assertOk()->getContent();
 
-        $this->assertStringNotContainsString(route('foods.edit', $food), $html);
-        $this->assertStringNotContainsString(route('foods.destroy', $food), $html);
+        // Match the full attribute: /foods/{food} is a prefix of /foods/{food}/trace,
+        // so a bare URL check would also reject the legitimate trace link.
+        $this->assertStringNotContainsString('href="'.route('foods.edit', $food).'"', $html);
+        $this->assertStringNotContainsString('action="'.route('foods.destroy', $food).'"', $html);
+
+        // Reading the chain is still allowed, and is linked rather than orphaned.
+        $this->assertStringContainsString('href="'.route('foods.transitions.index', $food).'"', $html);
     }
 
     public function test_an_admin_is_offered_the_moderation_actions_but_not_registration(): void
@@ -209,27 +214,89 @@ class NavigationAccessTest extends TestCase
 
     // ---------- Back office navigation ----------
 
+    /**
+     * The catalog header carries three controls that have to sit on one baseline:
+     * the file input (h-10), the import button and the add-product link.
+     *
+     * The button used to opt out of the default size (h-9) and the hint sat
+     * stacked under the input inside an items-end flex, so the import button
+     * rendered lower than its neighbours.
+     */
+    public function test_the_catalog_header_controls_share_one_baseline(): void
+    {
+        $html = $this->actingAs($this->user('producer'))->get(route('foods.index'))->assertOk()->getContent();
+
+        // One wrapping row that centres its children on a single baseline.
+        $this->assertStringContainsString('flex flex-wrap items-center justify-between gap-3', $html);
+
+        // All three controls are in that row.
+        $this->assertStringContainsString('name="csv_file"', $html);
+        $this->assertStringContainsString('Import CSV', $html);
+        $this->assertStringContainsString('Add a product', $html);
+
+        // The hint describes the input without displacing the row: inline beside
+        // the button rather than stacked underneath the input.
+        $this->assertStringContainsString('aria-describedby="csv_file-hint"', $html);
+        $this->assertStringContainsString('CSV or TXT, up to 2 MB', $html);
+        $this->assertStringNotContainsString('<p id="csv_file-hint"', $html);
+        $this->assertStringNotContainsString('items-end', $html);
+
+        // Every control keeps the component's default h-10, so none sits lower.
+        // Asserted on the rendered output, because April merges and reorders
+        // attributes: the Blade source text is not what ships.
+        $this->assertStringContainsString('h-10', $this->controlOpeningTag($html, 'Import CSV', 'button'));
+        $this->assertStringNotContainsString('h-9', $this->controlOpeningTag($html, 'Import CSV', 'button'));
+        $this->assertStringContainsString('h-10', $this->controlOpeningTag($html, 'Add a product', 'a'));
+    }
+
+    /**
+     * The opening <$tag> that controls the label $text.
+     *
+     * Used to assert on what a component actually rendered rather than on the
+     * markup it was handed.
+     */
+    private function controlOpeningTag(string $html, string $text, string $tag): string
+    {
+        $labelAt = strpos($html, $text);
+        $this->assertNotFalse($labelAt, "\"{$text}\" is not on the page.");
+
+        $start = strrpos(substr($html, 0, $labelAt), '<'.$tag);
+        $this->assertNotFalse($start, "No <{$tag}> controls \"{$text}\".");
+
+        $end = strpos($html, '>', $start);
+
+        return substr($html, $start, $end - $start + 1);
+    }
+
+    public function test_the_catalog_header_is_not_offered_to_a_consumer(): void
+    {
+        $html = $this->actingAs($this->user('consumer'))->get(route('foods.index'))->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('csv_file', $html);
+        $this->assertStringNotContainsString('Add a product', $html);
+    }
+
     public function test_a_producer_is_not_offered_the_admin_only_region_actions(): void
     {
-        $html = $this->actingAs($this->user('producer'))->get(route('back.agricultural-regions.index'))->assertOk()->getContent();
+        $html = $this->actingAs($this->user('producer'))->get(route('regions.index'))->assertOk()->getContent();
 
         $this->assertStringNotContainsString('Add a region', $html);
-        $this->assertStringNotContainsString(route('back.agricultural-regions.create'), $html);
+        $this->assertStringNotContainsString(route('regions.create'), $html);
     }
 
     public function test_an_admin_is_offered_the_admin_only_region_actions(): void
     {
-        $html = $this->actingAs($this->user('admin'))->get(route('back.agricultural-regions.index'))->assertOk()->getContent();
+        $html = $this->actingAs($this->user('admin'))->get(route('regions.index'))->assertOk()->getContent();
 
         $this->assertStringContainsString('Add a region', $html);
-        $this->assertStringContainsString(route('back.agricultural-regions.create'), $html);
+        $this->assertStringContainsString(route('regions.create'), $html);
     }
 
     public function test_a_producer_is_not_offered_the_pending_request_queue(): void
     {
-        $html = $this->actingAs($this->user('producer'))->get(route('back.farms.index'))->assertOk()->getContent();
+        $html = $this->actingAs($this->user('producer'))->get(route('farms.index'))->assertOk()->getContent();
 
-        $this->assertStringNotContainsString(route('back.farms.requests'), $html);
+        $this->assertStringNotContainsString(route('farms.requests'), $html);
     }
 
     public function test_the_back_office_never_offers_the_consumer_meal_area(): void

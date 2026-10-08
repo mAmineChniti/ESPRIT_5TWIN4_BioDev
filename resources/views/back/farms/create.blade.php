@@ -17,7 +17,7 @@
                     @endif
                 </p>
             </div>
-            <april:button-link href="{{ route('back.farms.index') }}" variant="outline">
+            <april:button-link href="{{ route('farms.index') }}" variant="outline">
                 Back to list
             </april:button-link>
         </div>
@@ -35,13 +35,13 @@
 
         <april:card>
             <x-slot:content>
-                <form method="POST" action="{{ route('back.farms.store') }}" class="space-y-5">
+                <form method="POST" action="{{ route('farms.store') }}" class="space-y-5">
                     @csrf
 
-                    @include('back.farms.partials.form-fields', ['farm' => null, 'regions' => $regions, 'isAdmin' => $isAdmin])
+                    @include('back.farms.partials.form-fields', ['farm' => null, 'regions' => $regions])
 
                     <div class="flex justify-end gap-3 pt-4">
-                        <april:button-link href="{{ route('back.farms.index') }}" variant="ghost">Cancel</april:button-link>
+                        <april:button-link href="{{ route('farms.index') }}" variant="ghost">Cancel</april:button-link>
                         <april:button type="submit">
                             <x-lucide-send class="mr-2 size-4" />
                             {{ $isAdmin ? 'Save Farm' : 'Submit for review' }}

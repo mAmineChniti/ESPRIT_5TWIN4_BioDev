@@ -1,5 +1,7 @@
 @extends('layouts.front')
 
+@section('title', 'Traceable food from farm to plate')
+
 @section('content')
     {{-- Hero --}}
     <section class="relative overflow-hidden rounded-2xl border border-border bg-card">
@@ -179,7 +181,7 @@
                             <a href="{{ route('products.show', $food) }}" class="flex items-center justify-between gap-3 rounded-xl border border-border bg-background px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer">
                                 <div class="flex items-center gap-3">
                                     <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                                        <x-lucide-apple class="size-4.5" />
+                                        <x-lucide-apple class="size-4" />
                                     </span>
                                     <div>
                                         <p class="text-sm font-semibold">{{ $food->name }}</p>

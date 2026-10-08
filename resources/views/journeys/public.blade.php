@@ -21,7 +21,7 @@
 </div>
 
 <section class="rounded-lg bg-card p-6 shadow">
-    <h2 class="mb-6 text-xl font-semibold">Chronologie</h2>
+    <h2 class="mb-6 text-xl font-semibold">Chronology</h2>
     <ol class="space-y-6">
         @forelse($journey->steps as $step)
             <li class="flex gap-4">

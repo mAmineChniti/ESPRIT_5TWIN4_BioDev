@@ -5,7 +5,6 @@
     Expects:
       $farm      ?Farm    the farm being edited, or null when creating
       $regions   Collection<int, AgriculturalRegion>
-      $isAdmin   bool
 --}}
 @php
     $value = fn (string $field, mixed $fallback = null) => old($field, $farm?->{$field} ?? $fallback);

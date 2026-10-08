@@ -72,6 +72,81 @@ class LogisticsTest extends TestCase
         $this->assertModelMissing($shipment);
     }
 
+    public function test_a_distributor_cannot_touch_another_distributors_shipment(): void
+    {
+        $owner = User::factory()->create(['role' => 'distributor']);
+        $intruder = User::factory()->create(['role' => 'distributor']);
+        $warehouse = Warehouse::factory()->create();
+
+        $this->actingAs($owner)
+            ->post(route('logistics.shipments.store'), $this->validShipment($warehouse));
+
+        $shipment = Shipment::where('reference', 'SHP-000001')->firstOrFail();
+
+        // The route group admits every distributor, so the second layer is what
+        // stops one distributor rewriting another's records.
+        $this->actingAs($intruder)
+            ->get(route('logistics.shipments.show', $shipment))
+            ->assertForbidden();
+
+        $this->actingAs($intruder)
+            ->get(route('logistics.shipments.edit', $shipment))
+            ->assertForbidden();
+
+        $this->actingAs($intruder)
+            ->patch(
+                route('logistics.shipments.update', $shipment),
+                $this->validShipment($warehouse, ['destination' => 'Hijacked, Spain'])
+            )
+            ->assertForbidden();
+
+        $this->actingAs($intruder)
+            ->delete(route('logistics.shipments.destroy', $shipment))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('shipments', [
+            'id' => $shipment->id,
+            'destination' => 'Marseille, France',
+        ]);
+    }
+
+    public function test_an_admin_may_supervise_any_shipment(): void
+    {
+        $owner = User::factory()->create(['role' => 'distributor']);
+        $admin = User::factory()->create(['role' => 'admin']);
+        $warehouse = Warehouse::factory()->create();
+
+        $this->actingAs($owner)
+            ->post(route('logistics.shipments.store'), $this->validShipment($warehouse));
+
+        $shipment = Shipment::where('reference', 'SHP-000001')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->get(route('logistics.shipments.show', $shipment))
+            ->assertOk();
+    }
+
+    public function test_a_distributor_can_still_manage_their_own_shipment(): void
+    {
+        $owner = User::factory()->create(['role' => 'distributor']);
+        $warehouse = Warehouse::factory()->create();
+
+        $this->actingAs($owner)
+            ->post(route('logistics.shipments.store'), $this->validShipment($warehouse));
+
+        $shipment = Shipment::where('reference', 'SHP-000001')->firstOrFail();
+
+        $this->actingAs($owner)
+            ->get(route('logistics.shipments.show', $shipment))
+            ->assertOk();
+
+        $this->actingAs($owner)
+            ->delete(route('logistics.shipments.destroy', $shipment))
+            ->assertRedirect(route('logistics.shipments.index'));
+
+        $this->assertModelMissing($shipment);
+    }
+
     public function test_consumers_cannot_open_the_logistics_area(): void
     {
         $consumer = User::factory()->create(['role' => 'consumer']);

@@ -159,10 +159,13 @@ class TraceabilityIntegrityTest extends TestCase
         $food = Food::factory()->create(['producer_id' => $this->producer()->id]);
 
         // A processor may sign for the chain but must not see ownership actions.
+        // The full attribute is matched because /foods/{food} is a prefix of
+        // /foods/{food}/trace, which every reader is offered.
         $this->actingAs(User::factory()->create(['role' => 'processor']))
             ->get(route('foods.show', $food))
             ->assertOk()
-            ->assertDontSee(route('foods.destroy', $food), false);
+            ->assertDontSee('action="'.route('foods.destroy', $food).'"', false)
+            ->assertDontSee('href="'.route('foods.edit', $food).'"', false);
     }
 
     // ---------- Chain of custody integrity ----------
@@ -316,7 +319,7 @@ class TraceabilityIntegrityTest extends TestCase
 
         foreach (['producer', 'processor', 'distributor', 'admin'] as $role) {
             $this->actingAs(User::factory()->create(['role' => $role]))
-                ->post(route('reports.store', $food), ['reason' => ReportReason::cases()[0]->value])
+                ->post(route('products.reports.store', $food), ['reason' => ReportReason::cases()[0]->value])
                 ->assertForbidden();
         }
 
@@ -329,7 +332,7 @@ class TraceabilityIntegrityTest extends TestCase
         $report = GreenwashingReport::factory()->upheld()->create();
 
         $this->actingAs($admin)
-            ->patch(route('reports.update', $report), ['status' => ReportStatus::Dismissed->value])
+            ->patch(route('admin.reports.update', $report), ['status' => ReportStatus::Dismissed->value])
             ->assertSessionHasErrors('status');
 
         $this->assertSame(ReportStatus::Upheld, $report->fresh()->status);
@@ -341,7 +344,7 @@ class TraceabilityIntegrityTest extends TestCase
         $report = GreenwashingReport::factory()->create();
 
         $this->actingAs($admin)
-            ->patch(route('reports.update', $report), ['status' => ReportStatus::Pending->value])
+            ->patch(route('admin.reports.update', $report), ['status' => ReportStatus::Pending->value])
             ->assertSessionHasErrors('status');
 
         $this->assertSame(ReportStatus::Pending, $report->fresh()->status);
@@ -353,7 +356,7 @@ class TraceabilityIntegrityTest extends TestCase
         GreenwashingReport::factory()->count(20)->create();
 
         $this->actingAs($admin)
-            ->get(route('admin.reports'))
+            ->get(route('admin.reports.index'))
             ->assertOk()
             ->assertSee('page=2', false);
     }
@@ -397,7 +400,7 @@ class TraceabilityIntegrityTest extends TestCase
         User::factory()->count(18)->create(['role' => 'consumer']);
 
         // Totals are aggregated in SQL, so they hold past the first page.
-        $response = $this->actingAs($admin)->get(route('admin.users'))->assertOk();
+        $response = $this->actingAs($admin)->get(route('admin.users.index'))->assertOk();
 
         $this->assertStringContainsString('19 total', $response->getContent());
     }
@@ -465,7 +468,7 @@ class TraceabilityIntegrityTest extends TestCase
         GreenwashingReport::factory()->create();
 
         $pages = [
-            route('admin.reports'),
+            route('admin.reports.index'),
             route('products.index'),
         ];
 

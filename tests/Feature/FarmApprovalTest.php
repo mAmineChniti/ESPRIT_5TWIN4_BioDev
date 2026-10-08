@@ -71,7 +71,7 @@ class FarmApprovalTest extends TestCase
         $producer = $this->user('producer');
         $farm = $this->farm(FarmStatus::Pending, $producer, $region);
 
-        $html = $this->get(route('front.agricultural-regions.show', $region))->assertOk()->getContent();
+        $html = $this->get(route('agricultural-regions.show', $region))->assertOk()->getContent();
 
         $this->assertStringNotContainsString($farm->name, $html);
         $this->assertStringNotContainsString($farm->address, $html);
@@ -82,7 +82,7 @@ class FarmApprovalTest extends TestCase
         $region = AgriculturalRegion::factory()->create();
         $farm = $this->farm(FarmStatus::Rejected, $this->user('producer'), $region);
 
-        $this->get(route('front.agricultural-regions.show', $region))
+        $this->get(route('agricultural-regions.show', $region))
             ->assertOk()
             ->assertDontSee($farm->name);
     }
@@ -92,7 +92,7 @@ class FarmApprovalTest extends TestCase
         $region = AgriculturalRegion::factory()->create();
         $farm = $this->farm(FarmStatus::Approved, $this->user('producer'), $region);
 
-        $this->get(route('front.agricultural-regions.show', $region))
+        $this->get(route('agricultural-regions.show', $region))
             ->assertOk()
             ->assertSee($farm->name);
     }
@@ -106,7 +106,7 @@ class FarmApprovalTest extends TestCase
         $this->farm(FarmStatus::Pending, $producer, $region);
         $this->farm(FarmStatus::Rejected, $producer, $region);
 
-        $html = $this->get(route('front.agricultural-regions.index'))->assertOk()->getContent();
+        $html = $this->get(route('agricultural-regions.index'))->assertOk()->getContent();
 
         // All three farms sit in one region and exactly one is publishable, so
         // the single badge on the page must read 1. Counting the badges too
@@ -122,7 +122,7 @@ class FarmApprovalTest extends TestCase
         $region = AgriculturalRegion::factory()->create();
         $this->farm(FarmStatus::Pending, $this->user('producer'));
 
-        $this->get(route('front.agricultural-regions.show', $region))
+        $this->get(route('agricultural-regions.show', $region))
             ->assertOk()
             ->assertSee('No farms recorded in this region yet.');
     }
@@ -133,7 +133,7 @@ class FarmApprovalTest extends TestCase
     public function test_only_an_admin_may_see_the_pending_request_queue(string $role): void
     {
         $this->actingAs($this->user($role))
-            ->get(route('back.farms.requests'))
+            ->get(route('farms.requests'))
             ->assertForbidden();
     }
 
@@ -143,7 +143,7 @@ class FarmApprovalTest extends TestCase
         $farm = $this->farm(FarmStatus::Pending, $this->user('producer'));
 
         $this->actingAs($this->user($role))
-            ->patch(route('back.farms.approve', $farm))
+            ->patch(route('farms.approve', $farm))
             ->assertForbidden();
 
         $this->assertSame(FarmStatus::Pending, $farm->fresh()->status);
@@ -155,7 +155,7 @@ class FarmApprovalTest extends TestCase
         $farm = $this->farm(FarmStatus::Pending, $this->user('producer'));
 
         $this->actingAs($this->user($role))
-            ->patch(route('back.farms.reject', $farm), ['rejection_reason' => 'nope'])
+            ->patch(route('farms.reject', $farm), ['rejection_reason' => 'nope'])
             ->assertForbidden();
 
         $this->assertSame(FarmStatus::Pending, $farm->fresh()->status);
@@ -167,11 +167,11 @@ class FarmApprovalTest extends TestCase
         $user = $this->user($role);
         $region = AgriculturalRegion::factory()->create();
 
-        $this->actingAs($user)->get(route('back.agricultural-regions.create'))->assertForbidden();
-        $this->actingAs($user)->post(route('back.agricultural-regions.store'), ['name' => 'X', 'code' => 'X1'])->assertForbidden();
-        $this->actingAs($user)->get(route('back.agricultural-regions.edit', $region))->assertForbidden();
-        $this->actingAs($user)->patch(route('back.agricultural-regions.update', $region), ['name' => 'X', 'code' => 'X1'])->assertForbidden();
-        $this->actingAs($user)->delete(route('back.agricultural-regions.destroy', $region))->assertForbidden();
+        $this->actingAs($user)->get(route('regions.create'))->assertForbidden();
+        $this->actingAs($user)->post(route('regions.store'), ['name' => 'X', 'code' => 'X1'])->assertForbidden();
+        $this->actingAs($user)->get(route('regions.edit', $region))->assertForbidden();
+        $this->actingAs($user)->patch(route('regions.update', $region), ['name' => 'X', 'code' => 'X1'])->assertForbidden();
+        $this->actingAs($user)->delete(route('regions.destroy', $region))->assertForbidden();
 
         $this->assertDatabaseHas('agricultural_regions', ['id' => $region->id]);
     }
@@ -179,7 +179,7 @@ class FarmApprovalTest extends TestCase
     #[DataProvider('roleProvider')]
     public function test_only_admin_and_producer_may_list_regions(string $role): void
     {
-        $response = $this->actingAs($this->user($role))->get(route('back.agricultural-regions.index'));
+        $response = $this->actingAs($this->user($role))->get(route('regions.index'));
 
         in_array($role, ['admin', 'producer'], true)
             ? $response->assertOk()
@@ -194,7 +194,7 @@ class FarmApprovalTest extends TestCase
         $ownFarm = $this->farm(FarmStatus::Pending, $mine);
         $otherFarm = $this->farm(FarmStatus::Pending, $theirs);
 
-        $html = $this->actingAs($mine)->get(route('back.farms.index'))->assertOk()->getContent();
+        $html = $this->actingAs($mine)->get(route('farms.index'))->assertOk()->getContent();
 
         $this->assertStringContainsString($ownFarm->name, $html);
         $this->assertStringNotContainsString($otherFarm->name, $html);
@@ -205,7 +205,7 @@ class FarmApprovalTest extends TestCase
         $first = $this->farm(FarmStatus::Pending, $this->user('producer'));
         $second = $this->farm(FarmStatus::Pending, $this->user('producer'));
 
-        $html = $this->actingAs($this->user('admin'))->get(route('back.farms.index'))->assertOk()->getContent();
+        $html = $this->actingAs($this->user('admin'))->get(route('farms.index'))->assertOk()->getContent();
 
         $this->assertStringContainsString($first->name, $html);
         $this->assertStringContainsString($second->name, $html);
@@ -215,9 +215,9 @@ class FarmApprovalTest extends TestCase
     {
         $theirs = $this->farm(FarmStatus::Approved, $this->user('producer'));
 
-        $this->actingAs($this->user('producer'))->get(route('back.farms.show', $theirs))->assertForbidden();
-        $this->actingAs($this->user('producer'))->get(route('back.farms.edit', $theirs))->assertForbidden();
-        $this->actingAs($this->user('producer'))->delete(route('back.farms.destroy', $theirs))->assertForbidden();
+        $this->actingAs($this->user('producer'))->get(route('farms.show', $theirs))->assertForbidden();
+        $this->actingAs($this->user('producer'))->get(route('farms.edit', $theirs))->assertForbidden();
+        $this->actingAs($this->user('producer'))->delete(route('farms.destroy', $theirs))->assertForbidden();
 
         $this->assertDatabaseHas('farms', ['id' => $theirs->id]);
     }
@@ -229,13 +229,13 @@ class FarmApprovalTest extends TestCase
         $producer = $this->user('producer');
         $region = AgriculturalRegion::factory()->create();
 
-        $this->actingAs($producer)->post(route('back.farms.store'), [
+        $this->actingAs($producer)->post(route('farms.store'), [
             'agricultural_region_id' => $region->id,
             'name' => 'Waiting Farm',
             'address' => '1 Road',
             'surface_hectares' => 12,
             'farming_type' => 'Biologique',
-        ])->assertRedirect(route('back.farms.index'))->assertSessionHasNoErrors();
+        ])->assertRedirect(route('farms.index'))->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('farms', ['name' => 'Waiting Farm', 'status' => FarmStatus::Pending->value]);
     }
@@ -244,13 +244,13 @@ class FarmApprovalTest extends TestCase
     {
         $region = AgriculturalRegion::factory()->create();
 
-        $this->actingAs($this->user('admin'))->post(route('back.farms.store'), [
+        $this->actingAs($this->user('admin'))->post(route('farms.store'), [
             'agricultural_region_id' => $region->id,
             'name' => 'Admin Farm',
             'address' => '2 Road',
             'surface_hectares' => 12,
             'farming_type' => 'Biologique',
-        ])->assertRedirect(route('back.farms.index'))->assertSessionHasNoErrors();
+        ])->assertRedirect(route('farms.index'))->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('farms', ['name' => 'Admin Farm', 'status' => FarmStatus::Approved->value]);
     }
@@ -261,11 +261,11 @@ class FarmApprovalTest extends TestCase
         $farm = $this->farm(FarmStatus::Pending, $this->user('producer'));
 
         $this->actingAs($this->user('admin'))
-            ->patch(route('back.farms.approve', $farm))
+            ->patch(route('farms.approve', $farm))
             ->assertSessionHasNoErrors();
 
         $this->assertSame(FarmStatus::Approved, $farm->fresh()->status);
-        $this->get(route('front.agricultural-regions.show', $region))->assertSee($farm->name);
+        $this->get(route('agricultural-regions.show', $region))->assertSee($farm->name);
     }
 
     public function test_rejecting_a_farm_records_the_reason_and_unpublishes_it(): void
@@ -273,7 +273,7 @@ class FarmApprovalTest extends TestCase
         $region = AgriculturalRegion::factory()->create();
         $farm = $this->farm(FarmStatus::Pending, $this->user('producer'), $region);
 
-        $this->actingAs($this->user('admin'))->patch(route('back.farms.reject', $farm), [
+        $this->actingAs($this->user('admin'))->patch(route('farms.reject', $farm), [
             'rejection_reason' => 'Adresse incorrecte',
         ])->assertSessionHasNoErrors();
 
@@ -284,7 +284,7 @@ class FarmApprovalTest extends TestCase
         // Assert on the address rather than the name: the rejection flash
         // message quotes the farm name, so asserting on it would pass or fail
         // for the wrong reason.
-        $this->get(route('front.agricultural-regions.show', $region))
+        $this->get(route('agricultural-regions.show', $region))
             ->assertOk()
             ->assertDontSee($farm->address);
     }
@@ -294,10 +294,66 @@ class FarmApprovalTest extends TestCase
         $farm = $this->farm(FarmStatus::Pending, $this->user('producer'));
 
         $this->actingAs($this->user('admin'))
-            ->patch(route('back.farms.reject', $farm))
+            ->patch(route('farms.reject', $farm))
             ->assertSessionHasErrors('rejection_reason');
 
         $this->assertSame(FarmStatus::Pending, $farm->fresh()->status);
+    }
+
+    /**
+     * The reason is required, so the control that collects it has to exist.
+     *
+     * The dialog used to be a bare confirmation that posted nothing, which meant
+     * the Reject button could never succeed: every press came back with "The
+     * rejection reason field is required" and the farm stayed pending.
+     *
+     * @return array<string, array{string}>
+     */
+    public static function adminFarmPageProvider(): array
+    {
+        return [
+            'the pending queue' => ['farms.requests'],
+            'the farm list' => ['farms.index'],
+            'the farm page' => ['farms.show'],
+        ];
+    }
+
+    #[DataProvider('adminFarmPageProvider')]
+    public function test_the_reject_dialog_collects_the_reason_it_requires(string $page): void
+    {
+        $farm = $this->farm(FarmStatus::Pending, $this->user('producer'));
+
+        $html = $this->actingAs($this->user('admin'))
+            ->get(route($page, $page === 'farms.show' ? $farm : []))
+            ->assertOk()
+            ->getContent();
+
+        $q = '"';
+
+        // The field is in the form that posts to the reject route, so pressing
+        // the button sends it.
+        $this->assertStringContainsString('name='.$q.'rejection_reason'.$q, $html);
+        $this->assertStringContainsString('action='.$q.route('farms.reject', $farm).$q, $html);
+
+        // And it is a labelled control, not an unlabelled box.
+        $this->assertStringContainsString('id='.$q.'farm-rejection-reason-'.$farm->id.$q, $html);
+        $this->assertStringContainsString('for='.$q.'farm-rejection-reason-'.$farm->id.$q, $html);
+    }
+
+    public function test_rejecting_from_the_dialog_form_succeeds(): void
+    {
+        $farm = $this->farm(FarmStatus::Pending, $this->user('producer'));
+
+        $this->actingAs($this->user('admin'))
+            ->from(route('farms.requests'))
+            ->patch(route('farms.reject', $farm), [
+                'rejection_reason' => 'The land registry number does not match the address.',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $farm->refresh();
+        $this->assertSame(FarmStatus::Rejected, $farm->status);
+        $this->assertSame('The land registry number does not match the address.', $farm->rejection_reason);
     }
 
     public function test_rejecting_a_farm_bounds_the_reason(): void
@@ -305,7 +361,7 @@ class FarmApprovalTest extends TestCase
         $farm = $this->farm(FarmStatus::Pending, $this->user('producer'));
 
         $this->actingAs($this->user('admin'))
-            ->patch(route('back.farms.reject', $farm), ['rejection_reason' => str_repeat('a', 1001)])
+            ->patch(route('farms.reject', $farm), ['rejection_reason' => str_repeat('a', 1001)])
             ->assertSessionHasErrors('rejection_reason');
     }
 
@@ -314,7 +370,7 @@ class FarmApprovalTest extends TestCase
         $farm = $this->farm(FarmStatus::Rejected, $this->user('producer'));
         $farm->update(['rejection_reason' => 'Ancienne erreur']);
 
-        $this->actingAs($this->user('admin'))->patch(route('back.farms.approve', $farm));
+        $this->actingAs($this->user('admin'))->patch(route('farms.approve', $farm));
 
         $this->assertNull($farm->fresh()->rejection_reason);
     }
@@ -324,11 +380,11 @@ class FarmApprovalTest extends TestCase
         $farm = $this->farm(FarmStatus::Approved, $this->user('producer'));
 
         $this->actingAs($this->user('admin'))
-            ->get(route('back.farms.index', ['status' => 'not-a-status']))
+            ->get(route('farms.index', ['status' => 'not-a-status']))
             ->assertSessionHasErrors('status');
 
         $this->actingAs($this->user('admin'))
-            ->get(route('back.farms.index', ['status' => FarmStatus::Pending->value]))
+            ->get(route('farms.index', ['status' => FarmStatus::Pending->value]))
             ->assertOk()
             ->assertDontSee($farm->name);
     }

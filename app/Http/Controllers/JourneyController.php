@@ -17,7 +17,7 @@ class JourneyController extends Controller
             ->latest()
             ->paginate(10);
 
-        return view('journeys.index', compact('journeys'));
+        return view('processor.journeys.index', compact('journeys'));
     }
 
     public function show(Journey $journey): View

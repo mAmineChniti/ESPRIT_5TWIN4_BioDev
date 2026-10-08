@@ -5,7 +5,7 @@
 @section('content')
 <div class="space-y-8">
     <div class="space-y-3">
-        <april:button-link href="{{ route('front.agricultural-regions.index') }}" variant="ghost" class="pl-0 text-muted-foreground hover:text-foreground">
+        <april:button-link href="{{ route('agricultural-regions.index') }}" variant="ghost" class="pl-0 text-muted-foreground hover:text-foreground">
             <x-lucide-arrow-left class="mr-2 size-4" /> Back to regions
         </april:button-link>
 

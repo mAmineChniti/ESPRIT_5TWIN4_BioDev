@@ -17,8 +17,12 @@ class StageTransitionController extends Controller
     /**
      * Show the supply chain recorded for a product.
      */
-    public function index(Food $food): View
+    public function index(Request $request, Food $food): View
     {
+        // Every signed in role may read the chain, but say so through the policy
+        // rather than by leaving the action ungated.
+        $this->authorize('view', $food);
+
         $food->load('transitions.actor');
 
         return view('foods.transitions.index', [

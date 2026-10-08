@@ -18,6 +18,10 @@
         <april:button-link href="{{ route('products.show', $food) }}" variant="outline">
             Public page
         </april:button-link>
+        <april:button-link href="{{ route('foods.transitions.index', $food) }}" variant="outline">
+            <x-lucide-route class="size-4" />
+            Trace record
+        </april:button-link>
         @can('update', $food)
             <april:button-link href="{{ route('foods.edit', $food) }}" variant="outline">Edit</april:button-link>
         @endcan
@@ -56,7 +60,7 @@
     <x-slot:content>
         <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
             <div class="sm:col-span-1">
-                <dt class="text-sm font-medium text-muted-foreground">Nom du produit</dt>
+                <dt class="text-sm font-medium text-muted-foreground">Product name</dt>
                 <dd class="mt-1 text-sm text-foreground">{{ $food->name }}</dd>
             </div>
             <div class="sm:col-span-1">
@@ -68,13 +72,13 @@
                 <dd class="mt-1 text-sm text-foreground">{{ $food->origin ?? 'Unknown' }}</dd>
             </div>
             <div class="sm:col-span-1">
-                <dt class="text-sm font-medium text-muted-foreground">Score Environnemental</dt>
+                <dt class="text-sm font-medium text-muted-foreground">Environmental score</dt>
                 <dd class="mt-1 text-sm text-foreground">
                     <x-eco-score :score="$food->environmental_score" />
                 </dd>
             </div>
             <div class="sm:col-span-2">
-                <dt class="text-sm font-medium text-muted-foreground">Producteur</dt>
+                <dt class="text-sm font-medium text-muted-foreground">Producer</dt>
                 <dd class="mt-1 text-sm text-foreground">{{ $food->producer?->name ?? 'Unattributed' }}</dd>
             </div>
             <div class="sm:col-span-2">

@@ -15,7 +15,7 @@
         @include('logistics.warehouses.form')
 
         <div class="pt-4 flex justify-end">
-            <button type="submit" class="bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2 px-6 rounded-md">Update</button>
+            <april:button type="submit">Update</april:button>
         </div>
     </form>
 </div>

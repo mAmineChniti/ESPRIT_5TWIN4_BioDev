@@ -160,7 +160,7 @@ class ConsumerSpaceTest extends TestCase
         $food = Food::factory()->create();
 
         $this->actingAs($user)
-            ->post(route('reviews.store', $food), ['rating' => 4, 'body' => 'Matched the label'])
+            ->post(route('products.reviews.store', $food), ['rating' => 4, 'body' => 'Matched the label'])
             ->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('reviews', [
@@ -175,8 +175,8 @@ class ConsumerSpaceTest extends TestCase
         $user = $this->consumer();
         $food = Food::factory()->create();
 
-        $this->actingAs($user)->post(route('reviews.store', $food), ['rating' => 2]);
-        $this->actingAs($user)->post(route('reviews.store', $food), ['rating' => 5]);
+        $this->actingAs($user)->post(route('products.reviews.store', $food), ['rating' => 2]);
+        $this->actingAs($user)->post(route('products.reviews.store', $food), ['rating' => 5]);
 
         $this->assertSame(1, Review::where('food_id', $food->id)->where('user_id', $user->id)->count());
         $this->assertSame(5, Review::where('food_id', $food->id)->first()->rating);
@@ -185,20 +185,20 @@ class ConsumerSpaceTest extends TestCase
     public function test_review_rating_must_be_between_one_and_five(): void
     {
         $this->actingAs($this->consumer())
-            ->post(route('reviews.store', Food::factory()->create()), ['rating' => 9])
+            ->post(route('products.reviews.store', Food::factory()->create()), ['rating' => 9])
             ->assertSessionHasErrors('rating');
     }
 
     public function test_a_guest_cannot_review(): void
     {
-        $this->post(route('reviews.store', Food::factory()->create()), ['rating' => 5])
+        $this->post(route('products.reviews.store', Food::factory()->create()), ['rating' => 5])
             ->assertRedirect(route('login'));
     }
 
     public function test_only_consumers_may_review(): void
     {
         $this->actingAs(User::factory()->create(['role' => 'producer']))
-            ->post(route('reviews.store', Food::factory()->create()), ['rating' => 5])
+            ->post(route('products.reviews.store', Food::factory()->create()), ['rating' => 5])
             ->assertForbidden();
     }
 
@@ -207,7 +207,7 @@ class ConsumerSpaceTest extends TestCase
         $review = Review::factory()->create();
 
         $this->actingAs($this->consumer())
-            ->delete(route('reviews.destroy', ['food' => $review->food_id, 'review' => $review]))
+            ->delete(route('products.reviews.destroy', ['food' => $review->food_id, 'review' => $review]))
             ->assertForbidden();
 
         $this->assertDatabaseHas('reviews', ['id' => $review->id]);
@@ -229,7 +229,7 @@ class ConsumerSpaceTest extends TestCase
         $user = $this->consumer();
         $food = Food::factory()->create();
 
-        $this->actingAs($user)->post(route('reports.store', $food), [
+        $this->actingAs($user)->post(route('products.reports.store', $food), [
             'reason' => ReportReason::UnverifiableClaim->value,
             'details' => 'Nothing on the page backs this up.',
         ])->assertSessionHasNoErrors();
@@ -245,7 +245,7 @@ class ConsumerSpaceTest extends TestCase
     public function test_a_report_requires_a_valid_reason(): void
     {
         $this->actingAs($this->consumer())
-            ->post(route('reports.store', Food::factory()->create()), ['reason' => 'because'])
+            ->post(route('products.reports.store', Food::factory()->create()), ['reason' => 'because'])
             ->assertSessionHasErrors('reason');
     }
 
@@ -254,8 +254,8 @@ class ConsumerSpaceTest extends TestCase
         $user = $this->consumer();
         $food = Food::factory()->create();
 
-        $this->actingAs($user)->post(route('reports.store', $food), ['reason' => ReportReason::Other->value]);
-        $this->actingAs($user)->post(route('reports.store', $food), ['reason' => ReportReason::Other->value])
+        $this->actingAs($user)->post(route('products.reports.store', $food), ['reason' => ReportReason::Other->value]);
+        $this->actingAs($user)->post(route('products.reports.store', $food), ['reason' => ReportReason::Other->value])
             ->assertSessionHasErrors('reason');
 
         $this->assertSame(1, GreenwashingReport::where('food_id', $food->id)->count());
@@ -266,11 +266,11 @@ class ConsumerSpaceTest extends TestCase
         $report = GreenwashingReport::factory()->create();
 
         $this->actingAs($this->consumer())
-            ->patch(route('reports.update', $report), ['status' => ReportStatus::Upheld->value])
+            ->patch(route('admin.reports.update', $report), ['status' => ReportStatus::Upheld->value])
             ->assertForbidden();
 
         $this->actingAs(User::factory()->create(['role' => 'admin']))
-            ->patch(route('reports.update', $report), ['status' => ReportStatus::Upheld->value])
+            ->patch(route('admin.reports.update', $report), ['status' => ReportStatus::Upheld->value])
             ->assertSessionHasNoErrors();
 
         $this->assertSame(ReportStatus::Upheld, $report->fresh()->status);

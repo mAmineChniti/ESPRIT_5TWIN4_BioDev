@@ -116,21 +116,27 @@ class DatabaseSeeder extends Seeder
             );
         });
 
-        foreach (range(0, 9) as $index) {
-            $meal = Meal::factory()->create([
-                'user_id' => $consumer->id,
-                'consumed_on' => now()->subDays($index)->format('Y-m-d'),
-            ]);
+        // Every consumer gets meals, so neither demo account lands on an
+        // empty "My Meals" page.
+        foreach ($consumers as $consumerUser) {
+            foreach (range(0, 5) as $index) {
+                $meal = Meal::factory()->create([
+                    'user_id' => $consumerUser->id,
+                    'consumed_on' => now()->subDays($index)->format('Y-m-d'),
+                ]);
 
-            $meal->foods()->sync(
-                $foods->random(fake()->numberBetween(1, 3))->pluck('id')
-                    ->mapWithKeys(fn (int $foodId): array => [$foodId => ['quantity' => fake()->numberBetween(50, 300)]])
-                    ->all()
-            );
+                $meal->foods()->sync(
+                    $foods->random(fake()->numberBetween(1, 3))->pluck('id')
+                        ->mapWithKeys(fn (int $foodId): array => [$foodId => ['quantity' => fake()->numberBetween(50, 300)]])
+                        ->all()
+                );
+            }
         }
 
         $this->call(LogisticsSeeder::class);
         $this->call(AgriculturalRegionSeeder::class);
+        // Runs last: a journey is attached to a seeded product.
+        $this->call(JourneySeeder::class);
     }
 
     /**

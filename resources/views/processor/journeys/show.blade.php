@@ -26,7 +26,10 @@
 <div class="rounded-lg bg-card p-6 shadow">
     <div class="mb-4 flex items-center justify-between">
         <h2 class="text-lg font-semibold">Journey steps</h2>
-        <a href="{{ route('processor.journeys.steps.create', $journey) }}" class="rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-primary/90">Add a step</a>
+        <april:button-link href="{{ route('processor.journeys.steps.create', $journey) }}">
+            <x-lucide-plus class="size-4" />
+            Add a step
+        </april:button-link>
     </div>
     <ol class="space-y-4">
         @forelse($journey->steps as $step)

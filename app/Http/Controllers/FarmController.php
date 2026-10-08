@@ -180,11 +180,11 @@ class FarmController extends Controller
         Farm::create($validated);
 
         if ($user->isAdmin()) {
-            return redirect()->route('back.farms.index')
+            return redirect()->route('farms.index')
                 ->with('success', 'Farm created and approved successfully.');
         }
 
-        return redirect()->route('back.farms.index')
+        return redirect()->route('farms.index')
             ->with('success', 'Your farm was saved and sent to an administrator for approval.');
     }
 
@@ -222,7 +222,7 @@ class FarmController extends Controller
 
         $farm->update($request->validate($this->farmRules()));
 
-        return redirect()->route('back.farms.index')
+        return redirect()->route('farms.index')
             ->with('success', 'Farm updated successfully.');
     }
 
@@ -235,7 +235,7 @@ class FarmController extends Controller
 
         $farm->delete();
 
-        return redirect()->route('back.farms.index')
+        return redirect()->route('farms.index')
             ->with('success', 'Farm deleted successfully.');
     }
 
