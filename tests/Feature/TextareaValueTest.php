@@ -3,10 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\AgriculturalRegion;
-use App\Models\AnalysisDispute;
 use App\Models\Farm;
 use App\Models\Food;
-use App\Models\Meal;
 use App\Models\Review;
 use App\Models\Stage;
 use App\Models\StageTransition;
