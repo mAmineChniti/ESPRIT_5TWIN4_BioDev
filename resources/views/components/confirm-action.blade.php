@@ -38,7 +38,7 @@
         <april:alert-dialog-footer>
             <april:alert-dialog-cancel>Cancel</april:alert-dialog-cancel>
 
-            <form method="POST" action="{{ $action }}" class="contents">
+            <form method="POST" action="{{ $action }}" class="contents" novalidate>
                 @csrf
                 @method($method)
 

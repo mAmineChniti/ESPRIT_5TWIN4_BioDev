@@ -1,5 +1,5 @@
 <x-guest-layout title="Confirm password" description="This is a secure area — please confirm your password.">
-    <form method="POST" action="{{ route('password.confirm') }}" class="space-y-4">
+    <form method="POST" action="{{ route('password.confirm') }}" class="space-y-4" novalidate>
         @csrf
 
         <div class="space-y-2">

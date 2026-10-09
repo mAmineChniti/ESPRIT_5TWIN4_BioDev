@@ -30,7 +30,7 @@
             </x-slot:description>
         </april:alert-dialog-header>
 
-        <form method="POST" action="{{ route('admin.analysis-disputes.update', $dispute) }}" class="space-y-4">
+        <form method="POST" action="{{ route('admin.analysis-disputes.update', $dispute) }}" class="space-y-4" novalidate>
             @csrf
             @method('PATCH')
 

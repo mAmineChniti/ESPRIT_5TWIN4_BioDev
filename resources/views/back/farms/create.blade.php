@@ -35,7 +35,7 @@
 
         <april:card>
             <x-slot:content>
-                <form method="POST" action="{{ route('farms.store') }}" class="space-y-5">
+                <form method="POST" action="{{ route('farms.store') }}" class="space-y-5" novalidate>
                     @csrf
 
                     @include('back.farms.partials.form-fields', ['farm' => null, 'regions' => $regions])

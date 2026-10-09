@@ -55,7 +55,7 @@
                                 </div>
                                 <april:alert-dialog-footer>
                                     <april:alert-dialog-cancel>Cancel</april:alert-dialog-cancel>
-                                    <form action="{{ route('meals.destroy', $meal) }}" method="POST">
+                                    <form action="{{ route('meals.destroy', $meal) }}" method="POST" novalidate>
                                         @csrf
                                         @method('DELETE')
                                         <april:button type="submit" variant="destructive" x-bind="action">

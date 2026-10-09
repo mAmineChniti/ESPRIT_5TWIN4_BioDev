@@ -1,15 +1,12 @@
 {{--
-    The dashboard for the supply chain roles and the admin.
+    Shared dashboard body for the supply chain roles and the admin.
 
-    A consumer never sees this view: /consumer/dashboard is served by
-    ConsumerDashboardController, which renders back.consumer.dashboard. So this
-    template has no consumer branch to read.
+    Rendered through one thin wrapper per route (back.admin.dashboard,
+    back.producer.dashboard, back.processor.dashboard,
+    back.distributor.dashboard) so every dashboard URL maps to its own view
+    file. A consumer never sees this partial: /consumer/dashboard is served by
+    ConsumerDashboardController, which renders back.consumer.dashboard.
 --}}
-@extends('layouts.back')
-
-@section('title', 'Dashboard')
-
-@section('content')
     @php($user = auth()->user())
 
     <april:breadcrumb>
@@ -207,4 +204,3 @@
             </april:card>
         </div>
     </div>
-@endsection

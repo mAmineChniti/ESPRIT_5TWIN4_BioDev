@@ -1,7 +1,7 @@
 <x-guest-layout title="Login" description="Log in to manage the catalog.">
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form method="POST" action="{{ route('login') }}" class="space-y-4">
+    <form method="POST" action="{{ route('login') }}" class="space-y-4" novalidate>
         @csrf
 
         <div class="space-y-2">
@@ -19,7 +19,7 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <april:checkbox id="remember_me" name="remember" />
+            <april:checkbox id="remember_me" name="remember" value="1" />
             <april:label for="remember_me" class="font-normal text-muted-foreground">Remember me</april:label>
         </div>
 

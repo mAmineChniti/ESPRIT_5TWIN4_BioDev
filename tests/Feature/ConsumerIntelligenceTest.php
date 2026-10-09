@@ -626,6 +626,30 @@ class ConsumerIntelligenceTest extends TestCase
             ->assertSessionHasErrors('category');
     }
 
+    public function test_reporting_a_finding_rejects_an_invalid_detail(): void
+    {
+        $food = Food::factory()->create();
+        $consumer = $this->consumer();
+
+        // Hidden fields are trivially forgeable, so detail is validated like
+        // every other input rather than truncated on the way in.
+        $this->actingAs($consumer)
+            ->post(route('products.reports.escalate', $food), [
+                'category' => FindingCategory::Other->value,
+                'detail' => ['not' => 'a string'],
+            ])
+            ->assertSessionHasErrors('detail');
+
+        $this->actingAs($consumer)
+            ->post(route('products.reports.escalate', $food), [
+                'category' => FindingCategory::Other->value,
+                'detail' => str_repeat('a', 2001),
+            ])
+            ->assertSessionHasErrors('detail');
+
+        $this->assertDatabaseCount('greenwashing_reports', 0);
+    }
+
     public function test_a_consumer_cannot_file_two_pending_reports_for_one_product(): void
     {
         $food = Food::factory()->create();

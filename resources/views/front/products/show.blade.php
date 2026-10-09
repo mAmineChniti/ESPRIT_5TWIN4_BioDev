@@ -207,7 +207,7 @@
             <x-slot:content>
                 @auth
                     @if($canReview)
-                        <form action="{{ route('products.reports.store', $food) }}" method="POST" class="mt-4 space-y-3">
+                        <form action="{{ route('products.reports.store', $food) }}" method="POST" class="mt-4 space-y-3" novalidate>
                             @csrf
                             <div>
                                 <april:label for="reason" class="text-xs uppercase tracking-wide text-muted-foreground">
@@ -315,7 +315,7 @@
 
         @auth
             @if($canReview)
-                <form action="{{ route('products.reviews.store', $food) }}" method="POST" class="mt-4 rounded-lg bg-muted/50 p-4">
+                <form action="{{ route('products.reviews.store', $food) }}" method="POST" class="mt-4 rounded-lg bg-muted/50 p-4" novalidate>
                     @csrf
                     <p class="text-sm font-medium">{{ $myReview ? 'Update your review' : 'Leave a review' }}</p>
                     <div class="mt-3 flex flex-wrap items-end gap-3">

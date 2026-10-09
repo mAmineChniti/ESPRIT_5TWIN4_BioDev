@@ -6,12 +6,12 @@
     @endif
 
     <div class="flex items-center justify-between gap-3">
-        <form method="POST" action="{{ route('verification.send') }}">
+        <form method="POST" action="{{ route('verification.send') }}" novalidate>
             @csrf
             <april:button type="submit" variant="outline">Resend email</april:button>
         </form>
 
-        <form method="POST" action="{{ route('logout') }}">
+        <form method="POST" action="{{ route('logout') }}" novalidate>
             @csrf
             <april:button type="submit" variant="link">Log out</april:button>
         </form>

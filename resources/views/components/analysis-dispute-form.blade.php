@@ -50,7 +50,7 @@
                     </april:alert-dialog-header>
 
                     <form method="POST" action="{{ route('products.analysis-disputes.store', $food) }}"
-                        class="space-y-4">
+                        class="space-y-4" novalidate>
                         @csrf
 
                         <div>

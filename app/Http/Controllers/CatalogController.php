@@ -15,10 +15,17 @@ class CatalogController extends Controller
 {
     /**
      * Serve a role dashboard with data scoped to the signed in user.
+     *
+     * Every dashboard URL maps to its own view file, so the role picks the
+     * wrapper and the shared body stays in back.partials.dashboard.
      */
     public function __invoke(Request $request): View
     {
-        return view('back.dashboard', self::forUser($request->user()));
+        $role = $request->user()->role;
+
+        abort_unless(in_array($role, ['admin', 'producer', 'processor', 'distributor'], true), 403);
+
+        return view("back.{$role}.dashboard", self::forUser($request->user()));
     }
 
     /**

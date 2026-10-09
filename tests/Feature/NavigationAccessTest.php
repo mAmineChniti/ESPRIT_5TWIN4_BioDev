@@ -234,9 +234,9 @@ class NavigationAccessTest extends TestCase
         $this->assertStringContainsString('Import CSV', $html);
         $this->assertStringContainsString('Add a product', $html);
 
-        // The hint describes the input without displacing the row: inline beside
-        // the button rather than stacked underneath the input.
-        $this->assertStringContainsString('aria-describedby="csv_file-hint"', $html);
+        // The hint and the field error describe the input without displacing
+        // the row: inline beside the button rather than stacked underneath.
+        $this->assertStringContainsString('aria-describedby="csv_file-hint csv_file-error"', $html);
         $this->assertStringContainsString('CSV or TXT, up to 2 MB', $html);
         $this->assertStringNotContainsString('<p id="csv_file-hint"', $html);
         $this->assertStringNotContainsString('items-end', $html);

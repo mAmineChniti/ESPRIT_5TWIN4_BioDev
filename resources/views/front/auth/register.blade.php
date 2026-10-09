@@ -1,5 +1,5 @@
 <x-guest-layout title="Register" description="Join NutriTrace to track honest food.">
-    <form method="POST" action="{{ route('register') }}" class="space-y-4">
+    <form method="POST" action="{{ route('register') }}" class="space-y-4" novalidate>
         @csrf
 
         <div class="space-y-2">

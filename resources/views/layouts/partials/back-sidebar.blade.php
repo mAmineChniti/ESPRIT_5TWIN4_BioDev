@@ -142,6 +142,18 @@
             <april:sidebar-menu>
                 <april:sidebar-group-label>Nutrition</april:sidebar-group-label>
                 <april:sidebar-menu-item>
+                    <april:sidebar-menu-button-link href="{{ route('consumer.space') }}" :active="request()->routeIs('consumer.space')">
+                        <x-lucide-sparkles />
+                        <span>Consumer Space</span>
+                    </april:sidebar-menu-button-link>
+                </april:sidebar-menu-item>
+                <april:sidebar-menu-item>
+                    <april:sidebar-menu-button-link href="{{ route('consumer.recommendations') }}" :active="request()->routeIs('consumer.recommendations')">
+                        <x-lucide-leaf />
+                        <span>Recommendations</span>
+                    </april:sidebar-menu-button-link>
+                </april:sidebar-menu-item>
+                <april:sidebar-menu-item>
                     <april:sidebar-menu-button-link href="{{ route('meals.index') }}" :active="request()->routeIs('meals.*')">
                         <x-lucide-utensils />
                         <span>My Meals</span>
@@ -176,7 +188,7 @@
                 <p class="truncate text-xs text-muted-foreground">{{ $user->email }}</p>
                 <p class="mt-1 truncate text-xs font-bold uppercase text-primary">{{ $role }}</p>
             </div>
-            <form method="POST" action="{{ route('logout') }}">
+            <form method="POST" action="{{ route('logout') }}" novalidate>
                 @csrf
                 <april:button type="submit" variant="ghost" size="icon" title="Log out" aria-label="Log out">
                     <x-lucide-log-out class="size-4" />

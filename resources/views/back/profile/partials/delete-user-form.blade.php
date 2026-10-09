@@ -7,7 +7,7 @@
         permanently deleted. Enter your password below to confirm.
     </p>
 
-    <form method="post" action="{{ route('profile.destroy') }}" class="mt-4 space-y-4">
+    <form method="post" action="{{ route('profile.destroy') }}" class="mt-4 space-y-4" novalidate>
         @csrf
         @method('delete')
 

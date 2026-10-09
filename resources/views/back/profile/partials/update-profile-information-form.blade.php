@@ -1,12 +1,12 @@
 {{-- Moved inside the unverified block: rendered unconditionally it shipped an
      empty CSRF form on every page load with no possible submit button. --}}
 @if (! $user->hasVerifiedEmail())
-    <form id="send-verification" method="post" action="{{ route('verification.send') }}">
+    <form id="send-verification" method="post" action="{{ route('verification.send') }}" novalidate>
         @csrf
     </form>
 @endif
 
-<form method="post" action="{{ route('profile.update') }}" class="space-y-4">
+<form method="post" action="{{ route('profile.update') }}" class="space-y-4" novalidate>
     @csrf
     @method('patch')
 

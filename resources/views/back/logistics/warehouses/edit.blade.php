@@ -9,7 +9,7 @@
 </div>
 
 <div class="bg-card rounded-lg shadow p-6 max-w-2xl">
-    <form action="{{ route('logistics.warehouses.update', $warehouse) }}" method="POST" class="space-y-6">
+    <form action="{{ route('logistics.warehouses.update', $warehouse) }}" method="POST" class="space-y-6" novalidate>
         @csrf
         @method('PUT')
         @include('back.logistics.warehouses.form')
