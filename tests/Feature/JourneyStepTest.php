@@ -118,4 +118,48 @@ class JourneyStepTest extends TestCase
 
         $this->assertDatabaseCount('journey_steps', 0);
     }
+
+    public function test_the_create_form_prefills_the_next_free_order_and_suggested_type(): void
+    {
+        $processor = User::factory()->create(['role' => 'processor']);
+        $journey = Journey::factory()->create();
+        JourneyStep::factory()->create([
+            'journey_id' => $journey->id,
+            'step_order' => 1,
+            'type' => 'origin',
+        ]);
+
+        $html = $this->actingAs($processor)
+            ->get(route('processor.journeys.steps.create', $journey))
+            ->assertOk()->getContent();
+
+        // The next free position, so submit does not fail the per-journey
+        // uniqueness rule, and the next unrecorded stage selected.
+        $this->assertStringContainsString('value="2"', $html);
+        $this->assertStringContainsString('value="transport" selected', $html);
+        $this->assertStringContainsString('Step 2', $html);
+    }
+
+    public function test_the_steps_page_renders_the_workflow_tracker(): void
+    {
+        $processor = User::factory()->create(['role' => 'processor']);
+        $journey = Journey::factory()->create();
+        JourneyStep::factory()->create([
+            'journey_id' => $journey->id,
+            'step_order' => 1,
+            'type' => 'origin',
+        ]);
+
+        $html = $this->actingAs($processor)
+            ->get(route('processor.journeys.steps.index', $journey))
+            ->assertOk()->getContent();
+
+        // The April progress tracker with the recorded stage completed and the
+        // suggested next stage current, plus the call to action that carries
+        // the prefill into the create form.
+        $this->assertStringContainsString('aria-label="Progress"', $html);
+        $this->assertStringContainsString('data-state="completed"', $html);
+        $this->assertStringContainsString('1 of 4 stages recorded', $html);
+        $this->assertStringContainsString('Record Transport — step 2', $html);
+    }
 }

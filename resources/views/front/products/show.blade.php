@@ -74,8 +74,10 @@
 </april:card>
 
 <div class="mt-6 grid gap-6 lg:grid-cols-3">
+    {{-- Timeline and map share the wide column, so no grid cell is left empty. --}}
+    <div class="space-y-6 lg:col-span-2">
     {{-- Interactive timeline --}}
-    <section class="lg:col-span-2 rounded-2xl border border-border bg-card p-6 shadow-sm"
+    <section class="rounded-2xl border border-border bg-card p-6 shadow-sm"
              x-data='{ selected: null }'>
         <h2 class="text-lg font-semibold">Supply chain timeline</h2>
         <p class="mt-1 text-sm text-muted-foreground">
@@ -153,9 +155,10 @@
     </section>
 
     {{-- Where it came from, and how far that is from us. --}}
-    <section class="lg:col-span-2 rounded-2xl border border-border bg-card p-6 shadow-sm">
+    <section class="rounded-2xl border border-border bg-card p-6 shadow-sm">
         <x-origin-map :food="$food" />
     </section>
+    </div>
 
     <div class="space-y-6">
         {{-- Certifications --}}
@@ -312,7 +315,7 @@
 
         @auth
             @if($canReview)
-                <form action="{{ route('products.reviews.store', $food) }}" method="POST" class="mt-4 rounded-xl bg-muted/50 p-4">
+                <form action="{{ route('products.reviews.store', $food) }}" method="POST" class="mt-4 rounded-lg bg-muted/50 p-4">
                     @csrf
                     <p class="text-sm font-medium">{{ $myReview ? 'Update your review' : 'Leave a review' }}</p>
                     <div class="mt-3 flex flex-wrap items-end gap-3">

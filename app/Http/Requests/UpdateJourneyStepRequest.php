@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\JourneyStep;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -26,7 +27,7 @@ class UpdateJourneyStepRequest extends FormRequest
                     ->where(fn ($query) => $query->where('journey_id', $this->route('journey')->id))
                     ->ignore($step->id),
             ],
-            'type' => ['required', Rule::in(['origin', 'transport', 'storage', 'sale'])],
+            'type' => ['required', Rule::in(JourneyStep::FLOW)],
             'location' => ['required', 'string', 'max:120'],
             'step_date' => ['required', 'date'],
             'description' => ['nullable', 'string', 'max:255'],

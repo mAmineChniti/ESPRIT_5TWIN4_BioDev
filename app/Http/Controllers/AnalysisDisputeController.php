@@ -74,7 +74,7 @@ class AnalysisDisputeController extends Controller
             ->paginate(self::PER_PAGE)
             ->withQueryString();
 
-        return view('back.analysis-disputes.index', [
+        return view('back.admin.analysis-disputes', [
             'disputes' => $disputes,
             'statuses' => AnalysisDisputeStatus::cases(),
             'status' => $status,

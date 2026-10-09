@@ -17,14 +17,14 @@ class JourneyController extends Controller
             ->latest()
             ->paginate(10);
 
-        return view('processor.journeys.index', compact('journeys'));
+        return view('back.processor.journeys.index', compact('journeys'));
     }
 
     public function show(Journey $journey): View
     {
         $journey->load(['product', 'steps']);
 
-        return view('processor.journeys.show', compact('journey'));
+        return view('back.processor.journeys.show', compact('journey'));
     }
 
     public function qrCode(Journey $journey): View
@@ -37,6 +37,6 @@ class JourneyController extends Controller
             ->margin(1)
             ->generate($publicUrl);
 
-        return view('processor.journeys.qr', compact('journey', 'publicUrl', 'qrSvg'));
+        return view('back.processor.journeys.qr', compact('journey', 'publicUrl', 'qrSvg'));
     }
 }

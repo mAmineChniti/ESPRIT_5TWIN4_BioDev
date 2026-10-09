@@ -30,8 +30,24 @@
                         <td class="px-6 py-4 text-sm tabular-nums text-muted-foreground">{{ $journey->environmental_score }}/100</td>
                         <td class="px-6 py-4 text-sm tabular-nums text-muted-foreground">{{ $journey->steps_count }}</td>
                         <td class="px-6 py-4 text-right text-sm">
-                            <a href="{{ route('processor.journeys.steps.index', $journey) }}" class="mr-3 text-primary hover:underline">Steps</a>
-                            <a href="{{ route('processor.journeys.show', $journey) }}" class="text-primary hover:underline">Details</a>
+                            <div class="flex items-center justify-end gap-2">
+                                <april:button-link
+                                    href="{{ route('processor.journeys.steps.index', $journey) }}"
+                                    variant="ghost"
+                                    size="sm"
+                                    aria-label="Manage steps for {{ $journey->product?->name ?? 'Product #'.$journey->product_id }}"
+                                >
+                                    <x-lucide-route class="size-4" />
+                                </april:button-link>
+                                <april:button-link
+                                    href="{{ route('processor.journeys.show', $journey) }}"
+                                    variant="ghost"
+                                    size="sm"
+                                    aria-label="View {{ $journey->product?->name ?? 'Product #'.$journey->product_id }}"
+                                >
+                                    <x-lucide-eye class="size-4" />
+                                </april:button-link>
+                            </div>
                         </td>
                     </tr>
                     @empty

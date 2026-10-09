@@ -52,7 +52,7 @@ class ShipmentController extends Controller
             ->orderByDesc('co2')
             ->get();
 
-        return view('logistics.shipments.index', [
+        return view('back.logistics.shipments.index', [
             'shipments' => $shipments,
             'totalCo2' => $totalCo2,
             'byMode' => $byMode,
@@ -65,7 +65,7 @@ class ShipmentController extends Controller
 
     public function create(): View
     {
-        return view('logistics.shipments.create', $this->formData() + ['shipment' => new Shipment]);
+        return view('back.logistics.shipments.create', $this->formData() + ['shipment' => new Shipment]);
     }
 
     public function store(ShipmentRequest $request): RedirectResponse
@@ -90,14 +90,14 @@ class ShipmentController extends Controller
             (float) $shipment->distance_km,
         );
 
-        return view('logistics.shipments.show', compact('shipment', 'comparison'));
+        return view('back.logistics.shipments.show', compact('shipment', 'comparison'));
     }
 
     public function edit(Request $request, Shipment $shipment): View
     {
         $this->ensureOwnership($request, $shipment);
 
-        return view('logistics.shipments.edit', $this->formData() + compact('shipment'));
+        return view('back.logistics.shipments.edit', $this->formData() + compact('shipment'));
     }
 
     public function update(ShipmentRequest $request, Shipment $shipment): RedirectResponse

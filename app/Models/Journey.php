@@ -38,4 +38,15 @@ class Journey extends Model
     {
         return $this->hasMany(JourneyStep::class)->orderBy('step_order');
     }
+
+    /**
+     * The first free position in this journey's workflow.
+     *
+     * Step orders are unique per journey, so prefilling this number is what
+     * keeps the create form from failing validation on submit.
+     */
+    public function nextStepOrder(): int
+    {
+        return (int) ($this->steps->max('step_order') ?? 0) + 1;
+    }
 }

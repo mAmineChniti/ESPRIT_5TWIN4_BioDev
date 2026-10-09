@@ -12,7 +12,7 @@
     <form action="{{ route('logistics.shipments.update', $shipment) }}" method="POST" class="space-y-6">
         @csrf
         @method('PUT')
-        @include('logistics.shipments.form')
+        @include('back.logistics.shipments.form')
 
         <div class="pt-4 flex justify-end">
             <april:button type="submit">Update</april:button>

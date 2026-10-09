@@ -43,7 +43,7 @@ class AgriculturalRegionController extends Controller
             ->latest()
             ->paginate(self::PER_PAGE);
 
-        return view('back.agricultural-regions.index', compact('regions'));
+        return view('back.regions.index', compact('regions'));
     }
 
     /**
@@ -53,7 +53,7 @@ class AgriculturalRegionController extends Controller
     {
         $this->ensureAdmin($request);
 
-        return view('back.agricultural-regions.create');
+        return view('back.regions.create');
     }
 
     /**
@@ -85,7 +85,7 @@ class AgriculturalRegionController extends Controller
                 ->latest(),
         ]);
 
-        return view('back.agricultural-regions.show', compact('region'));
+        return view('back.regions.show', compact('region'));
     }
 
     /**
@@ -95,7 +95,7 @@ class AgriculturalRegionController extends Controller
     {
         $this->ensureAdmin($request);
 
-        return view('back.agricultural-regions.edit', compact('region'));
+        return view('back.regions.edit', compact('region'));
     }
 
     /**

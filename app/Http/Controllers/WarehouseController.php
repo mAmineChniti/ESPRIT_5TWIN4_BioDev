@@ -13,12 +13,12 @@ class WarehouseController extends Controller
     {
         $warehouses = Warehouse::withCount('shipments')->orderBy('name')->paginate(10);
 
-        return view('logistics.warehouses.index', compact('warehouses'));
+        return view('back.logistics.warehouses.index', compact('warehouses'));
     }
 
     public function create(): View
     {
-        return view('logistics.warehouses.create', ['warehouse' => new Warehouse]);
+        return view('back.logistics.warehouses.create', ['warehouse' => new Warehouse]);
     }
 
     public function store(WarehouseRequest $request): RedirectResponse
@@ -35,12 +35,12 @@ class WarehouseController extends Controller
             ->latest('shipped_on')
             ->paginate(10);
 
-        return view('logistics.warehouses.show', compact('warehouse', 'shipments'));
+        return view('back.logistics.warehouses.show', compact('warehouse', 'shipments'));
     }
 
     public function edit(Warehouse $warehouse): View
     {
-        return view('logistics.warehouses.edit', compact('warehouse'));
+        return view('back.logistics.warehouses.edit', compact('warehouse'));
     }
 
     public function update(WarehouseRequest $request, Warehouse $warehouse): RedirectResponse

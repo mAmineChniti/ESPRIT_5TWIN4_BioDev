@@ -40,7 +40,7 @@
                         <tr>
                             <th scope="col" class="px-6 py-3">Code</th>
                             <th scope="col" class="px-6 py-3">Region name</th>
-                            <th scope="col" class="px-6 py-3">Climat</th>
+                            <th scope="col" class="px-6 py-3">Climate</th>
                             <th scope="col" class="px-6 py-3">Soil type</th>
                             <th scope="col" class="px-6 py-3">Linked farms</th>
                             <th scope="col" class="px-6 py-3 text-right">Actions</th>

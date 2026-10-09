@@ -43,7 +43,7 @@
             <april:card>
                 <x-slot:content>
                     <span class="text-xs font-semibold uppercase text-muted-foreground">Linked farms</span>
-                    <p class="mt-1 text-lg font-bold text-primary">{{ $region->farms->count() }} exploitation(s)</p>
+                    <p class="mt-1 text-lg font-bold text-primary">{{ $region->farms->count() }} farm(s)</p>
                 </x-slot:content>
             </april:card>
         </div>

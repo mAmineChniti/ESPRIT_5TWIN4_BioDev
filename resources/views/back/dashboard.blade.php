@@ -2,7 +2,7 @@
     The dashboard for the supply chain roles and the admin.
 
     A consumer never sees this view: /consumer/dashboard is served by
-    ConsumerDashboardController, which renders back.consumer-dashboard. So this
+    ConsumerDashboardController, which renders back.consumer.dashboard. So this
     template has no consumer branch to read.
 --}}
 @extends('layouts.back')

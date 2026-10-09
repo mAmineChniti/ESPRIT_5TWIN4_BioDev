@@ -25,7 +25,7 @@ class StageTransitionController extends Controller
 
         $food->load('transitions.actor');
 
-        return view('foods.transitions.index', [
+        return view('back.foods.transitions.index', [
             'food' => $food,
             'nextStage' => Stage::next($food->currentStage()),
         ]);

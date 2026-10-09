@@ -14,6 +14,6 @@ class PublicJourneyController extends Controller
             ->with(['product', 'steps'])
             ->firstOrFail();
 
-        return view('journeys.public', compact('journey'));
+        return view('front.journeys.public', compact('journey'));
     }
 }

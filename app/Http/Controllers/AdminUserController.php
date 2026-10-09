@@ -30,7 +30,7 @@ class AdminUserController extends Controller
             ->groupBy('role')
             ->pluck('total', 'role');
 
-        return view('back.users', [
+        return view('back.admin.users.index', [
             'users' => $users,
             'roleCounts' => $roleCounts,
         ]);
@@ -40,7 +40,7 @@ class AdminUserController extends Controller
     {
         $this->ensureAdmin($request);
 
-        return view('back.users_edit', compact('user'));
+        return view('back.admin.users.edit', compact('user'));
     }
 
     public function update(Request $request, User $user): RedirectResponse

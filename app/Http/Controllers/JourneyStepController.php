@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateJourneyStepRequest;
 use App\Models\Journey;
 use App\Models\JourneyStep;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class JourneyStepController extends Controller
@@ -15,12 +16,33 @@ class JourneyStepController extends Controller
     {
         $journey->load(['product', 'steps']);
 
-        return view('processor.journeys.steps.index', compact('journey'));
+        return view('back.processor.journeys.steps.index', compact('journey'));
     }
 
-    public function create(Journey $journey): View
+    public function create(Request $request, Journey $journey): View
     {
-        return view('processor.journeys.steps.create', compact('journey'));
+        $journey->load(['product', 'steps']);
+
+        // The form opens on the next free position with the next unrecorded
+        // stage selected, so recording a journey is one continuous workflow
+        // instead of inventing an order number. Explicit query values (from the
+        // workflow's call to action) win; anything invalid falls back, and the
+        // store validation still has the final word.
+        $order = $request->query('step_order');
+        $order = is_numeric($order) && (int) $order >= 1 ? (int) $order : $journey->nextStepOrder();
+
+        $type = $request->query('type');
+        $type = in_array($type, JourneyStep::FLOW, true)
+            ? $type
+            : JourneyStep::suggestedType($journey->steps->pluck('type'));
+
+        $step = new JourneyStep([
+            'step_order' => $order,
+            'type' => $type,
+            'step_date' => now()->toDateString(),
+        ]);
+
+        return view('back.processor.journeys.steps.create', compact('journey', 'step'));
     }
 
     public function store(StoreJourneyStepRequest $request, Journey $journey): RedirectResponse
@@ -36,14 +58,14 @@ class JourneyStepController extends Controller
     {
         $this->ensureBelongsToJourney($journey, $step);
 
-        return view('processor.journeys.steps.show', compact('journey', 'step'));
+        return view('back.processor.journeys.steps.show', compact('journey', 'step'));
     }
 
     public function edit(Journey $journey, JourneyStep $step): View
     {
         $this->ensureBelongsToJourney($journey, $step);
 
-        return view('processor.journeys.steps.edit', compact('journey', 'step'));
+        return view('back.processor.journeys.steps.edit', compact('journey', 'step'));
     }
 
     public function update(

@@ -24,7 +24,7 @@
             <x-slot:title>Profile information</x-slot:title>
             <x-slot:description>Update your name and email address.</x-slot:description>
             <x-slot:content>
-                @include('profile.partials.update-profile-information-form')
+                @include('back.profile.partials.update-profile-information-form')
             </x-slot:content>
         </april:card>
 
@@ -32,7 +32,7 @@
             <x-slot:title>Update password</x-slot:title>
             <x-slot:description>Use a long, random password to stay secure.</x-slot:description>
             <x-slot:content>
-                @include('profile.partials.update-password-form')
+                @include('back.profile.partials.update-password-form')
             </x-slot:content>
         </april:card>
 
@@ -40,7 +40,7 @@
             <x-slot:title>Delete account</x-slot:title>
             <x-slot:description>Permanently remove your account and data.</x-slot:description>
             <x-slot:content>
-                @include('profile.partials.delete-user-form')
+                @include('back.profile.partials.delete-user-form')
             </x-slot:content>
         </april:card>
     </div>

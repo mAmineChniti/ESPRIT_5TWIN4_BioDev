@@ -19,9 +19,10 @@
     source of truth.
 
     Colours come from the theme tokens so the map follows the light/dark palette.
-    The route uses the foreground token rather than destructive, because
-    destructive is this theme's error channel and a shipping route is not an
-    error.
+    The route uses the primary token rather than foreground or destructive:
+    foreground turns near-white in dark mode and vanishes on the light
+    OpenStreetMap tiles, and destructive is this theme's error channel while
+    a shipping route is not an error.
 --}}
 <div class="space-y-3">
     <h3 class="text-base font-medium leading-6 text-foreground">Origin map</h3>
@@ -74,7 +75,7 @@
                     const styles = getComputedStyle(document.documentElement);
                     const token = (name) => `hsl(${styles.getPropertyValue(name).trim()})`;
                     const tone = {
-                        line: token('--foreground'),
+                        line: token('--primary'),
                         fill: token('--card'),
                     };
 
@@ -106,16 +107,15 @@
                     // inside a popup someone has to click open.
                     const line = L.polyline([start, end], {
                         color: tone.line,
-                        weight: 3,
-                        opacity: 0.65,
-                        dashArray: '8, 8',
+                        weight: 5,
+                        opacity: 1,
                     }).addTo(map);
 
                     L.marker(start).addTo(map)
                         .bindPopup(`<b>${originLabel}</b><br>Origin of this product<br>~${kilometres.toLocaleString()} km`);
 
                     L.circleMarker(end, {
-                        radius: 7, color: tone.line, fillColor: tone.fill, fillOpacity: 1, weight: 2,
+                        radius: 7, color: tone.line, fillColor: tone.fill, fillOpacity: 1, weight: 3,
                     }).addTo(map)
                         .bindPopup(`<b>${home.name}</b><br>Destination market`);
 

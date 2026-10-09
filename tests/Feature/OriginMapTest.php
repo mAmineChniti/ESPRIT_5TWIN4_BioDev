@@ -192,15 +192,23 @@ class OriginMapTest extends TestCase
         $this->assertStringContainsString('map.fitBounds(line.getBounds()', $html);
     }
 
-    public function test_the_route_line_is_not_painted_with_the_error_colour(): void
+    public function test_the_route_line_uses_the_visible_primary_colour(): void
     {
         $food = Food::factory()->create(['origin' => 'Brazil']);
 
         $html = $this->get(route('products.show', $food))->assertOk()->getContent();
 
-        // destructive is this theme's error channel; a shipping route is not an
-        // error, and on a dark background it reads as a fault.
-        $this->assertStringContainsString('token(\'--foreground\')', $html);
+        // Primary is the leaf-green brand channel: dark green against the light
+        // OpenStreetMap tiles in light mode, bright leaf in dark mode. Foreground
+        // turns near-white in dark mode and vanishes on those same light tiles;
+        // destructive is the error channel and a shipping route is not an error.
+        $this->assertStringContainsString('token(\'--primary\')', $html);
+        $this->assertStringNotContainsString('token(\'--foreground\')', $html);
         $this->assertStringNotContainsString('token(\'--destructive\')', $html);
+
+        // Solid and full-opacity: the old thin dashed 0.65 line was faint.
+        $this->assertStringContainsString('weight: 5', $html);
+        $this->assertStringContainsString('opacity: 1', $html);
+        $this->assertStringNotContainsString('dashArray', $html);
     }
 }

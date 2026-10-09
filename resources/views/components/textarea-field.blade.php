@@ -16,6 +16,10 @@
     back blank: editing a farm blanked its description, editing a review blanked
     the body, and a failed rejection lost the reason.
 
+    The box is a fixed size: it always fills its container's width and cannot
+    be drag-resized, so a stretched textarea can never break a dialog, card or
+    grid alignment. Height comes from `rows`, with a floor of 80px.
+
     The classes are April's own, copied once here so they cannot drift.
 --}}
 <textarea
@@ -24,7 +28,7 @@
     @if ($name) name="{{ $name }}" @endif
     rows="{{ $rows }}"
     {{ $attributes->twMerge([
-        'flex min-h-[80px] rounded-md border bg-background px-3 py-2',
+        'flex min-h-[80px] w-full resize-none rounded-md border bg-background px-3 py-2',
         'text-sm ring-offset-background placeholder:text-muted-foreground',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         'focus-visible:ring-offset-2 disabled:cursor-not-allowed',

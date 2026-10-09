@@ -51,12 +51,12 @@
                     </p>
 
                     <div class="pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-                        <span>📍 {{ $farm->address }}</span>
+                        <span class="inline-flex items-center gap-1.5"><x-lucide-map-pin class="size-3.5 shrink-0" /> {{ $farm->address }}</span>
                         <span class="font-mono font-semibold">{{ number_format($farm->surface_hectares, 1) }} ha</span>
                     </div>
                 </div>
             @empty
-                <div class="col-span-2 rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
+                <div class="col-span-full rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
                     No farms recorded in this region yet.
                 </div>
             @endforelse
