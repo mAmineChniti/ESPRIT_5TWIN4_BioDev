@@ -23,7 +23,7 @@ class MealController extends Controller
             ->latest('id')
             ->paginate(20);
 
-        return view('meals.index', compact('meals'));
+        return view('back.meals.index', compact('meals'));
     }
 
     /**
@@ -52,7 +52,7 @@ class MealController extends Controller
             ->limit(self::PICKER_LIMIT)
             ->get();
 
-        return view('meals.create', [
+        return view('back.meals.create', [
             'foods' => $foods,
             'types' => Meal::TYPES,
             'search' => $term,
@@ -106,7 +106,7 @@ class MealController extends Controller
     {
         $this->ensureOwnership($request, $meal);
 
-        return view('meals.show', [
+        return view('back.meals.show', [
             'meal' => $meal->load('foods.category'),
         ]);
     }

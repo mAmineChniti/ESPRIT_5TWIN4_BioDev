@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Food extends Model
 {
@@ -181,6 +182,32 @@ class Food extends Model
     }
 
     /**
+     * Reports that the AI detector read this product wrongly.
+     *
+     * Kept separate from reports(): these are claims about our own analysis, so
+     * they must never be counted against the product.
+     *
+     * @return HasMany<AnalysisDispute, $this>
+     */
+    public function analysisDisputes(): HasMany
+    {
+        return $this->hasMany(AnalysisDispute::class);
+    }
+
+    /**
+     * The traceability journey for this product, when one exists.
+     *
+     * The column is unique, so the relationship is singular rather than a
+     * has-many.
+     *
+     * @return HasOne<Journey, $this>
+     */
+    public function journey(): HasOne
+    {
+        return $this->hasOne(Journey::class, 'product_id');
+    }
+
+    /**
      * Mean rating across all reviews, or null when nobody has reviewed it.
      *
      * Prefers an aggregate already loaded by withAvg() so a listing sorted by
@@ -303,5 +330,15 @@ class Food extends Model
             'tone' => VerdictTone::Medium,
             'message' => 'The full chain is recorded, but certifications or other evidence are missing.',
         ];
+    }
+
+    /**
+     * Shipments that carried this product.
+     *
+     * @return HasMany<Shipment, $this>
+     */
+    public function shipments(): HasMany
+    {
+        return $this->hasMany(Shipment::class);
     }
 }

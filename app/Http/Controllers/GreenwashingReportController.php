@@ -27,7 +27,7 @@ class GreenwashingReportController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('back.reports', compact('reports'));
+        return view('back.admin.reports', compact('reports'));
     }
 
     /**

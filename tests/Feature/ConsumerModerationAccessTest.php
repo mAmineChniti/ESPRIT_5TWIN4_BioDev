@@ -60,7 +60,7 @@ class ConsumerModerationAccessTest extends TestCase
         $food = Food::factory()->create();
 
         $this->actingAs($this->user($role))
-            ->post(route('reviews.store', $food), ['rating' => 4])
+            ->post(route('products.reviews.store', $food), ['rating' => 4])
             ->assertForbidden();
 
         $this->assertDatabaseCount('reviews', 0);
@@ -73,7 +73,7 @@ class ConsumerModerationAccessTest extends TestCase
         $review = Review::factory()->create(['food_id' => $food->id, 'user_id' => $this->user('consumer')->id]);
 
         $this->actingAs($this->user($role))
-            ->delete(route('reviews.destroy', ['food' => $food, 'review' => $review]))
+            ->delete(route('products.reviews.destroy', ['food' => $food, 'review' => $review]))
             ->assertForbidden();
 
         $this->assertDatabaseHas('reviews', ['id' => $review->id]);
@@ -86,7 +86,7 @@ class ConsumerModerationAccessTest extends TestCase
         $review = Review::factory()->create(['food_id' => $food->id, 'user_id' => $consumer->id]);
 
         $this->actingAs($consumer)
-            ->delete(route('reviews.destroy', ['food' => $food, 'review' => $review]))
+            ->delete(route('products.reviews.destroy', ['food' => $food, 'review' => $review]))
             ->assertSessionHasNoErrors();
 
         $this->assertDatabaseMissing('reviews', ['id' => $review->id]);
@@ -107,7 +107,7 @@ class ConsumerModerationAccessTest extends TestCase
         // named in the URL. Route-model-binding is not authorization: both the
         // product and the review have to agree.
         $this->actingAs($consumer)
-            ->delete(route('reviews.destroy', ['food' => $unrelatedProduct, 'review' => $review]))
+            ->delete(route('products.reviews.destroy', ['food' => $unrelatedProduct, 'review' => $review]))
             ->assertNotFound();
 
         $this->assertDatabaseHas('reviews', ['id' => $review->id]);
@@ -119,7 +119,7 @@ class ConsumerModerationAccessTest extends TestCase
         $review = Review::factory()->create(['food_id' => $food->id, 'user_id' => $this->user('consumer')->id]);
 
         $this->actingAs($this->user('consumer'))
-            ->delete(route('reviews.destroy', ['food' => $food, 'review' => $review]))
+            ->delete(route('products.reviews.destroy', ['food' => $food, 'review' => $review]))
             ->assertForbidden();
 
         $this->assertDatabaseHas('reviews', ['id' => $review->id]);
@@ -133,7 +133,7 @@ class ConsumerModerationAccessTest extends TestCase
         $food = Food::factory()->create();
 
         $this->actingAs($this->user($role))
-            ->post(route('reports.store', $food), ['reason' => ReportReason::UnverifiableClaim->value])
+            ->post(route('products.reports.store', $food), ['reason' => ReportReason::UnverifiableClaim->value])
             ->assertForbidden();
 
         $this->assertDatabaseCount('greenwashing_reports', 0);
@@ -145,7 +145,7 @@ class ConsumerModerationAccessTest extends TestCase
         $food = Food::factory()->create();
 
         $this->actingAs($consumer)
-            ->post(route('reports.store', $food), ['reason' => ReportReason::UnverifiableClaim->value])
+            ->post(route('products.reports.store', $food), ['reason' => ReportReason::UnverifiableClaim->value])
             ->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('greenwashing_reports', [
@@ -160,11 +160,11 @@ class ConsumerModerationAccessTest extends TestCase
         $consumer = $this->user('consumer');
         $food = Food::factory()->create();
 
-        $this->actingAs($consumer)->post(route('reports.store', $food), [
+        $this->actingAs($consumer)->post(route('products.reports.store', $food), [
             'reason' => ReportReason::UnverifiableClaim->value,
         ]);
 
-        $this->actingAs($consumer)->post(route('reports.store', $food), [
+        $this->actingAs($consumer)->post(route('products.reports.store', $food), [
             'reason' => ReportReason::UnverifiableClaim->value,
         ])->assertSessionHasErrors('reason');
 
@@ -182,7 +182,7 @@ class ConsumerModerationAccessTest extends TestCase
             'status' => ReportStatus::Dismissed,
         ]);
 
-        $this->actingAs($consumer)->post(route('reports.store', $food), [
+        $this->actingAs($consumer)->post(route('products.reports.store', $food), [
             'reason' => ReportReason::UnverifiableClaim->value,
         ])->assertSessionHasNoErrors();
 
@@ -196,7 +196,7 @@ class ConsumerModerationAccessTest extends TestCase
         $report = GreenwashingReport::factory()->create();
 
         $this->actingAs($this->user($role))
-            ->patch(route('reports.update', $report), ['status' => ReportStatus::Upheld->value])
+            ->patch(route('admin.reports.update', $report), ['status' => ReportStatus::Upheld->value])
             ->assertForbidden();
 
         $this->assertNull($report->fresh()->reviewed_by);
@@ -213,7 +213,7 @@ class ConsumerModerationAccessTest extends TestCase
         $before = $food->transparencyScore();
 
         $this->actingAs($this->user('admin'))
-            ->patch(route('reports.update', $report), ['status' => ReportStatus::Upheld->value])
+            ->patch(route('admin.reports.update', $report), ['status' => ReportStatus::Upheld->value])
             ->assertSessionHasNoErrors();
 
         $this->assertSame(ReportStatus::Upheld, $report->fresh()->status);
@@ -231,7 +231,7 @@ class ConsumerModerationAccessTest extends TestCase
         $before = $food->transparencyScore();
 
         $this->actingAs($this->user('admin'))
-            ->patch(route('reports.update', $report), ['status' => ReportStatus::Dismissed->value]);
+            ->patch(route('admin.reports.update', $report), ['status' => ReportStatus::Dismissed->value]);
 
         $this->assertSame($before, $food->fresh()->transparencyScore());
     }

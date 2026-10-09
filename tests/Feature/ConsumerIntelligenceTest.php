@@ -578,7 +578,7 @@ class ConsumerIntelligenceTest extends TestCase
         $food = Food::factory()->create();
         $consumer = $this->consumer();
 
-        $response = $this->actingAs($consumer)->post(route('products.reportFinding', $food), [
+        $response = $this->actingAs($consumer)->post(route('products.reports.escalate', $food), [
             'category' => FindingCategory::ExpiredCertification->value,
             'title' => 'Certification has expired',
             'detail' => 'The only certification on file lapsed last month.',
@@ -608,7 +608,7 @@ class ConsumerIntelligenceTest extends TestCase
 
         foreach (['producer', 'processor', 'distributor', 'admin'] as $role) {
             $this->actingAs(User::factory()->create(['role' => $role]))
-                ->post(route('products.reportFinding', $food), [
+                ->post(route('products.reports.escalate', $food), [
                     'category' => FindingCategory::Other->value,
                 ])
                 ->assertForbidden();
@@ -620,7 +620,7 @@ class ConsumerIntelligenceTest extends TestCase
     public function test_reporting_a_finding_requires_a_known_category(): void
     {
         $this->actingAs($this->consumer())
-            ->post(route('products.reportFinding', Food::factory()->create()), [
+            ->post(route('products.reports.escalate', Food::factory()->create()), [
                 'category' => 'made_up',
             ])
             ->assertSessionHasErrors('category');
@@ -633,10 +633,10 @@ class ConsumerIntelligenceTest extends TestCase
 
         $payload = ['category' => FindingCategory::Other->value];
 
-        $this->actingAs($consumer)->post(route('products.reportFinding', $food), $payload);
+        $this->actingAs($consumer)->post(route('products.reports.escalate', $food), $payload);
 
         $this->actingAs($consumer)
-            ->post(route('products.reportFinding', $food), $payload)
+            ->post(route('products.reports.escalate', $food), $payload)
             ->assertSessionHasErrors('reason');
 
         $this->assertSame(1, $food->reports()->count());
@@ -669,7 +669,7 @@ class ConsumerIntelligenceTest extends TestCase
 
         $html = $this->actingAs($consumer)->get(route('consumer.space'))->assertOk()->getContent();
 
-        $this->assertStringContainsString('Espace Consommateur', $html);
+        $this->assertStringContainsString('Your consumer space', $html);
         $this->assertStringContainsString('Scrambled Eggs', $html);
         $this->assertStringNotContainsString('Never Eaten Product', $html);
         $this->assertStringContainsString('AI audit of what you eat', $html);

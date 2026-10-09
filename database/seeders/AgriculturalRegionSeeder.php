@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\FarmStatus;
 use App\Models\AgriculturalRegion;
 use App\Models\Farm;
 use App\Models\User;
@@ -27,7 +28,7 @@ class AgriculturalRegionSeeder extends Seeder
                         'producer_name' => 'Sami Ben Ali',
                         'address' => 'Route de Korba Km 5, Nabeul',
                         'surface_hectares' => 45.00,
-                        'farming_type' => 'Biologique',
+                        'farming_type' => 'Organic',
                         'phone' => '+216 72 100 200',
                         'description' => 'Spécialisée dans la production d’agrumes bio et d’huile d’olive de qualité supérieure.',
                     ],
@@ -36,7 +37,7 @@ class AgriculturalRegionSeeder extends Seeder
                         'producer_name' => 'Karim Soltane',
                         'address' => 'Grombalia Centre',
                         'surface_hectares' => 80.50,
-                        'farming_type' => 'Raisonné',
+                        'farming_type' => 'Sustainable',
                         'phone' => '+216 72 300 400',
                         'description' => 'Vergers d’oranges maltaises et de clémentines produites en agriculture raisonnée.',
                     ],
@@ -54,7 +55,7 @@ class AgriculturalRegionSeeder extends Seeder
                         'producer_name' => 'Moncef Jebali',
                         'address' => 'Teboursouk, Béja',
                         'surface_hectares' => 120.00,
-                        'farming_type' => 'Traditionnel',
+                        'farming_type' => 'Traditional',
                         'phone' => '+216 78 500 600',
                         'description' => 'Production de blé dur, d’orge et d’olives de la variété Chemlali.',
                     ],
@@ -63,7 +64,7 @@ class AgriculturalRegionSeeder extends Seeder
                         'producer_name' => 'Fatma Gharbi',
                         'address' => 'Aïn Draham Road, Testour',
                         'surface_hectares' => 35.00,
-                        'farming_type' => 'Biologique',
+                        'farming_type' => 'Organic',
                         'phone' => '+216 78 700 800',
                         'description' => 'Culture biologique de grenades, figues et Légumes de saison.',
                     ],
@@ -81,7 +82,7 @@ class AgriculturalRegionSeeder extends Seeder
                         'producer_name' => 'Youssef Trabelsi',
                         'address' => 'Msaken, Sousse',
                         'surface_hectares' => 150.00,
-                        'farming_type' => 'Raisonné',
+                        'farming_type' => 'Sustainable',
                         'phone' => '+216 73 900 111',
                         'description' => 'Production et extraction d’huile d’olive vierge extra pressée à froid.',
                     ],
@@ -100,7 +101,7 @@ class AgriculturalRegionSeeder extends Seeder
 
             foreach ($farms as $farmData) {
                 $farmData['agricultural_region_id'] = $region->id;
-                $farmData['status'] = 'validee';
+                $farmData['status'] = FarmStatus::Approved;
                 // Assign first farm of Sahel to admin, others to producer to test filtering
                 if ($data['code'] === 'REG-SAHEL' && $adminUser) {
                     $farmData['user_id'] = $adminUser->id;
@@ -137,8 +138,8 @@ class AgriculturalRegionSeeder extends Seeder
                     'soil_type' => 'Sol argileux',
                     'address' => 'Bizerte Centre',
                     'surface_hectares' => 50.00,
-                    'farming_type' => 'Biologique',
-                    'status' => 'en_attente',
+                    'farming_type' => 'Organic',
+                    'status' => FarmStatus::Pending,
                     'description' => 'Sol fertile adapté aux cultures agricoles',
                 ]
             );

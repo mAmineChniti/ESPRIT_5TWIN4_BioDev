@@ -83,7 +83,7 @@ class ConsumerDashboardController extends Controller
             ->take(5)
             ->get();
 
-        return view('back.consumer-dashboard', [
+        return view('back.consumer.dashboard', [
             'meals' => $meals,
             'myReviews' => $myReviews,
             'myReports' => $myReports,

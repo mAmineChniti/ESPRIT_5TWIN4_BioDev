@@ -12,17 +12,17 @@
                     <h1 class="text-2xl font-bold tracking-tight">{{ $region->name }}</h1>
                     <april:badge variant="none" class="font-mono">{{ $region->code }}</april:badge>
                 </div>
-                <p class="mt-1 text-sm text-muted-foreground">Détails de la région agricole et des fermes associées.</p>
+                <p class="mt-1 text-sm text-muted-foreground">Agricultural region details and linked farms.</p>
             </div>
             <div class="flex gap-2">
                 @if($isAdmin)
-                    <april:button-link href="{{ route('back.regions.edit', $region) }}" variant="outline">
+                    <april:button-link href="{{ route('regions.edit', $region) }}" variant="outline">
                         <x-lucide-pencil class="mr-2 size-4" />
-                        Modifier
+                        Edit
                     </april:button-link>
                 @endif
-                <april:button-link href="{{ route('back.regions.index') }}" variant="ghost">
-                    Retour
+                <april:button-link href="{{ route('regions.index') }}" variant="ghost">
+                    Back
                 </april:button-link>
             </div>
         </div>
@@ -30,20 +30,20 @@
         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
             <april:card>
                 <x-slot:content>
-                    <span class="text-xs font-semibold uppercase text-muted-foreground">Climat</span>
-                    <p class="mt-1 text-lg font-medium text-foreground">{{ $region->climate ?? 'Non spécifié' }}</p>
+                    <span class="text-xs font-semibold uppercase text-muted-foreground">Climate</span>
+                    <p class="mt-1 text-lg font-medium text-foreground">{{ $region->climate ?? 'Not specified' }}</p>
                 </x-slot:content>
             </april:card>
             <april:card>
                 <x-slot:content>
-                    <span class="text-xs font-semibold uppercase text-muted-foreground">Type de Sol</span>
-                    <p class="mt-1 text-lg font-medium text-foreground">{{ $region->soil_type ?? 'Non spécifié' }}</p>
+                    <span class="text-xs font-semibold uppercase text-muted-foreground">Soil type</span>
+                    <p class="mt-1 text-lg font-medium text-foreground">{{ $region->soil_type ?? 'Not specified' }}</p>
                 </x-slot:content>
             </april:card>
             <april:card>
                 <x-slot:content>
-                    <span class="text-xs font-semibold uppercase text-muted-foreground">Fermes Rattachées</span>
-                    <p class="mt-1 text-lg font-bold text-primary">{{ $region->farms->count() }} exploitation(s)</p>
+                    <span class="text-xs font-semibold uppercase text-muted-foreground">Linked farms</span>
+                    <p class="mt-1 text-lg font-bold text-primary">{{ $region->farms->count() }} farm(s)</p>
                 </x-slot:content>
             </april:card>
         </div>
@@ -58,26 +58,26 @@
         @endif
 
         <april:card>
-            <x-slot:title>Fermes dans cette Région</x-slot:title>
+            <x-slot:title>Farms in this Region</x-slot:title>
             {{-- The controller scopes this to the viewer's own farms unless
                  the viewer is an admin, so a producer never sees another's. --}}
             <x-slot:content>
                 <div class="mb-4">
-                    <april:button-link href="{{ route('back.farms.create') }}?region_id={{ $region->id }}" size="sm">
+                    <april:button-link href="{{ route('farms.create') }}?region_id={{ $region->id }}" size="sm">
                         <x-lucide-plus class="mr-2 size-4" />
-                        Ajouter une Ferme
+                        Add a farm
                     </april:button-link>
                 </div>
 
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
-                        <caption class="sr-only">Fermes rattachées à {{ $region->name }}</caption>
+                        <caption class="sr-only">Farms linked to {{ $region->name }}</caption>
                         <thead class="border-b border-border bg-muted/50 text-xs font-semibold uppercase text-muted-foreground">
                             <tr>
-                                <th scope="col" class="px-4 py-3">Nom de la Ferme</th>
-                                <th scope="col" class="px-4 py-3">Producteur</th>
-                                <th scope="col" class="px-4 py-3">Surface</th>
-                                <th scope="col" class="px-4 py-3">Statut</th>
+                                <th scope="col" class="px-4 py-3">Farm name</th>
+                                <th scope="col" class="px-4 py-3">Producer</th>
+                                <th scope="col" class="px-4 py-3">Area</th>
+                                <th scope="col" class="px-4 py-3">Status</th>
                                 <th scope="col" class="px-4 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
@@ -92,10 +92,10 @@
                                     </td>
                                     <td class="px-4 py-3 text-right">
                                         <april:button-link
-                                            href="{{ route('back.farms.show', $farm) }}"
+                                            href="{{ route('farms.show', $farm) }}"
                                             variant="ghost"
                                             size="sm"
-                                            aria-label="Voir {{ $farm->name }}"
+                                            aria-label="View {{ $farm->name }}"
                                         >
                                             <x-lucide-eye class="size-4" />
                                         </april:button-link>
@@ -104,7 +104,7 @@
                             @empty
                                 <tr>
                                     <td colspan="5" class="px-4 py-8 text-center text-muted-foreground">
-                                        Aucune ferme enregistrée dans cette région.
+                                        No farms recorded in this region.
                                     </td>
                                 </tr>
                             @endforelse

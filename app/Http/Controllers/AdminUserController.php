@@ -17,8 +17,10 @@ class AdminUserController extends Controller
      */
     private const ROLES = ['admin', 'producer', 'processor', 'distributor', 'consumer'];
 
-    public function index(): View
+    public function index(Request $request): View
     {
+        $this->ensureAdmin($request);
+
         $users = User::orderBy('role')->orderBy('name')->paginate(15)->withQueryString();
 
         // Counted in the database rather than by filtering the page in PHP, so
@@ -28,19 +30,23 @@ class AdminUserController extends Controller
             ->groupBy('role')
             ->pluck('total', 'role');
 
-        return view('back.users', [
+        return view('back.admin.users.index', [
             'users' => $users,
             'roleCounts' => $roleCounts,
         ]);
     }
 
-    public function edit(User $user): View
+    public function edit(Request $request, User $user): View
     {
-        return view('back.users_edit', compact('user'));
+        $this->ensureAdmin($request);
+
+        return view('back.admin.users.edit', compact('user'));
     }
 
     public function update(Request $request, User $user): RedirectResponse
     {
+        $this->ensureAdmin($request);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
@@ -57,17 +63,30 @@ class AdminUserController extends Controller
 
         $user->update($validated);
 
-        return redirect()->route('admin.users')->with('success', 'User updated successfully.');
+        return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
     }
 
-    public function destroy(User $user): RedirectResponse
+    public function destroy(Request $request, User $user): RedirectResponse
     {
-        if ($user->id === request()->user()->id) {
+        $this->ensureAdmin($request);
+
+        if ($user->id === $request->user()->id) {
             return back()->withErrors(['error' => 'You cannot delete yourself.']);
         }
 
         $user->delete();
 
-        return redirect()->route('admin.users')->with('success', 'User deleted successfully.');
+        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
+    }
+
+    /**
+     * Route-level middleware already restricts these actions to an admin; this
+     * is the second layer, so a route accidentally moved out of the group still
+     * fails closed. Guarding `update` matters most, since it can promote any
+     * account to admin.
+     */
+    private function ensureAdmin(Request $request): void
+    {
+        abort_unless($request->user()?->isAdmin(), 403, 'Only an administrator can manage users.');
     }
 }

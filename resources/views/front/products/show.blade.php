@@ -74,8 +74,10 @@
 </april:card>
 
 <div class="mt-6 grid gap-6 lg:grid-cols-3">
+    {{-- Timeline and map share the wide column, so no grid cell is left empty. --}}
+    <div class="space-y-6 lg:col-span-2">
     {{-- Interactive timeline --}}
-    <section class="lg:col-span-2 rounded-2xl border border-border bg-card p-6 shadow-sm"
+    <section class="rounded-2xl border border-border bg-card p-6 shadow-sm"
              x-data='{ selected: null }'>
         <h2 class="text-lg font-semibold">Supply chain timeline</h2>
         <p class="mt-1 text-sm text-muted-foreground">
@@ -152,6 +154,12 @@
         <script type="application/json" id="trace-timeline-data">{!! json_encode(['steps' => $timeline]) !!}</script>
     </section>
 
+    {{-- Where it came from, and how far that is from us. --}}
+    <section class="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <x-origin-map :food="$food" />
+    </section>
+    </div>
+
     <div class="space-y-6">
         {{-- Certifications --}}
         <april:card>
@@ -199,7 +207,7 @@
             <x-slot:content>
                 @auth
                     @if($canReview)
-                        <form action="{{ route('reports.store', $food) }}" method="POST" class="mt-4 space-y-3">
+                        <form action="{{ route('products.reports.store', $food) }}" method="POST" class="mt-4 space-y-3">
                             @csrf
                             <div>
                                 <april:label for="reason" class="text-xs uppercase tracking-wide text-muted-foreground">
@@ -221,7 +229,7 @@
                                 <april:label for="details" class="text-xs uppercase tracking-wide text-muted-foreground">
                                     Details
                                 </april:label>
-                                <april:textarea id="details" name="details" rows="3" class="mt-1">{{ old('details') }}</april:textarea>
+                                <x-textarea-field id="details" name="details" rows="3" class="mt-1" :value="old('details')" />
                                 @error('details') <p class="mt-1 text-sm text-destructive" role="alert">{{ $message }}</p> @enderror
                             </div>
                             <april:button type="submit" variant="destructive" class="w-full">Submit report</april:button>
@@ -307,7 +315,7 @@
 
         @auth
             @if($canReview)
-                <form action="{{ route('reviews.store', $food) }}" method="POST" class="mt-4 rounded-xl bg-muted/50 p-4">
+                <form action="{{ route('products.reviews.store', $food) }}" method="POST" class="mt-4 rounded-lg bg-muted/50 p-4">
                     @csrf
                     <p class="text-sm font-medium">{{ $myReview ? 'Update your review' : 'Leave a review' }}</p>
                     <div class="mt-3 flex flex-wrap items-end gap-3">
@@ -326,8 +334,9 @@
                             <april:label for="body" class="text-xs uppercase tracking-wide text-muted-foreground">
                                 Your experience
                             </april:label>
-                            <april:textarea id="body" name="body" rows="2" class="mt-1"
-                                            placeholder="Did the product match its label?">{{ old('body', $myReview?->body) }}</april:textarea>
+                            <x-textarea-field id="body" name="body" rows="2" class="mt-1"
+                                :value="old('body', $myReview?->body)"
+                                placeholder="Did the product match its label?" />
                         </div>
                         <april:button type="submit">
                             {{ $myReview ? 'Update' : 'Publish' }}

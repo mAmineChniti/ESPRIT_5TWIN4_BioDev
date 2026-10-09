@@ -110,6 +110,16 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Reports this user filed that the AI analysis got a product wrong.
+     *
+     * @return HasMany<AnalysisDispute, $this>
+     */
+    public function analysisDisputes(): HasMany
+    {
+        return $this->hasMany(AnalysisDispute::class);
+    }
+
+    /**
      * Reviews this user left.
      *
      * @return HasMany<Review, $this>

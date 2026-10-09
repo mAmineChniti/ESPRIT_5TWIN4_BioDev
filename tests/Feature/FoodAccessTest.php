@@ -101,11 +101,11 @@ class FoodAccessTest extends TestCase
     public function test_only_admins_can_list_users(): void
     {
         $this->actingAs(User::factory()->create(['role' => 'consumer']))
-            ->get(route('admin.users'))
+            ->get(route('admin.users.index'))
             ->assertForbidden();
 
         $this->actingAs(User::factory()->create(['role' => 'admin']))
-            ->get(route('admin.users'))
+            ->get(route('admin.users.index'))
             ->assertOk();
     }
 

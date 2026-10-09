@@ -18,6 +18,10 @@
         </include>
     </source>
     <php>
+        <!-- Forced empty so no test can silently depend on the developer's own
+             AI_KEY: anything that needs the detector must stub
+             services.ai.key itself, or it fails loudly as "unavailable". -->
+        <env name="AI_KEY" value="" force="true"/>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>

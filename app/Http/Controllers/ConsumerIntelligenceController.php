@@ -61,7 +61,7 @@ class ConsumerIntelligenceController extends Controller
                 'report' => $this->detector->analyze($food),
             ]);
 
-        return view('front.space.index', [
+        return view('front.consumer.space', [
             'recommendations' => $recommendations,
             'watchList' => $watchList,
             'reportsFiled' => $user->reports()->count(),
@@ -188,7 +188,7 @@ class ConsumerIntelligenceController extends Controller
      */
     public function recommendations(Request $request): View
     {
-        return view('front.recommendations', [
+        return view('front.consumer.recommendations', [
             'recommendations' => $this->recommender->recommendedFor($request->user()),
         ]);
     }

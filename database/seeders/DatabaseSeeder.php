@@ -2,9 +2,13 @@
 
 namespace Database\Seeders;
 
+use App\Enums\AnalysisDisputeReason;
+use App\Enums\AnalysisDisputeStatus;
+use App\Enums\FindingCategory;
 use App\Enums\ReportReason;
 use App\Enums\ReportStatus;
 use App\Enums\Stage;
+use App\Models\AnalysisDispute;
 use App\Models\Category;
 use App\Models\Certification;
 use App\Models\Food;
@@ -26,7 +30,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $consumer = $this->user('test@example.com', 'Test User', 'consumer');
+        $consumer = $this->user('consumer@example.com', 'Test User', 'consumer');
         $admin = $this->user('admin@example.com', 'Admin User', 'admin');
         $producer = $this->user('producer@example.com', 'Producer User', 'producer');
         $processor = $this->user('processor@example.com', 'Processor User', 'processor');
@@ -116,20 +120,64 @@ class DatabaseSeeder extends Seeder
             );
         });
 
-        foreach (range(0, 9) as $index) {
-            $meal = Meal::factory()->create([
-                'user_id' => $consumer->id,
-                'consumed_on' => now()->subDays($index)->format('Y-m-d'),
-            ]);
-
-            $meal->foods()->sync(
-                $foods->random(fake()->numberBetween(1, 3))->pluck('id')
-                    ->mapWithKeys(fn (int $foodId): array => [$foodId => ['quantity' => fake()->numberBetween(50, 300)]])
-                    ->all()
+        // A few users also disagree with the detector, so the admin queue has
+        // something to work through. One is left pending on purpose: the sidebar
+        // badge and the queue's oldest-first ordering are only visible when
+        // there is something waiting.
+        $foods->random(3)->each(function (Food $food) use ($consumers, $admin): void {
+            AnalysisDispute::firstOrCreate(
+                ['food_id' => $food->id, 'user_id' => $consumers->first()->id],
+                [
+                    'reason' => AnalysisDisputeReason::FalsePositive,
+                    'comment' => 'The certificate is on file but expired last month, so this is not an unevidenced claim.',
+                    'status' => AnalysisDisputeStatus::Dismissed,
+                    'resolution_note' => 'Agreed — the reference does match the record. Re-ran the analysis.',
+                    'reviewed_by' => $admin->id,
+                    'reviewed_at' => now()->subDay(),
+                ]
             );
+        });
+
+        AnalysisDispute::firstOrCreate(
+            ['food_id' => $foods->first()->id, 'user_id' => $producer->id],
+            [
+                'reason' => AnalysisDisputeReason::MissedIssue,
+                'comment' => 'Nothing flags the expiry date, which is well inside the window we ship in.',
+                'status' => AnalysisDisputeStatus::Pending,
+            ]
+        );
+
+        AnalysisDispute::firstOrCreate(
+            ['food_id' => $foods->last()->id, 'user_id' => $processor->id],
+            [
+                'reason' => AnalysisDisputeReason::WrongEvidence,
+                'finding_category' => FindingCategory::UnverifiableClaim,
+                'comment' => 'The finding cites the origin as evidence, but the unevidenced claim is the grade.',
+                'status' => AnalysisDisputeStatus::Pending,
+            ]
+        );
+
+        // Every consumer gets meals, so neither demo account lands on an
+        // empty "My Meals" page.
+        foreach ($consumers as $consumerUser) {
+            foreach (range(0, 5) as $index) {
+                $meal = Meal::factory()->create([
+                    'user_id' => $consumerUser->id,
+                    'consumed_on' => now()->subDays($index)->format('Y-m-d'),
+                ]);
+
+                $meal->foods()->sync(
+                    $foods->random(fake()->numberBetween(1, 3))->pluck('id')
+                        ->mapWithKeys(fn (int $foodId): array => [$foodId => ['quantity' => fake()->numberBetween(50, 300)]])
+                        ->all()
+                );
+            }
         }
 
+        $this->call(LogisticsSeeder::class);
         $this->call(AgriculturalRegionSeeder::class);
+        // Runs last: a journey is attached to a seeded product.
+        $this->call(JourneySeeder::class);
     }
 
     /**

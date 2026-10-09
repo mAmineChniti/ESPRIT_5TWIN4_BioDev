@@ -2,7 +2,7 @@
     The dashboard for the supply chain roles and the admin.
 
     A consumer never sees this view: /consumer/dashboard is served by
-    ConsumerDashboardController, which renders back.consumer-dashboard. So this
+    ConsumerDashboardController, which renders back.consumer.dashboard. So this
     template has no consumer branch to read.
 --}}
 @extends('layouts.back')
@@ -68,7 +68,7 @@
                     <div class="flex items-center justify-between">
                         <p class="text-sm font-medium text-muted-foreground">{{ $stat['label'] }}</p>
                         <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                            <x-dynamic-component :component="'lucide-'.$stat['icon']" class="size-4.5" />
+                            <x-dynamic-component :component="'lucide-'.$stat['icon']" class="size-4" />
                         </span>
                     </div>
                     <p class="mt-2 text-3xl font-extrabold tabular-nums tracking-tight">{{ $stat['value'] }}</p>
@@ -179,7 +179,7 @@
                             @case('processor')
                                 <li class="flex items-center gap-2 text-muted-foreground">
                                     <x-lucide-factory class="size-4 text-primary" />
-                                    Log transformation steps for raw materials.
+                                    <a href="{{ route('processor.journeys.index') }}" class="text-primary hover:underline">Log transformation steps for raw materials.</a>
                                 </li>
                                 <li class="flex items-center gap-2 text-muted-foreground">
                                     <x-lucide-list class="size-4 text-primary" />

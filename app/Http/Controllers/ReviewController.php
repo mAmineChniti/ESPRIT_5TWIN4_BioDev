@@ -18,6 +18,11 @@ class ReviewController extends Controller
     {
         $user = $request->user();
 
+        // Second layer over the route's role middleware, matching
+        // GreenwashingReportController::store, so a route moved out of the
+        // group still fails closed.
+        abort_unless($user->role === 'consumer', 403, 'Only consumer accounts can review a product.');
+
         $validated = $request->validate([
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
             'body' => ['nullable', 'string', 'max:2000'],

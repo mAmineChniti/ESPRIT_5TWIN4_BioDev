@@ -83,7 +83,7 @@ class FarmController extends Controller
      */
     private function statisticsFor(User $user): array
     {
-        $stats = ['total' => 0, 'validees' => 0, 'en_attente' => 0, 'refusees' => 0, 'surface' => 0];
+        $stats = ['total' => 0, 'approved' => 0, 'pending' => 0, 'rejected' => 0, 'surface' => 0];
 
         foreach (FarmStatus::cases() as $status) {
             $stats[$status->statKey()] = Farm::query()
@@ -92,7 +92,7 @@ class FarmController extends Controller
                 ->count();
         }
 
-        $stats['total'] = $stats['validees'] + $stats['en_attente'] + $stats['refusees'];
+        $stats['total'] = $stats['approved'] + $stats['pending'] + $stats['rejected'];
         $stats['surface'] = (float) Farm::query()
             ->when(! $user->isAdmin(), fn ($query) => $query->where('user_id', $user->id))
             ->where('status', FarmStatus::Approved)
@@ -126,7 +126,7 @@ class FarmController extends Controller
 
         $farm->update(['status' => FarmStatus::Approved, 'rejection_reason' => null]);
 
-        return back()->with('success', "La ferme « {$farm->name} » a été acceptée et validée.");
+        return back()->with('success', "Farm \"{$farm->name}\" was approved.");
     }
 
     /**
@@ -145,7 +145,7 @@ class FarmController extends Controller
             'rejection_reason' => $validated['rejection_reason'],
         ]);
 
-        return back()->with('success', "La ferme « {$farm->name} » a été refusée.");
+        return back()->with('success', "Farm \"{$farm->name}\" was rejected.");
     }
 
     /**
@@ -180,12 +180,12 @@ class FarmController extends Controller
         Farm::create($validated);
 
         if ($user->isAdmin()) {
-            return redirect()->route('back.farms.index')
-                ->with('success', 'Ferme créée et validée avec succès.');
+            return redirect()->route('farms.index')
+                ->with('success', 'Farm created and approved successfully.');
         }
 
-        return redirect()->route('back.farms.index')
-            ->with('success', 'Votre ferme a été enregistrée et envoyée pour validation auprès de l\'administrateur.');
+        return redirect()->route('farms.index')
+            ->with('success', 'Your farm was saved and sent to an administrator for approval.');
     }
 
     /**
@@ -222,8 +222,8 @@ class FarmController extends Controller
 
         $farm->update($request->validate($this->farmRules()));
 
-        return redirect()->route('back.farms.index')
-            ->with('success', 'Ferme mise à jour avec succès.');
+        return redirect()->route('farms.index')
+            ->with('success', 'Farm updated successfully.');
     }
 
     /**
@@ -235,8 +235,8 @@ class FarmController extends Controller
 
         $farm->delete();
 
-        return redirect()->route('back.farms.index')
-            ->with('success', 'Ferme supprimée avec succès.');
+        return redirect()->route('farms.index')
+            ->with('success', 'Farm deleted successfully.');
     }
 
     /**
@@ -256,7 +256,7 @@ class FarmController extends Controller
      */
     private function ensureAdmin(Request $request): void
     {
-        abort_unless($request->user()?->isAdmin(), 403, 'Seul un Administrateur peut valider une ferme.');
+        abort_unless($request->user()?->isAdmin(), 403, 'Only an administrator can approve a farm.');
     }
 
     /**
@@ -267,7 +267,7 @@ class FarmController extends Controller
         abort_if(
             ! $request->user()?->isAdmin() && $farm->user_id !== $request->user()->id,
             403,
-            'Accès refusé. Vous ne pouvez gérer que vos propres fermes.',
+            'Access denied. You can only manage your own farms.',
         );
     }
 }

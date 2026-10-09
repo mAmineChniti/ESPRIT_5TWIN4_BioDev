@@ -32,7 +32,7 @@ class FoodController extends Controller
             ->latest()
             ->paginate(10);
 
-        return view('foods.index', [
+        return view('back.foods.index', [
             'foods' => $foods,
             // Derived from the policy rather than a hand-rolled role check, so
             // the "Add a product" and CSV import controls appear for exactly
@@ -45,7 +45,7 @@ class FoodController extends Controller
     {
         $this->authorize('create', Food::class);
 
-        return view('foods.create', [
+        return view('back.foods.create', [
             'categories' => Category::orderBy('name')->get(),
             'certifications' => Certification::orderBy('name')->get(),
         ]);
@@ -85,14 +85,14 @@ class FoodController extends Controller
 
         $food->load(['category', 'producer', 'transitions.actor', 'certifications']);
 
-        return view('foods.show', compact('food'));
+        return view('back.foods.show', compact('food'));
     }
 
     public function edit(Food $food): View
     {
         $this->authorize('update', $food);
 
-        return view('foods.edit', [
+        return view('back.foods.edit', [
             'food' => $food,
             'categories' => Category::orderBy('name')->get(),
             'certifications' => Certification::orderBy('name')->get(),

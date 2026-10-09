@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AnalysisDisputeStatus;
 use App\Enums\EnvironmentalScore;
 use App\Enums\FarmStatus;
 use App\Enums\ReportStatus;
 use App\Enums\Stage;
 use App\Models\AgriculturalRegion;
+use App\Models\AnalysisDispute;
 use App\Models\Category;
 use App\Models\Certification;
 use App\Models\Farm;
@@ -14,6 +16,7 @@ use App\Models\Food;
 use App\Models\GreenwashingReport;
 use App\Models\Meal;
 use App\Models\Review;
+use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -33,6 +36,57 @@ class DatabaseSeederTest extends TestCase
 
         foreach (['admin', 'producer', 'processor', 'distributor', 'consumer'] as $role) {
             $this->assertDatabaseHas('users', ['role' => $role]);
+        }
+    }
+
+    /**
+     * Every role must be reachable at `<role>@example.com`.
+     *
+     * The consumer used to be seeded as `test@example.com`, so signing in as the
+     * consumer looked impossible even though the account existed — the demo
+     * credentials looked incomplete.
+     */
+    public function test_every_role_has_a_predictable_demo_login(): void
+    {
+        $this->seedDatabase();
+
+        foreach (['admin', 'producer', 'processor', 'distributor', 'consumer'] as $role) {
+            $this->assertDatabaseHas('users', [
+                'email' => $role.'@example.com',
+                'role' => $role,
+            ]);
+        }
+    }
+
+    /**
+     * The seeded accounts must actually authenticate, not merely exist.
+     */
+    public function test_every_seeded_demo_account_can_sign_in(): void
+    {
+        $this->seedDatabase();
+
+        foreach ([
+            'admin', 'producer', 'processor', 'distributor', 'consumer', 'consumer2',
+        ] as $account) {
+            $user = User::where('email', $account.'@example.com')->firstOrFail();
+
+            $response = $this->post(route('login'), [
+                'email' => $account.'@example.com',
+                'password' => 'password',
+            ]);
+
+            $response->assertRedirect();
+            $this->assertAuthenticatedAs($user);
+
+            // Whichever landing the controller picks for this role, it must be
+            // a page that role can actually read. Following redirects because
+            // /dashboard is itself a redirect to the role's own dashboard.
+            $this->followingRedirects()
+                ->get($response->headers->get('Location'))
+                ->assertOk();
+
+            $this->post(route('logout'))->assertRedirect(route('home'));
+            $this->assertGuest();
         }
     }
 
@@ -156,6 +210,41 @@ class DatabaseSeederTest extends TestCase
         }
     }
 
+    public function test_it_seeds_analysis_disputes_in_both_states(): void
+    {
+        $this->seed();
+
+        // The admin queue is worthless empty, and the sidebar badge is only
+        // visible when something is waiting, so both states must be seeded.
+        $this->assertGreaterThan(0, AnalysisDispute::where('status', AnalysisDisputeStatus::Pending->value)->count());
+        $this->assertGreaterThan(0, AnalysisDispute::where('status', AnalysisDisputeStatus::Dismissed->value)->count());
+
+        foreach (AnalysisDispute::all() as $dispute) {
+            $this->assertNotNull($dispute->food_id, 'A seeded dispute is not attached to a product.');
+            $this->assertNotNull($dispute->user_id, 'A seeded dispute has no reporter.');
+            $this->assertNotEmpty($dispute->comment, 'A seeded dispute has no explanation.');
+
+            // Only a decided dispute may carry a decision.
+            if ($dispute->isPending()) {
+                $this->assertNull($dispute->reviewed_at);
+            } else {
+                $this->assertNotNull($dispute->reviewed_at);
+                $this->assertNotNull($dispute->reviewed_by);
+            }
+        }
+    }
+
+    public function test_a_seeded_dismissal_always_explains_itself(): void
+    {
+        $this->seed();
+
+        // The request makes a note mandatory on dismissal, so the demo data may
+        // not contradict the rule the form enforces.
+        foreach (AnalysisDispute::where('status', AnalysisDisputeStatus::Dismissed->value)->get() as $dispute) {
+            $this->assertNotEmpty($dispute->resolution_note);
+        }
+    }
+
     public function test_seeded_products_have_transparency_scores_in_range(): void
     {
         $this->seed();
@@ -239,6 +328,6 @@ class DatabaseSeederTest extends TestCase
         $this->assertFalse($farm->canBeEdited(), 'A rejected farm must not be editable.');
 
         // And it stays out of the public listing.
-        $this->get(route('front.regions.show', $farm->region))->assertDontSee($farm->address);
+        $this->get(route('agricultural-regions.show', $farm->region))->assertDontSee($farm->address);
     }
 }

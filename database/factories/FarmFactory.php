@@ -20,11 +20,11 @@ class FarmFactory extends Factory
     {
         return [
             'agricultural_region_id' => AgriculturalRegion::factory(),
-            'name' => 'Ferme '.fake()->company(),
+            'name' => 'Farm '.fake()->company(),
             'producer_name' => fake()->name(),
             'address' => fake()->address(),
             'surface_hectares' => fake()->randomFloat(2, 5, 250),
-            'farming_type' => fake()->randomElement(['Biologique', 'Raisonné', 'Traditionnel', 'Biodynamique']),
+            'farming_type' => fake()->randomElement(['Organic', 'Sustainable', 'Traditional', 'Biodynamic']),
             'phone' => fake()->phoneNumber(),
             'description' => fake()->sentence(12),
         ];

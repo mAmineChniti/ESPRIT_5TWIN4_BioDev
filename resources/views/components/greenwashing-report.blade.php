@@ -61,7 +61,7 @@
                          it is already known. --}}
                     @auth
                         @if (auth()->user()->role === 'consumer')
-                            <form action="{{ route('products.reportFinding', $food) }}" method="POST" class="mt-3">
+                            <form action="{{ route('products.reports.escalate', $food) }}" method="POST" class="mt-3">
                                 @csrf
                                 <input type="hidden" name="category" value="{{ $finding->category->value }}">
                                 <input type="hidden" name="title" value="{{ $finding->title }}">
@@ -93,4 +93,11 @@
             </p>
         </div>
     @endif
+
+    {{-- The way to push back on the verdict, which is what makes the absence of
+         findings a reviewable claim rather than a dead end. Not offered when the
+         detector failed, because there is no verdict to dispute. --}}
+    @unless ($report->hasFailed())
+        <x-analysis-dispute-form :food="$food" :report="$report" />
+    @endunless
 @endif
