@@ -11,30 +11,40 @@
     </p>
 </div>
 
+{{-- The status filter is navigation, so it renders whether or not the current
+     filter matches anything. Hiding it on an empty result would strand the admin
+     on a dead end with no way back to the other statuses. The counts come from
+     SQL, so they stay right on every page. --}}
+<div class="mb-4 flex flex-wrap gap-2">
+    <april:button-link href="{{ route('admin.analysis-disputes.index') }}" size="sm"
+        variant="{{ $status === null ? 'default' : 'secondary' }}">All</april:button-link>
+    @foreach ($statuses as $case)
+        <april:button-link
+            href="{{ route('admin.analysis-disputes.index', ['status' => $case->value]) }}"
+            size="sm"
+            variant="{{ $status === $case->value ? 'default' : 'secondary' }}">
+            {{ $case->label() }}
+            <span class="ml-1 tabular-nums opacity-70">{{ $counts[$case->value] ?? 0 }}</span>
+        </april:button-link>
+    @endforeach
+</div>
+
 @if ($disputes->isEmpty())
     <april:card>
         <x-slot:content>
             <div class="p-8 text-center text-muted-foreground">
                 <x-lucide-check-circle class="mx-auto mb-3 size-12" />
                 <p>No analysis reports{{ $status ? ' with that status' : '' }}.</p>
+                @if ($status)
+                    <april:button-link href="{{ route('admin.analysis-disputes.index') }}"
+                        variant="outline" size="sm" class="mt-4">
+                        Show all reports
+                    </april:button-link>
+                @endif
             </div>
         </x-slot:content>
     </april:card>
 @else
-    {{-- Status tabs. The counts come from SQL, so they stay right on every page. --}}
-    <div class="mb-4 flex flex-wrap gap-2">
-        <april:button-link href="{{ route('admin.analysis-disputes.index') }}" size="sm"
-            variant="{{ $status === null ? 'default' : 'secondary' }}">All</april:button-link>
-        @foreach ($statuses as $case)
-            <april:button-link
-                href="{{ route('admin.analysis-disputes.index', ['status' => $case->value]) }}"
-                size="sm"
-                variant="{{ $status === $case->value ? 'default' : 'secondary' }}">
-                {{ $case->label() }}
-                <span class="ml-1 tabular-nums opacity-70">{{ $counts[$case->value] ?? 0 }}</span>
-            </april:button-link>
-        @endforeach
-    </div>
 
     {{-- The same shape as the greenwashing reports queue, because they are the same
          job: an admin reading a list of user claims and deciding on each one. --}}

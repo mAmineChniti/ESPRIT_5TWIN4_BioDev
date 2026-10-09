@@ -53,12 +53,13 @@
 
             <div>
                 <april:label for="{{ $suffix }}-note">Note for the reporter</april:label>
-                <april:textarea id="{{ $suffix }}-note" name="resolution_note" rows="3"
+                <x-textarea-field id="{{ $suffix }}-note" name="resolution_note" rows="3"
                     class="mt-1"
                     maxlength="2000"
                     placeholder="What you concluded, and what happens next."
-                    aria-describedby="{{ $suffix }}-note-error"
-                    :aria-invalid="$errors->has('resolution_note') ? 'true' : 'false'">{{ old('resolution_note') }}</april:textarea>
+                    :describedby="$suffix.'-note-error'"
+                    :value="old('resolution_note')"
+                    :aria-invalid="$errors->has('resolution_note') ? 'true' : 'false'" />
                 <x-input-error id="{{ $suffix }}-note-error" :messages="$errors->get('resolution_note')" />
             </div>
 

@@ -152,6 +152,11 @@
         <script type="application/json" id="trace-timeline-data">{!! json_encode(['steps' => $timeline]) !!}</script>
     </section>
 
+    {{-- Where it came from, and how far that is from us. --}}
+    <section class="lg:col-span-2 rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <x-origin-map :food="$food" />
+    </section>
+
     <div class="space-y-6">
         {{-- Certifications --}}
         <april:card>
@@ -221,7 +226,7 @@
                                 <april:label for="details" class="text-xs uppercase tracking-wide text-muted-foreground">
                                     Details
                                 </april:label>
-                                <april:textarea id="details" name="details" rows="3" class="mt-1">{{ old('details') }}</april:textarea>
+                                <x-textarea-field id="details" name="details" rows="3" class="mt-1" :value="old('details')" />
                                 @error('details') <p class="mt-1 text-sm text-destructive" role="alert">{{ $message }}</p> @enderror
                             </div>
                             <april:button type="submit" variant="destructive" class="w-full">Submit report</april:button>
@@ -326,8 +331,9 @@
                             <april:label for="body" class="text-xs uppercase tracking-wide text-muted-foreground">
                                 Your experience
                             </april:label>
-                            <april:textarea id="body" name="body" rows="2" class="mt-1"
-                                            placeholder="Did the product match its label?">{{ old('body', $myReview?->body) }}</april:textarea>
+                            <x-textarea-field id="body" name="body" rows="2" class="mt-1"
+                                :value="old('body', $myReview?->body)"
+                                placeholder="Did the product match its label?" />
                         </div>
                         <april:button type="submit">
                             {{ $myReview ? 'Update' : 'Publish' }}

@@ -35,10 +35,15 @@ class JourneySeeder extends Seeder
             ->limit(8)
             ->get();
 
-        foreach ($foods as $index => $food) {
+        foreach ($foods as $food) {
             $journey = Journey::create([
                 'product_id' => $food->id,
-                'qr_code' => 'QR-'.str_pad((string) ($index + 1), 6, '0', STR_PAD_LEFT),
+                // Derived from the product id rather than the loop index: a
+                // product has exactly one journey, so this is unique and stays
+                // the same when re-seeded. Numbering by index handed out
+                // QR-000001 again on a second run and collided with the unique
+                // index on qr_code.
+                'qr_code' => 'QR-'.str_pad((string) $food->id, 6, '0', STR_PAD_LEFT),
                 'environmental_score' => fake()->randomFloat(2, 40, 95),
                 'total_distance_km' => fake()->randomFloat(1, 20, 1800),
                 'ai_summary' => fake()->sentence(14),

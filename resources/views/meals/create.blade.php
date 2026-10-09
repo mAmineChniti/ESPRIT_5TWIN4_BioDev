@@ -134,9 +134,8 @@
 
             <div class="space-y-2">
                 <april:label for="notes">Notes</april:label>
-                <april:textarea id="notes" name="notes" rows="2" aria-describedby="notes-error">
-                    {{ old('notes') }}
-                </april:textarea>
+                <x-textarea-field id="notes" name="notes" rows="2"
+                    :value="old('notes')" aria-describedby="notes-error" />
                 <p id="notes-error" class="text-sm text-destructive" role="alert" aria-live="polite">
                     @error('notes') {{ $message }} @enderror
                 </p>

@@ -3,9 +3,9 @@
 @section('title', 'Consumer Space')
 
 @section('content')
-{{-- Espace Consommateur — Amine Chnitti --}}
+{{-- The consumer hub: AI audit, assistant, recommendations. --}}
 <div class="mb-8">
-    <p class="text-xs font-semibold uppercase tracking-widest text-primary">Espace Consommateur</p>
+    <p class="text-xs font-semibold uppercase tracking-widest text-primary">Consumer Space</p>
     <h1 class="mt-1 text-3xl font-bold">Your consumer space</h1>
     <p class="mt-2 max-w-3xl text-sm text-muted-foreground">
         Four tools that work off the same record: an AI auditor that looks for claims the evidence does

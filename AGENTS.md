@@ -277,7 +277,7 @@ Broken navigation and leaked or hidden controls are correctness bugs, not polish
   php artisan route:list --except-vendor
   ```
 
-  Seeded demo accounts are `admin@example.com`, `producer@example.com`, `processor@example.com`, `distributor@example.com`, `test@example.com`, and `consumer2@example.com`, all with password `password`.
+  Seeded demo accounts are `admin@example.com`, `producer@example.com`, `processor@example.com`, `distributor@example.com`, `consumer@example.com`, and `consumer2@example.com`, all with password `password`. Every role has a `<role>@example.com` login — if one appears missing, the seeder has not been run, not that the role is unseeded.
 - After a seeder changes, re-check demo credentials and any hard-coded assumption about seeded IDs — the seeder owns that data, not the code.
 
 === verification rules ===

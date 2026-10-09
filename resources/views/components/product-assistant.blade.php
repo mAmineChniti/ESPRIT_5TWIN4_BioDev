@@ -71,12 +71,12 @@
             <april:label for="assistant-question-{{ $food->id }}" class="sr-only">
                 Ask a question about {{ $food->name }}
             </april:label>
-            <april:textarea id="assistant-question-{{ $food->id }}"
-                            x-model="question"
-                            rows="2"
-                            maxlength="500"
-                            placeholder="Is this really organic? Where was it grown?"
-                            x-bind:disabled="! enabled"></april:textarea>
+            <x-textarea-field id="assistant-question-{{ $food->id }}"
+                x-model="question"
+                rows="2"
+                maxlength="500"
+                placeholder="Is this really organic? Where was it grown?"
+                x-bind:disabled="! enabled" />
         </div>
         <april:button type="submit" x-bind:disabled="! enabled || loading || ! question.trim()">
             <x-lucide-send class="size-4" />

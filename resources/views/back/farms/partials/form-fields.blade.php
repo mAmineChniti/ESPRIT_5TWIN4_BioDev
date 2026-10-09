@@ -156,12 +156,13 @@
 
 <div class="space-y-2">
     <april:label for="description">Description</april:label>
-    <april:textarea
+    <x-textarea-field
         id="description"
         name="description"
         rows="3"
+        :value="$value('description')"
         placeholder="Example: Fertile soil suitable for crops"
-    >{{ $value('description') }}</april:textarea>
+    />
     @error('description')
         <p role="alert" class="mt-1 text-xs text-destructive">{{ $message }}</p>
     @enderror

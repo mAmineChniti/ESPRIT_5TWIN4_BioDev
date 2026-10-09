@@ -38,17 +38,18 @@
             @method('PATCH')
 
             <april:label for="{{ $fieldId }}">Reason for rejection</april:label>
-            <april:textarea
-                id="{{ $fieldId }}"
+            <x-textarea-field
+                :id="$fieldId"
                 name="rejection_reason"
                 rows="3"
                 maxlength="1000"
                 required
                 placeholder="What does the producer need to fix?"
-                aria-describedby="{{ $errorId }}"
+                :describedby="$errorId"
+                :value="old('rejection_reason')"
                 @class(['border-destructive' => $errors->has('rejection_reason')])
                 @if($errors->has('rejection_reason')) aria-invalid="true" @endif
-            >{{ old('rejection_reason') }}</april:textarea>
+            />
 
             <x-input-error id="{{ $errorId }}" :messages="$errors->get('rejection_reason')" />
 

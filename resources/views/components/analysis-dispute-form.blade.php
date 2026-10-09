@@ -88,12 +88,13 @@
 
                         <div>
                             <april:label for="{{ $suffix }}-comment">Your comment</april:label>
-                            <april:textarea id="{{ $suffix }}-comment" name="comment" rows="4"
+                            <x-textarea-field id="{{ $suffix }}-comment" name="comment" rows="4"
                                 class="mt-1"
                                 required minlength="10" maxlength="2000"
                                 placeholder="What the analysis should have said, and what in the record shows it."
-                                aria-describedby="{{ $suffix }}-comment-error"
-                                :aria-invalid="$errors->has('comment') ? 'true' : 'false'">{{ old('comment') }}</april:textarea>
+                                :describedby="$suffix.'-comment-error'"
+                                :value="old('comment')"
+                                :aria-invalid="$errors->has('comment') ? 'true' : 'false'" />
                             <x-input-error id="{{ $suffix }}-comment-error" :messages="$errors->get('comment')" />
                         </div>
 

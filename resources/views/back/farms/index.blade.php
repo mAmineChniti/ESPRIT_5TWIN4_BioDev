@@ -86,7 +86,7 @@
         </april:card>
     </div>
 
-    {{-- ===== FILTRE PAR STATUT ===== --}}
+    {{-- ===== Filter by status ===== --}}
     <div class="mb-4 flex items-center gap-2 overflow-x-auto border-b border-border pb-3">
         <span class="mr-2 shrink-0 text-xs font-semibold uppercase text-muted-foreground">Filter by status:</span>
 

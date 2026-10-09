@@ -10,10 +10,10 @@
             <april:button-link href="{{ route('greenwashing') }}" variant="ghost"
                 @class(['bg-muted' => request()->routeIs('greenwashing')])>Spot greenwashing</april:button-link>
             @auth
-                {{-- Espace Consommateur: AI audit, assistant, recommendations.
-                     It reports on the reader's own meals, reviews and reports,
-                     so it belongs to consumers alone — offering it to a producer
-                     led to a "Log a meal" button that 403s. --}}
+                {{-- The consumer hub: AI audit, assistant, recommendations. It reports
+                     on the reader's own meals, reviews and reports, so it belongs
+                     to consumers alone — offering it to a producer led to a
+                     "Log a meal" button that 403s. --}}
                 @if(auth()->user()->role === 'consumer')
                     <april:button-link href="{{ route('consumer.space') }}" variant="ghost"
                         @class(['bg-muted' => request()->routeIs('consumer.space', 'consumer.recommendations')])>

@@ -37,24 +37,29 @@
     </div>
 </div>
 
-{{-- Filters --}}
-<form method="GET" class="flex flex-wrap gap-3 mb-4">
+{{-- Filters. The selects need an explicit width: april:native-select ships
+     w-full, which inside a row flex resolves against the whole row, so each
+     select would claim the full width and push the Filter button onto a
+     wrapped line. --}}
+<form method="GET" class="mb-4 flex flex-wrap items-center gap-3">
     <april:label for="shipment-status-filter" class="sr-only">Filter by status</april:label>
-    <april:native-select id="shipment-status-filter" name="status" class="text-sm">
+    <april:native-select id="shipment-status-filter" name="status" class="w-48 text-sm">
         <option value="">All statuses</option>
         @foreach($statuses as $status)
             <option value="{{ $status->value }}" @selected($filters['status'] === $status->value)>{{ $status->label() }}</option>
         @endforeach
     </april:native-select>
     <april:label for="shipment-mode-filter" class="sr-only">Filter by transport mode</april:label>
-    <april:native-select id="shipment-mode-filter" name="mode" class="text-sm">
+    <april:native-select id="shipment-mode-filter" name="mode" class="w-56 text-sm">
         <option value="">All transport modes</option>
         @foreach($modes as $mode)
             <option value="{{ $mode->value }}" @selected($filters['mode'] === $mode->value)>{{ $mode->label() }}</option>
         @endforeach
     </april:native-select>
     <april:button type="submit">Filter</april:button>
-    <a href="{{ route('logistics.shipments.index') }}" class="text-sm text-muted-foreground self-center hover:underline">Reset</a>
+    <april:button-link href="{{ route('logistics.shipments.index') }}" variant="ghost" size="sm">
+        Reset
+    </april:button-link>
 </form>
 
 <april:card class="overflow-hidden">
