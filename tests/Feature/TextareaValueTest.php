@@ -32,6 +32,11 @@ class TextareaValueTest extends TestCase
 
     private function fakeDetector(): void
     {
+        // The client refuses to call without a key before any HTTP happens,
+        // so the key is stubbed too: without it these tests only pass when
+        // the developer's own .env happens to contain a real one, and CI —
+        // correctly keyless — sees an "unavailable" analysis instead.
+        config(['services.ai.key' => 'test-key']);
         Http::preventStrayRequests();
         $payload = json_encode([
             'findings' => [],

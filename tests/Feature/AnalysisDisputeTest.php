@@ -63,6 +63,11 @@ class AnalysisDisputeTest extends TestCase
      */
     private function fakeDetector(array $findings): void
     {
+        // The client refuses to call without a key before any HTTP happens,
+        // so the key is stubbed too: without it these tests only pass when
+        // the developer's own .env happens to contain a real one, and CI —
+        // correctly keyless — sees an "unavailable" analysis instead.
+        config(['services.ai.key' => 'test-key']);
         // Any missing fake must fail loudly rather than reach a paid provider.
         Http::preventStrayRequests();
         Http::fake([
