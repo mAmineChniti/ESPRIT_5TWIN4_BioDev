@@ -67,7 +67,9 @@
 
                 function draw() {
                     const el = document.getElementById(@js($mapId));
-                    if (!el || typeof L === 'undefined' || el.dataset.drawn) {
+                    // window.L is read as a property so a not-yet-loaded CDN
+                    // script simply yields a falsy value instead of throwing.
+                    if (!el || !window.L || el.dataset.drawn) {
                         return;
                     }
                     el.dataset.drawn = 'true';

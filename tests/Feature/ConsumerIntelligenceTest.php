@@ -669,7 +669,7 @@ class ConsumerIntelligenceTest extends TestCase
 
         $html = $this->actingAs($consumer)->get(route('consumer.space'))->assertOk()->getContent();
 
-        $this->assertStringContainsString('Espace Consommateur', $html);
+        $this->assertStringContainsString('Your consumer space', $html);
         $this->assertStringContainsString('Scrambled Eggs', $html);
         $this->assertStringNotContainsString('Never Eaten Product', $html);
         $this->assertStringContainsString('AI audit of what you eat', $html);

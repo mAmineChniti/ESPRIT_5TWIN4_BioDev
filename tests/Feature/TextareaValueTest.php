@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AnalysisDisputeReason;
+use App\Enums\FarmStatus;
+use App\Enums\Stage;
 use App\Models\AgriculturalRegion;
 use App\Models\Farm;
 use App\Models\Food;
 use App\Models\Review;
-use App\Models\Stage;
 use App\Models\StageTransition;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -78,14 +80,19 @@ class TextareaValueTest extends TestCase
             'agricultural_region_id' => AgriculturalRegion::factory()->create()->id,
         ]);
 
-        $html = $this->actingAs($owner)
-            ->from(route('farms.edit', $farm))
+        $editUrl = route('farms.edit', $farm);
+
+        $this->actingAs($owner)
+            ->from($editUrl)
             // Missing name: the description the admin typed must survive.
             ->patch(route('farms.update', $farm), [
                 'description' => 'Left here while the name is corrected.',
             ])
             ->assertSessionHasErrors('name')
-            ->getContent();
+            ->assertRedirect($editUrl);
+
+        // The redirect carries the typed description back to the form.
+        $html = $this->actingAs($owner)->get($editUrl)->assertOk()->getContent();
 
         $this->assertSame('Left here while the name is corrected.', $this->textareaValue($html, 'description'));
     }
@@ -117,16 +124,20 @@ class TextareaValueTest extends TestCase
         $farm = Farm::factory()->create([
             'user_id' => User::factory()->create(['role' => 'producer'])->id,
             'agricultural_region_id' => AgriculturalRegion::factory()->create()->id,
-            'status' => FarmStatusValue(),
+            'status' => FarmStatus::Pending,
         ]);
 
-        $html = $this->actingAs($admin)
-            ->from(route('farms.requests'))
+        $requestsUrl = route('farms.requests');
+
+        $this->actingAs($admin)
+            ->from($requestsUrl)
             ->patch(route('farms.reject', $farm), [
                 'rejection_reason' => str_repeat('a', 1001),
             ])
             ->assertSessionHasErrors('rejection_reason')
-            ->getContent();
+            ->assertRedirect($requestsUrl);
+
+        $html = $this->actingAs($admin)->get($requestsUrl)->assertOk()->getContent();
 
         $this->assertSame(
             str_repeat('a', 1001),
@@ -142,14 +153,22 @@ class TextareaValueTest extends TestCase
         $consumer = User::factory()->create(['role' => 'consumer']);
         $food = Food::factory()->create();
 
-        $html = $this->actingAs($consumer)
-            ->from(route('products.show', $food))
+        $productUrl = route('products.show', $food);
+
+        $this->actingAs($consumer)
+            ->from($productUrl)
             ->post(route('products.analysis-disputes.store', $food), [
-                'reason' => AnalysisDisputeReasonValue(),
+                'reason' => AnalysisDisputeReason::WrongVerdict->value,
                 'comment' => 'too short',
             ])
-            ->assertSessionHasErrors('comment')
-            ->getContent();
+            // The short comment fails validation and bounces back to the
+            // product page. Note: no assertSessionHasErrors here — reading the
+            // error bag ages the flashed session, and the assertions below
+            // need the errors (and the typed values) rendered on the page.
+            // The message text itself is the proof validation failed.
+            ->assertRedirect($productUrl);
+
+        $html = $this->actingAs($consumer)->get($productUrl)->assertOk()->getContent();
 
         $this->assertSame('too short', $this->textareaValue($html, 'comment'));
         // And the reason they picked is still selected.
@@ -164,6 +183,7 @@ class TextareaValueTest extends TestCase
 
         $html = $this->actingAs($consumer)
             ->from(route('meals.create'))
+            ->followingRedirects()
             ->post(route('meals.store'), [
                 'type' => 'breakfast',
                 'consumed_on' => now()->format('Y-m-d'),
@@ -184,9 +204,17 @@ class TextareaValueTest extends TestCase
             'to_stage' => Stage::Produced,
         ]);
 
-        $html = $this->actingAs($producer)
+        // An admin may sign any stage, but the chain expects Processed next,
+        // so the order rule refuses and the note must come back with the form
+        // rather than vanish. (A distributor would 403 on the policy first,
+        // and the form below only renders for whoever may record the next
+        // stage, so neither of them could show the note coming back.)
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $html = $this->actingAs($admin)
             ->from(route('foods.transitions.index', $food))
             // Skipping a stage is refused, so the note must come back with it.
+            ->followingRedirects()
             ->post(route('foods.transitions.store', $food), [
                 'to_stage' => Stage::Distributed->value,
                 'notes' => 'Handed straight to the importer.',

@@ -61,8 +61,7 @@
                                 :aria-invalid="$errors->has('reason') ? 'true' : 'false'">
                                 <option value="">Choose a reason…</option>
                                 @foreach (App\Enums\AnalysisDisputeReason::cases() as $case)
-                                    <option value="{{ $case->value }}"
-                                        @selected(old('reason') === $case->value)>{{ $case->label() }}</option>
+                                    <option value="{{ $case->value }}" @selected(old('reason') === $case->value)>{{ $case->label() }}</option>
                                 @endforeach
                             </april:native-select>
                             <x-input-error id="{{ $suffix }}-reason-error" :messages="$errors->get('reason')" />
