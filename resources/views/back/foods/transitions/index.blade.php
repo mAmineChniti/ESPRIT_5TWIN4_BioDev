@@ -64,7 +64,7 @@
 
         @can('recordTransition', [$food, $nextStage])
             <form action="{{ route('foods.transitions.store', $food) }}" method="POST"
-                  class="mt-6 space-y-3 border-t border-border pt-6">
+                  class="mt-6 space-y-3 border-t border-border pt-6" novalidate>
                 @csrf
                 <p class="text-sm font-medium text-foreground">Record the next step</p>
                 <input type="hidden" name="to_stage" value="{{ $nextStage->value }}">
@@ -74,7 +74,10 @@
                 <div class="space-y-2">
                     <april:label for="notes">Notes</april:label>
                     <x-textarea-field id="notes" name="notes" rows="2"
-                        :value="old('notes')" aria-describedby="to_stage-error" />
+                        :value="old('notes')" aria-describedby="notes-error to_stage-error" />
+                    <p id="notes-error" class="text-sm text-destructive" role="alert" aria-live="polite">
+                        @error('notes') {{ $message }} @enderror
+                    </p>
                     <p id="to_stage-error" class="text-sm text-destructive" role="alert" aria-live="polite">
                         @error('to_stage') {{ $message }} @enderror
                     </p>

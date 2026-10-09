@@ -1,13 +1,15 @@
 <x-guest-layout title="New password">
-    <form method="POST" action="{{ route('password.store') }}" class="space-y-4">
+    <form method="POST" action="{{ route('password.store') }}" class="space-y-4" novalidate>
         @csrf
 
         <input type="hidden" name="token" value="{{ $request->route('token') }}">
 
         <div class="space-y-2">
             <april:label for="email">Email</april:label>
-            <april:input id="email" type="email" name="email" :value="old('email', $request- aria-describedby="email-error"
-                 :aria-invalid="$errors->has('email') ? 'true' : 'false'">email)" required autofocus autocomplete="username" />
+            <april:input id="email" type="email" name="email" :value="old('email', $request->email)" placeholder="you@example.com"
+                         required autofocus autocomplete="username"
+                         aria-describedby="email-error"
+                         :aria-invalid="$errors->has('email') ? 'true' : 'false'" />
             <x-input-error id="email-error" :messages="$errors->get('email')" />
         </div>
 

@@ -1,4 +1,4 @@
-@extends('layouts.front')
+@extends('layouts.back')
 
 @section('title', 'Responsible Recommendations')
 

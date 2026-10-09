@@ -82,7 +82,7 @@
                                         </div>
                                         <april:alert-dialog-footer>
                                             <april:alert-dialog-cancel>Cancel</april:alert-dialog-cancel>
-                                            <form action="{{ route('admin.reports.update', $report) }}" method="POST">
+                                            <form action="{{ route('admin.reports.update', $report) }}" method="POST" novalidate>
                                                 @csrf
                                                 @method('PATCH')
                                                 <input type="hidden" name="status" value="upheld">
@@ -111,7 +111,7 @@
                                         </div>
                                         <april:alert-dialog-footer>
                                             <april:alert-dialog-cancel>Cancel</april:alert-dialog-cancel>
-                                            <form action="{{ route('admin.reports.update', $report) }}" method="POST">
+                                            <form action="{{ route('admin.reports.update', $report) }}" method="POST" novalidate>
                                                 @csrf
                                                 @method('PATCH')
                                                 <input type="hidden" name="status" value="dismissed">

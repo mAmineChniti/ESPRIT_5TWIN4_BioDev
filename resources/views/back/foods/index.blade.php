@@ -38,16 +38,18 @@
                  submit also means a bulk import is never triggered by merely
                  picking a file. --}}
             <form action="{{ route('foods.import') }}" method="POST" enctype="multipart/form-data"
-                  class="flex flex-wrap items-center gap-2">
+                  class="flex flex-wrap items-center gap-2" novalidate>
                 @csrf
                 <april:label for="csv_file" class="sr-only">CSV file to import</april:label>
                 <april:input id="csv_file" name="csv_file" type="file" accept=".csv,.txt"
-                             class="w-auto" aria-describedby="csv_file-hint" />
+                             class="w-auto" aria-describedby="csv_file-hint csv_file-error"
+                             @if($errors->has('csv_file')) aria-invalid="true" @endif />
                 <april:button type="submit" variant="outline">
                     <x-lucide-upload class="size-4" />
                     Import CSV
                 </april:button>
                 <span id="csv_file-hint" class="text-xs text-muted-foreground">CSV or TXT, up to 2 MB</span>
+                @error('csv_file') <span id="csv_file-error" role="alert" class="text-xs text-destructive">{{ $message }}</span> @enderror
             </form>
             <april:button-link href="{{ route('foods.create') }}">
                 <x-lucide-plus class="size-4" />
@@ -108,7 +110,7 @@
                                         </div>
                                         <april:alert-dialog-footer>
                                             <april:alert-dialog-cancel>Cancel</april:alert-dialog-cancel>
-                                            <form action="{{ route('foods.destroy', $food) }}" method="POST">
+                                            <form action="{{ route('foods.destroy', $food) }}" method="POST" novalidate>
                                                 @csrf
                                                 @method('DELETE')
                                                 <april:button type="submit" variant="destructive" x-bind="action">

@@ -22,7 +22,7 @@
 
 <april:card class="max-w-2xl">
     <x-slot:content>
-        <form action="{{ $action }}" method="POST" class="space-y-6">
+        <form action="{{ $action }}" method="POST" class="space-y-6" novalidate>
             @csrf
             @if($editing) @method('PUT') @endif
 

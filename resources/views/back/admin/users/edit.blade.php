@@ -15,7 +15,7 @@
     <x-slot:title class="text-lg">User Profile</x-slot:title>
     <x-slot:description>Update the account details and role for this user.</x-slot:description>
     <x-slot:content>
-        <form action="{{ route('admin.users.update', $user) }}" method="POST" class="space-y-6">
+        <form action="{{ route('admin.users.update', $user) }}" method="POST" class="space-y-6" novalidate>
             @csrf
             @method('PATCH')
 

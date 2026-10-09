@@ -33,7 +33,7 @@
             </x-slot:description>
         </april:alert-dialog-header>
 
-        <form method="POST" action="{{ $action }}" class="space-y-2">
+        <form method="POST" action="{{ $action }}" class="space-y-2" novalidate>
             @csrf
             @method('PATCH')
 

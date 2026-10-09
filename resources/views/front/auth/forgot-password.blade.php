@@ -1,7 +1,7 @@
 <x-guest-layout title="Reset password" description="We will email you a reset link.">
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form method="POST" action="{{ route('password.email') }}" class="space-y-4">
+    <form method="POST" action="{{ route('password.email') }}" class="space-y-4" novalidate>
         @csrf
 
         <div class="space-y-2">

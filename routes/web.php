@@ -50,7 +50,7 @@ Route::get('/products', [ConsumerSearchController::class, 'index'])->name('produ
 Route::get('/products/scan', [ConsumerSearchController::class, 'scan'])->name('products.scan');
 Route::get('/products/{food}', [ConsumerSearchController::class, 'show'])->name('products.show');
 Route::get('/greenwashing', function () {
-    return view('front.greenwashing');
+    return view('front.greenwashing.index');
 })->name('greenwashing');
 Route::get('/agricultural-regions', [FrontRegionController::class, 'index'])->name('agricultural-regions.index');
 Route::get('/agricultural-regions/{agriculturalRegion}', [FrontRegionController::class, 'show'])->name('agricultural-regions.show');

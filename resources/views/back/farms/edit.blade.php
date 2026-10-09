@@ -18,7 +18,7 @@
 
         <april:card>
             <x-slot:content>
-                <form method="POST" action="{{ route('farms.update', $farm) }}" class="space-y-5">
+                <form method="POST" action="{{ route('farms.update', $farm) }}" class="space-y-5" novalidate>
                     @csrf
                     @method('PUT')
 

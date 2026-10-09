@@ -52,7 +52,7 @@
                                 </td>
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex items-center justify-end gap-2">
-                                        <form method="POST" action="{{ route('farms.approve', $farm) }}" class="inline">
+                                        <form method="POST" action="{{ route('farms.approve', $farm) }}" class="inline" novalidate>
                                             @csrf
                                             @method('PATCH')
                                             <april:button type="submit" size="sm">

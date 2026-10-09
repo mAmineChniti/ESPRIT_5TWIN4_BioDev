@@ -61,7 +61,7 @@
                          it is already known. --}}
                     @auth
                         @if (auth()->user()->role === 'consumer')
-                            <form action="{{ route('products.reports.escalate', $food) }}" method="POST" class="mt-3">
+                            <form action="{{ route('products.reports.escalate', $food) }}" method="POST" class="mt-3" novalidate>
                                 @csrf
                                 <input type="hidden" name="category" value="{{ $finding->category->value }}">
                                 <input type="hidden" name="title" value="{{ $finding->title }}">

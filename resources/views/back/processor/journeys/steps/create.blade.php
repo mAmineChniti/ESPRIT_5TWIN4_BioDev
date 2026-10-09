@@ -16,7 +16,7 @@
 
 <april:card class="max-w-2xl">
     <x-slot:content>
-        <form action="{{ route('processor.journeys.steps.store', $journey) }}" method="POST">
+        <form action="{{ route('processor.journeys.steps.store', $journey) }}" method="POST" novalidate>
             @csrf
             @include('back.processor.journeys.steps.form', ['submitLabel' => 'Add step'])
         </form>

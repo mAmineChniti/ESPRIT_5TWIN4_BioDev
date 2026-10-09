@@ -15,7 +15,7 @@
     </div>
 
     <div class="rounded-xl border border-border bg-card p-6 shadow-sm">
-        <form method="POST" action="{{ route('regions.store') }}" class="space-y-5">
+        <form method="POST" action="{{ route('regions.store') }}" class="space-y-5" novalidate>
             @csrf
 
             <div class="space-y-2">

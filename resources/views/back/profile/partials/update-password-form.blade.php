@@ -1,4 +1,4 @@
-<form method="post" action="{{ route('password.update') }}" class="space-y-4">
+<form method="post" action="{{ route('password.update') }}" class="space-y-4" novalidate>
     @csrf
     @method('put')
 

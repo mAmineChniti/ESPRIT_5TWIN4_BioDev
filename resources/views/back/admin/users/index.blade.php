@@ -75,7 +75,7 @@
                                     </div>
                                     <april:alert-dialog-footer>
                                         <april:alert-dialog-cancel>Cancel</april:alert-dialog-cancel>
-                                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST">
+                                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST" novalidate>
                                             @csrf
                                             @method('DELETE')
                                             <april:button type="submit" variant="destructive" x-bind="action">

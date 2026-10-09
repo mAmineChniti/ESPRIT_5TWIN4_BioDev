@@ -61,7 +61,7 @@ class ConsumerIntelligenceController extends Controller
                 'report' => $this->detector->analyze($food),
             ]);
 
-        return view('front.consumer.space', [
+        return view('back.consumer.space', [
             'recommendations' => $recommendations,
             'watchList' => $watchList,
             'reportsFiled' => $user->reports()->count(),
@@ -149,6 +149,7 @@ class ConsumerIntelligenceController extends Controller
         $validated = $request->validate([
             'category' => ['required', Rule::enum(FindingCategory::class)],
             'title' => ['nullable', 'string', 'max:120'],
+            'detail' => ['nullable', 'string', 'max:2000'],
         ]);
 
         /** @var FindingCategory $category */
@@ -159,7 +160,7 @@ class ConsumerIntelligenceController extends Controller
             "%s\n\nReported from the NutriTrace detector. Category: %s%s",
             $validated['title'] ?? $reason->label(),
             $category->value,
-            $request->filled('detail') ? "\n".$request->string('detail')->toString() : ''
+            isset($validated['detail']) && $validated['detail'] !== '' ? "\n".$validated['detail'] : ''
         ));
 
         $alreadyPending = $food->reports()
@@ -176,7 +177,7 @@ class ConsumerIntelligenceController extends Controller
         $food->reports()->create([
             'user_id' => $user->id,
             'reason' => $reason,
-            'details' => mb_substr($details, 0, 2000),
+            'details' => $details,
             'status' => ReportStatus::Pending,
         ]);
 
@@ -188,7 +189,7 @@ class ConsumerIntelligenceController extends Controller
      */
     public function recommendations(Request $request): View
     {
-        return view('front.consumer.recommendations', [
+        return view('back.consumer.recommendations', [
             'recommendations' => $this->recommender->recommendedFor($request->user()),
         ]);
     }

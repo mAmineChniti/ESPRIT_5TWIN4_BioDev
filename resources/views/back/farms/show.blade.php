@@ -36,7 +36,7 @@
                 {{-- Approving and rejecting are admin-only and offered only
                      while the request is actually open. --}}
                 @if($isAdmin && $farm->isPending())
-                    <form method="POST" action="{{ route('farms.approve', $farm) }}">
+                    <form method="POST" action="{{ route('farms.approve', $farm) }}" novalidate>
                         @csrf
                         @method('PATCH')
                         <april:button type="submit" size="sm">
