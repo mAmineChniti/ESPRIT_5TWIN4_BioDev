@@ -19,6 +19,7 @@ use App\Models\StageTransition;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
@@ -29,6 +30,15 @@ class DatabaseSeeder extends Seeder
      * Seed the application's database.
      */
     public function run(): void
+    {
+        // Seeding is one unit of work: a partial failure must not leave
+        // products without a chain or meals without contents.
+        DB::transaction(function (): void {
+            $this->seedAll();
+        });
+    }
+
+    private function seedAll(): void
     {
         $consumer = $this->user('consumer@example.com', 'Test User', 'consumer');
         $admin = $this->user('admin@example.com', 'Admin User', 'admin');

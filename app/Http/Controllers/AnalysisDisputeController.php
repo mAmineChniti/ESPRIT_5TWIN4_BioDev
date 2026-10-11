@@ -60,6 +60,8 @@ class AnalysisDisputeController extends Controller
      */
     public function index(Request $request): View
     {
+        $this->ensureAdmin($request);
+
         $statusInput = $request->query('status');
         $status = is_string($statusInput) && AnalysisDisputeStatus::tryFrom($statusInput) !== null
             ? $statusInput
@@ -115,5 +117,15 @@ class AnalysisDisputeController extends Controller
         ]);
 
         return back()->with('success', 'Decision recorded and the reporter can now see it.');
+    }
+
+    /**
+     * Route-level middleware already restricts the queue to an admin; this is
+     * the second layer, so a route accidentally moved out of the group still
+     * fails closed.
+     */
+    private function ensureAdmin(Request $request): void
+    {
+        abort_unless($request->user()?->isAdmin(), 403, 'Only an administrator can review analysis disputes.');
     }
 }

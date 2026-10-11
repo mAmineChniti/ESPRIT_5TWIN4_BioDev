@@ -41,23 +41,27 @@ class MealController extends Controller
 
         $term = trim((string) $request->query('q', ''));
 
-        $foods = Food::with('category')
-            ->when($term !== '', fn (Builder $query) => $query
+        $applySearch = function (Builder $query) use ($term): Builder {
+            return $query->when($term !== '', fn (Builder $filtered) => $filtered
                 ->where(fn (Builder $inner) => $inner
                     ->where('name', 'like', "%{$term}%")
                     ->orWhere('origin', 'like', "%{$term}%")
                     ->orWhereHas('category', fn (Builder $category) => $category->where('name', 'like', "%{$term}%")))
-            )
+            );
+        };
+
+        $foods = $applySearch(Food::with('category'))
             ->orderBy('name')
             ->limit(self::PICKER_LIMIT)
             ->get();
+
+        $matchingCount = $applySearch(Food::query())->count();
 
         return view('back.meals.create', [
             'foods' => $foods,
             'types' => Meal::TYPES,
             'search' => $term,
-            // Only worth offering a hint when the list was actually capped.
-            'pickerTruncated' => $term === '' && Food::count() > self::PICKER_LIMIT,
+            'pickerTruncated' => $matchingCount > self::PICKER_LIMIT,
         ]);
     }
 

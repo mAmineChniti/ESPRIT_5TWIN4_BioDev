@@ -12,7 +12,9 @@ class ShipmentRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        // The route group admits distributors and admins; repeated here so a
+        // route moved out of the group still fails closed.
+        return (bool) $this->user()?->isAdmin() || $this->user()?->role === 'distributor';
     }
 
     /**

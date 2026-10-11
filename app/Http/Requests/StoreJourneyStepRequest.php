@@ -10,7 +10,9 @@ class StoreJourneyStepRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        // The route group admits processors; repeated here so a route moved
+        // out of the group still fails closed.
+        return $this->user()?->role === 'processor';
     }
 
     public function rules(): array
@@ -28,6 +30,8 @@ class StoreJourneyStepRequest extends FormRequest
             'location' => ['required', 'string', 'max:120'],
             'step_date' => ['required', 'date'],
             'description' => ['nullable', 'string', 'max:255'],
+            'farm_id' => ['nullable', 'integer', 'exists:farms,id'],
+            'shipment_id' => ['nullable', 'integer', 'exists:shipments,id'],
         ];
     }
 

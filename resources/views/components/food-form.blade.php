@@ -58,7 +58,7 @@
                 <div class="space-y-2">
                     <april:label for="origin">Origin</april:label>
                     <april:input id="origin" name="origin" :value="old('origin', $food?->origin)"
-                                 placeholder="ex: France" aria-describedby="origin-error"
+                                 placeholder="e.g. France" aria-describedby="origin-error"
                                  :aria-invalid="$errors->has('origin') ? 'true' : 'false'" />
                     <p id="origin-error" class="text-sm text-destructive" role="alert" aria-live="polite">
                         @error('origin') {{ $message }} @enderror

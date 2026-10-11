@@ -66,7 +66,7 @@
         </template>
     </div>
 
-    <form class="flex items-end gap-2" @submit.prevent="ask(question); question = ''">
+    <form class="flex items-end gap-2" @submit.prevent="ask(question); question = ''" novalidate>
         <div class="flex-1">
             <april:label for="assistant-question-{{ $food->id }}" class="sr-only">
                 Ask a question about {{ $food->name }}
