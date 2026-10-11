@@ -97,13 +97,13 @@
             <x-slot:content>
                 <ol class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     @foreach ([
-                        ['icon' => 'wheat', 'color' => 'bg-primary/10 text-primary', 'title' => 'Producer', 'text' => 'The farm: soil, water, growing practices.'],
-                        ['icon' => 'factory', 'color' => 'bg-primary/10 text-primary', 'title' => 'Processor', 'text' => 'Transformation steps and additives.'],
-                        ['icon' => 'truck', 'color' => 'bg-primary/10 text-primary', 'title' => 'Distributor', 'text' => 'Kilometres, cold chain, packaging.'],
-                        ['icon' => 'shopping-basket', 'color' => 'bg-primary/10 text-primary', 'title' => 'Consumer', 'text' => 'You: scan, compare, choose better.'],
+                        ['icon' => 'wheat', 'title' => 'Producer', 'text' => 'The farm: soil, water, growing practices.'],
+                        ['icon' => 'factory', 'title' => 'Processor', 'text' => 'Transformation steps and additives.'],
+                        ['icon' => 'truck', 'title' => 'Distributor', 'text' => 'Kilometres, cold chain, packaging.'],
+                        ['icon' => 'shopping-basket', 'title' => 'Consumer', 'text' => 'You: scan, compare, choose better.'],
                     ] as $step)
                         <li class="relative rounded-xl border border-border bg-background p-4">
-                            <span class="flex h-10 w-10 items-center justify-center rounded-lg {{ $step['color'] }}">
+                            <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                                 <x-dynamic-component :component="'lucide-' . $step['icon']" class="size-5" />
                             </span>
                             <p class="mt-3 font-semibold">{{ $step['title'] }}</p>

@@ -7,6 +7,14 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
+/**
+ * Journeys are a shared processor pool: every processor may read and extend
+ * any journey, because traceability recording is the processors' joint work
+ * rather than per-account property (journeys carry no user_id; they belong to
+ * products via product_id). Per-step binding is still enforced in
+ * JourneyStepController::ensureBelongsToJourney, so a step URL cannot be
+ * rewired to another journey.
+ */
 class JourneyController extends Controller
 {
     public function index(Request $request): View

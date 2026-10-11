@@ -24,7 +24,7 @@ class FarmFactory extends Factory
             'producer_name' => fake()->name(),
             'address' => fake()->address(),
             'surface_hectares' => fake()->randomFloat(2, 5, 250),
-            'farming_type' => fake()->randomElement(['Organic', 'Sustainable', 'Traditional', 'Biodynamic']),
+            'farming_type' => fake()->randomElement(Farm::FARMING_TYPES),
             'phone' => fake()->phoneNumber(),
             'description' => fake()->sentence(12),
         ];

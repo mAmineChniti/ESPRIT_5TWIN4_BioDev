@@ -4,7 +4,7 @@
 
         <div class="space-y-2">
             <april:label for="name">Name</april:label>
-            <april:input id="name" type="text" name="name" :value="old('name')" placeholder="Marie Dupont" required autofocus autocomplete="name"  aria-describedby="name-error"
+            <april:input id="name" type="text" name="name" :value="old('name')" placeholder="Jane Doe" required autofocus autocomplete="name"  aria-describedby="name-error"
                  :aria-invalid="$errors->has('name') ? 'true' : 'false'"/>
             <x-input-error id="name-error" :messages="$errors->get('name')" />
         </div>

@@ -72,6 +72,51 @@ class LogisticsTest extends TestCase
         $this->assertModelMissing($shipment);
     }
 
+    public function test_only_an_admin_may_delete_a_warehouse(): void
+    {
+        $distributor = User::factory()->create(['role' => 'distributor']);
+        $admin = User::factory()->create(['role' => 'admin']);
+        $warehouse = Warehouse::factory()->create();
+        $shipment = Shipment::factory()->create(['warehouse_id' => $warehouse->id]);
+
+        // Deleting cascades to every shipment in the warehouse, so a
+        // distributor reaching the route any other way fails closed.
+        $this->actingAs($distributor)
+            ->delete(route('logistics.warehouses.destroy', $warehouse))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('warehouses', ['id' => $warehouse->id]);
+        $this->assertDatabaseHas('shipments', ['id' => $shipment->id]);
+
+        $this->actingAs($admin)
+            ->delete(route('logistics.warehouses.destroy', $warehouse))
+            ->assertRedirect(route('logistics.warehouses.index'));
+
+        $this->assertModelMissing($warehouse);
+        $this->assertModelMissing($shipment);
+    }
+
+    public function test_a_distributor_warehouse_page_hides_another_distributors_shipments(): void
+    {
+        $mine = User::factory()->create(['role' => 'distributor']);
+        $theirs = User::factory()->create(['role' => 'distributor']);
+        $warehouse = Warehouse::factory()->create();
+        $own = Shipment::factory()->create(['user_id' => $mine->id, 'warehouse_id' => $warehouse->id]);
+        $other = Shipment::factory()->create(['user_id' => $theirs->id, 'warehouse_id' => $warehouse->id]);
+
+        $html = $this->actingAs($mine)
+            ->get(route('logistics.warehouses.show', $warehouse))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString($own->reference, $html);
+        $this->assertStringNotContainsString(
+            $other->reference,
+            $html,
+            'The page offers a shipment the controller will refuse.'
+        );
+    }
+
     public function test_a_distributor_cannot_touch_another_distributors_shipment(): void
     {
         $owner = User::factory()->create(['role' => 'distributor']);

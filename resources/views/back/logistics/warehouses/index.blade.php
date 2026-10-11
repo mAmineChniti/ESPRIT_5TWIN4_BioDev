@@ -37,13 +37,25 @@
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                             <a href="{{ route('logistics.warehouses.show', $warehouse) }}" class="text-primary hover:underline">View</a>
                             <a href="{{ route('logistics.warehouses.edit', $warehouse) }}" class="text-primary hover:underline">Edit</a>
-                            <x-confirm-action
-                                :action="route('logistics.warehouses.destroy', $warehouse)"
-                                title="Delete this warehouse?"
-                                description="This warehouse and its {{ $warehouse->shipments_count }} shipment(s) will be permanently deleted."
-                                triggerVariant="ghost"
-                                triggerSize="sm"
-                            >Delete</x-confirm-action>
+                            @if(auth()->user()?->isAdmin())
+                                <x-confirm-action
+                                    :action="route('logistics.warehouses.destroy', $warehouse)"
+                                    title="Delete this warehouse?"
+                                    description="This warehouse and its {{ $warehouse->shipments_count }} shipment(s) will be permanently deleted."
+                                    triggerVariant="ghost"
+                                    triggerSize="sm"
+                                >Delete</x-confirm-action>
+                            @else
+                                {{-- Deleting cascades to every shipment in the warehouse,
+                                     so only an administrator is offered the action. --}}
+                                <april:tooltip>
+                                    <x-slot:trigger>
+                                        <span class="cursor-not-allowed text-sm text-muted-foreground opacity-50"
+                                              aria-disabled="true">Delete</span>
+                                    </x-slot:trigger>
+                                    <x-slot:content>Only an administrator can delete a warehouse.</x-slot:content>
+                                </april:tooltip>
+                            @endif
                         </td>
                     </tr>
                     @empty

@@ -14,6 +14,14 @@ class Farm extends Model
     /** @use HasFactory<FarmFactory> */
     use HasFactory;
 
+    /**
+     * The farming practices the app recognises, written once here so the
+     * factory, seeders and validation cannot drift apart.
+     *
+     * @var list<string>
+     */
+    public const FARMING_TYPES = ['Organic', 'Sustainable', 'Traditional', 'Biodynamic'];
+
     protected $fillable = [
         'agricultural_region_id',
         'user_id',

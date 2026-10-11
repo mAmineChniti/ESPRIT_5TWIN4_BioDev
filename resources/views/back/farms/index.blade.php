@@ -193,15 +193,31 @@
                                             </april:button-link>
                                         @endif
 
-                                        <x-confirm-action
-                                            :action="route('farms.destroy', $farm)"
-                                            label="Delete farm"
-                                            title="Delete this farm?"
-                                            description="{{ $farm->name }} will be permanently deleted. This action cannot be undone."
-                                        >
-                                            <x-lucide-trash-2 class="size-4" />
-                                            <span class="sr-only">Delete {{ $farm->name }}</span>
-                                        </x-confirm-action>
+                                        @if($farm->canBeEdited())
+                                            <x-confirm-action
+                                                :action="route('farms.destroy', $farm)"
+                                                label="Delete farm"
+                                                title="Delete this farm?"
+                                                description="{{ $farm->name }} will be permanently deleted. This action cannot be undone."
+                                            >
+                                                <x-lucide-trash-2 class="size-4" />
+                                                <span class="sr-only">Delete {{ $farm->name }}</span>
+                                            </x-confirm-action>
+                                        @else
+                                            {{-- A rejected request is closed; say why
+                                                 instead of offering a dead control. --}}
+                                            <april:tooltip>
+                                                <x-slot:trigger>
+                                                    <span class="cursor-not-allowed opacity-50"
+                                                          aria-disabled="true"
+                                                          title="This request was rejected and cannot be deleted.">
+                                                        <x-lucide-trash-2 class="size-4" />
+                                                        <span class="sr-only">Delete {{ $farm->name }}: this request was rejected and cannot be deleted.</span>
+                                                    </span>
+                                                </x-slot:trigger>
+                                                <x-slot:content>This request was rejected and cannot be deleted.</x-slot:content>
+                                            </april:tooltip>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>

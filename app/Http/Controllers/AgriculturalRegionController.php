@@ -36,10 +36,16 @@ class AgriculturalRegionController extends Controller
      * Both admins and producers see every region: a producer needs the list in
      * order to attach a farm to one.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
+        $user = $request->user();
+
+        // A producer sees only their own farms on the show page, so the index
+        // counts are scoped the same way; otherwise the listing advertises
+        // farms the controller will not show.
         $regions = AgriculturalRegion::query()
-            ->withCount('farms')
+            ->withCount(['farms' => fn (Builder $query) => $query
+                ->when(! $user->isAdmin(), fn (Builder $inner) => $inner->where('user_id', $user->id))])
             ->latest()
             ->paginate(self::PER_PAGE);
 

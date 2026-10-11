@@ -8,8 +8,10 @@ class WarehouseRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Access is already restricted by the route middleware (distributor, admin).
-        return true;
+        // The route group admits distributors and admins; repeated here so a
+        // route moved out of the group still fails closed. Deleting is further
+        // restricted to admins inside the controller.
+        return (bool) $this->user()?->isAdmin() || $this->user()?->role === 'distributor';
     }
 
     protected function prepareForValidation(): void

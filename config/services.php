@@ -64,9 +64,13 @@ return [
             'together' => 'https://api.together.xyz/v1',
         ],
 
-        // Gemini uses its own request shape rather than the OpenAI one.
+        // Gemini uses its own request shape rather than the OpenAI one, so it
+        // has its own model setting. AI_GEMINI_MODEL wins; AI_MODEL is only
+        // honoured when it does not look like an OpenAI-style name (those
+        // contain a "/"), so switching providers without changing models
+        // cannot send a Groq name to the Gemini endpoint.
         'gemini_base_url' => 'https://generativelanguage.googleapis.com/v1beta',
-        'gemini_model' => env('AI_MODEL', 'gemini-2.5-flash'),
+        'gemini_model' => env('AI_GEMINI_MODEL', str_contains((string) env('AI_MODEL', ''), '/') ? 'gemini-2.5-flash' : env('AI_MODEL', 'gemini-2.5-flash')),
     ],
 
 ];

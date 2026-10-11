@@ -229,8 +229,8 @@
                                 <april:label for="details" class="text-xs uppercase tracking-wide text-muted-foreground">
                                     Details
                                 </april:label>
-                                <x-textarea-field id="details" name="details" rows="3" class="mt-1" :value="old('details')" />
-                                @error('details') <p class="mt-1 text-sm text-destructive" role="alert">{{ $message }}</p> @enderror
+                                <x-textarea-field id="details" name="details" rows="3" class="mt-1" :value="old('details')" describedby="details-error" />
+                                @error('details') <p id="details-error" class="mt-1 text-sm text-destructive" role="alert">{{ $message }}</p> @enderror
                             </div>
                             <april:button type="submit" variant="destructive" class="w-full">Submit report</april:button>
                         </form>
@@ -324,6 +324,7 @@
                                 Rating
                             </april:label>
                             <april:native-select id="rating" name="rating" required class="mt-1"
+                                                   aria-describedby="rating-error"
                                                    :aria-invalid="$errors->has('rating') ? 'true' : 'false'">
                                 @for($i = 5; $i >= 1; $i--)
                                     <option value="{{ $i }}" @selected(($myReview?->rating ?? 5) === $i)>{{ $i }} / 5</option>
@@ -336,14 +337,15 @@
                             </april:label>
                             <x-textarea-field id="body" name="body" rows="2" class="mt-1"
                                 :value="old('body', $myReview?->body)"
+                                describedby="body-error"
                                 placeholder="Did the product match its label?" />
                         </div>
                         <april:button type="submit">
                             {{ $myReview ? 'Update' : 'Publish' }}
                         </april:button>
                     </div>
-                    @error('rating') <p class="mt-2 text-sm text-destructive" role="alert">{{ $message }}</p> @enderror
-                    @error('body') <p class="mt-2 text-sm text-destructive" role="alert">{{ $message }}</p> @enderror
+                    @error('rating') <p id="rating-error" class="mt-2 text-sm text-destructive" role="alert">{{ $message }}</p> @enderror
+                    @error('body') <p id="body-error" class="mt-2 text-sm text-destructive" role="alert">{{ $message }}</p> @enderror
                 </form>
             @endif
         @endauth

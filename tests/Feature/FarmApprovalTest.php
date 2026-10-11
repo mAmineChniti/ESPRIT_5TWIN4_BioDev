@@ -222,6 +222,41 @@ class FarmApprovalTest extends TestCase
         $this->assertDatabaseHas('farms', ['id' => $theirs->id]);
     }
 
+    public function test_a_rejected_farm_can_no_longer_be_edited_or_deleted(): void
+    {
+        $owner = $this->user('producer');
+        $region = AgriculturalRegion::factory()->create();
+        $farm = $this->farm(FarmStatus::Rejected, $owner, $region);
+
+        $this->actingAs($owner)->get(route('farms.edit', $farm))->assertStatus(422);
+
+        $this->actingAs($owner)->put(route('farms.update', $farm), [
+            'agricultural_region_id' => $region->id,
+            'name' => 'Changed Name',
+            'address' => '1 Road',
+            'surface_hectares' => 12,
+            'farming_type' => 'Organic',
+        ])->assertStatus(422);
+
+        $this->actingAs($owner)->delete(route('farms.destroy', $farm))->assertStatus(422);
+
+        $this->assertDatabaseHas('farms', ['id' => $farm->id, 'name' => $farm->name]);
+    }
+
+    public function test_farming_type_rejects_unknown_values(): void
+    {
+        $producer = $this->user('producer');
+        $region = AgriculturalRegion::factory()->create();
+
+        $this->actingAs($producer)->post(route('farms.store'), [
+            'agricultural_region_id' => $region->id,
+            'name' => 'Mystery Farm',
+            'address' => '1 Road',
+            'surface_hectares' => 12,
+            'farming_type' => 'Hydroponic',
+        ])->assertSessionHasErrors('farming_type');
+    }
+
     // ---------- Workflow ----------
 
     public function test_a_producer_submission_waits_for_an_admin(): void
@@ -234,7 +269,7 @@ class FarmApprovalTest extends TestCase
             'name' => 'Waiting Farm',
             'address' => '1 Road',
             'surface_hectares' => 12,
-            'farming_type' => 'Biologique',
+            'farming_type' => 'Organic',
         ])->assertRedirect(route('farms.index'))->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('farms', ['name' => 'Waiting Farm', 'status' => FarmStatus::Pending->value]);
@@ -249,7 +284,7 @@ class FarmApprovalTest extends TestCase
             'name' => 'Admin Farm',
             'address' => '2 Road',
             'surface_hectares' => 12,
-            'farming_type' => 'Biologique',
+            'farming_type' => 'Organic',
         ])->assertRedirect(route('farms.index'))->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('farms', ['name' => 'Admin Farm', 'status' => FarmStatus::Approved->value]);

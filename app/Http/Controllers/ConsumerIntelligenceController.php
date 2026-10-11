@@ -12,7 +12,9 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * The consumer-facing AI features: greenwashing detection, the product
@@ -163,23 +165,34 @@ class ConsumerIntelligenceController extends Controller
             isset($validated['detail']) && $validated['detail'] !== '' ? "\n".$validated['detail'] : ''
         ));
 
-        $alreadyPending = $food->reports()
-            ->where('user_id', $user->id)
-            ->where('status', ReportStatus::Pending->value)
-            ->exists();
+        // One open report per consumer per product. The product row is locked
+        // for the duration so two concurrent submissions cannot both pass the
+        // check and open a duplicate.
+        try {
+            DB::transaction(function () use ($food, $user, $reason, $details): void {
+                Food::query()->whereKey($food->getKey())->lockForUpdate()->first();
 
-        if ($alreadyPending) {
-            return back()->withErrors([
-                'reason' => 'You already have a report awaiting review on this product.',
-            ]);
+                $alreadyPending = $food->reports()
+                    ->where('user_id', $user->id)
+                    ->where('status', ReportStatus::Pending->value)
+                    ->exists();
+
+                if ($alreadyPending) {
+                    throw ValidationException::withMessages([
+                        'reason' => 'You already have a report awaiting review on this product.',
+                    ]);
+                }
+
+                $food->reports()->create([
+                    'user_id' => $user->id,
+                    'reason' => $reason,
+                    'details' => $details,
+                    'status' => ReportStatus::Pending,
+                ]);
+            });
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors());
         }
-
-        $food->reports()->create([
-            'user_id' => $user->id,
-            'reason' => $reason,
-            'details' => $details,
-            'status' => ReportStatus::Pending,
-        ]);
 
         return back()->with('success', 'Report received. A reviewer will look at it.');
     }

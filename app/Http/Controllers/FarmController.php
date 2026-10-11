@@ -33,7 +33,7 @@ class FarmController extends Controller
             'producer_name' => ['nullable', 'string', 'max:255'],
             'address' => ['required', 'string', 'max:255'],
             'surface_hectares' => ['required', 'numeric', 'min:0'],
-            'farming_type' => ['required', 'string', 'max:100'],
+            'farming_type' => ['required', 'string', Rule::in(Farm::FARMING_TYPES)],
             'phone' => ['nullable', 'string', 'max:50'],
             'description' => ['nullable', 'string', 'max:2000'],
         ];
@@ -206,6 +206,7 @@ class FarmController extends Controller
     public function edit(Request $request, Farm $farm): View
     {
         $this->ensureOwnership($request, $farm);
+        $this->ensureEditable($farm);
 
         return view('back.farms.edit', [
             'farm' => $farm,
@@ -219,6 +220,7 @@ class FarmController extends Controller
     public function update(Request $request, Farm $farm): RedirectResponse
     {
         $this->ensureOwnership($request, $farm);
+        $this->ensureEditable($farm);
 
         $farm->update($request->validate($this->farmRules()));
 
@@ -232,6 +234,7 @@ class FarmController extends Controller
     public function destroy(Request $request, Farm $farm): RedirectResponse
     {
         $this->ensureOwnership($request, $farm);
+        $this->ensureEditable($farm);
 
         $farm->delete();
 
@@ -268,6 +271,19 @@ class FarmController extends Controller
             ! $request->user()?->isAdmin() && $farm->user_id !== $request->user()->id,
             403,
             'Access denied. You can only manage your own farms.',
+        );
+    }
+
+    /**
+     * A rejected farm is closed: its record is kept as submitted rather than
+     * edited, as documented on the model.
+     */
+    private function ensureEditable(Farm $farm): void
+    {
+        abort_if(
+            ! $farm->canBeEdited(),
+            422,
+            'This farm request was rejected and can no longer be edited or deleted.'
         );
     }
 }
