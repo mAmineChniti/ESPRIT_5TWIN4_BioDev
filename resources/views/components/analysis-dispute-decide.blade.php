@@ -18,15 +18,14 @@
 
 <april:alert-dialog>
     <x-slot:trigger>
-        <april:button type="button" size="sm" variant="outline">Decide</april:button>
+        <april:button type="button" size="sm" variant="outline">{{ __('Decide') }}</april:button>
     </x-slot:trigger>
 
     <x-slot:content>
         <april:alert-dialog-header>
-            <x-slot:title>Decide on this analysis report</x-slot:title>
+            <x-slot:title>{{ __('Decide on this analysis report') }}</x-slot:title>
             <x-slot:description>
-                {{ $dispute->user?->name ?? 'Someone' }} says the analysis of
-                <strong>{{ $product }}</strong> is wrong: &ldquo;{{ $dispute->reason->label() }}&rdquo;.
+                {!! __(':user says the analysis of :product is wrong: “:reason”.', ['user' => e($dispute->user?->name ?? __('Someone')), 'product' => '<strong>'.e($product).'</strong>', 'reason' => $dispute->reason->label()]) !!}
             </x-slot:description>
         </april:alert-dialog-header>
 
@@ -35,7 +34,7 @@
             @method('PATCH')
 
             <div>
-                <april:label for="{{ $suffix }}-status">Decision</april:label>
+                <april:label for="{{ $suffix }}-status">{{ __('Decision') }}</april:label>
                 <april:native-select id="{{ $suffix }}-status" name="status" required
                     class="mt-1"
                     aria-describedby="{{ $suffix }}-status-hint">
@@ -46,17 +45,16 @@
                     @endforeach
                 </april:native-select>
                 <p id="{{ $suffix }}-status-hint" class="mt-2 text-sm text-muted-foreground">
-                    Neither decision changes the product&rsquo;s score: the claim is about our analysis,
-                    not about the product.
+                    {{ __('Neither decision changes the product’s score: the claim is about our analysis, not about the product.') }}
                 </p>
             </div>
 
             <div>
-                <april:label for="{{ $suffix }}-note">Note for the reporter</april:label>
+                <april:label for="{{ $suffix }}-note">{{ __('Note for the reporter') }}</april:label>
                 <x-textarea-field id="{{ $suffix }}-note" name="resolution_note" rows="3"
                     class="mt-1"
                     maxlength="2000"
-                    placeholder="What you concluded, and what happens next."
+                    :placeholder="__('What you concluded, and what happens next.')" 
                     :describedby="$suffix.'-note-error'"
                     :value="old('resolution_note')"
                     :aria-invalid="$errors->has('resolution_note') ? 'true' : 'false'" />
@@ -64,9 +62,9 @@
             </div>
 
             <april:alert-dialog-footer>
-                <april:alert-dialog-cancel>Cancel</april:alert-dialog-cancel>
+                <april:alert-dialog-cancel>{{ __('Cancel') }}</april:alert-dialog-cancel>
                 <april:alert-dialog-action x-on:click="$el.closest('form').requestSubmit()">
-                    Record decision
+                    {{ __('Record decision') }}
                 </april:alert-dialog-action>
             </april:alert-dialog-footer>
         </form>

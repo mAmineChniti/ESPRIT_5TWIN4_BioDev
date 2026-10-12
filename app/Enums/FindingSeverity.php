@@ -18,9 +18,9 @@ enum FindingSeverity: string
     public function label(): string
     {
         return match ($this) {
-            self::Low => 'Minor',
-            self::Medium => 'Concern',
-            self::High => 'Serious',
+            self::Low => __('Minor'),
+            self::Medium => __('Concern'),
+            self::High => __('Serious'),
         };
     }
 

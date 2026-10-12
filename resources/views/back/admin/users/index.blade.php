@@ -1,23 +1,23 @@
 @extends('layouts.back')
 
-@section('title', 'Manage Users')
+@section('title', __('Manage Users'))
 
 @section('content')
 <div class="mb-6">
-    <h1 class="text-2xl font-bold">Manage Users</h1>
+    <h1 class="text-2xl font-bold">{{ __('Manage Users') }}</h1>
     <p class="mt-1 text-sm text-muted-foreground">
-        All registered users on NutriTrace — {{ $users->total() }} total.
+        {{ __('All registered users on NutriTrace — :total total.', ['total' => $users->total()]) }}
     </p>
 </div>
 
 <april:data-table>
     <x-slot:header>
         <tr>
-            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Name</th>
-            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Email</th>
-            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Role</th>
-            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Registered</th>
-            <th scope="col" class="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Actions</th>
+            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">{{ __('Name') }}</th>
+            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">{{ __('Email') }}</th>
+            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">{{ __('Role') }}</th>
+            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">{{ __('Registered') }}</th>
+            <th scope="col" class="h-10 px-4 text-right align-middle font-medium text-muted-foreground">{{ __('Actions') }}</th>
         </tr>
     </x-slot:header>
 
@@ -49,37 +49,36 @@
                     </april:badge>
                 </td>
                 <td class="whitespace-nowrap p-4 align-middle text-sm text-muted-foreground">
-                    {{ $user->created_at?->format('d M Y') ?? 'N/A' }}
+                    {{ $user->created_at?->translatedFormat('d M Y') ?? __('N/A') }}
                 </td>
                 <td class="whitespace-nowrap p-4 text-right align-middle">
                     <div class="inline-flex items-center gap-2">
                         <april:button-link href="{{ route('admin.users.edit', $user) }}" variant="link" size="sm">
-                            Edit
+                            {{ __('Edit') }}
                         </april:button-link>
 
                         @if(auth()->id() !== $user->id)
                             <april:alert-dialog>
                                 <x-slot:trigger>
-                                    <april:button type="button" variant="link" size="sm"
-                                                  class="text-destructive">
-                                        Delete
-                                    </april:button>
+                                        <april:button type="button" variant="link" size="sm"
+                                                      class="text-destructive">
+                                            {{ __('Delete') }}
+                                        </april:button>
                                 </x-slot:trigger>
                                 <x-slot:content>
                                     <div>
-                                        <h2 class="text-lg font-semibold" x-bind="title">Delete this user?</h2>
+                                        <h2 class="text-lg font-semibold" x-bind="title">{{ __('Delete this user?') }}</h2>
                                         <p class="mt-2 text-sm text-muted-foreground" x-bind="description">
-                                            <strong>{{ $user->name }}</strong> will lose access immediately, along
-                                            with their reviews, meals and recorded supply chain steps.
+                                            {!! __(':name will lose access immediately, along with their reviews, meals and recorded supply chain steps.', ['name' => '<strong>'.e($user->name).'</strong>']) !!}
                                         </p>
                                     </div>
                                     <april:alert-dialog-footer>
-                                        <april:alert-dialog-cancel>Cancel</april:alert-dialog-cancel>
+                                        <april:alert-dialog-cancel>{{ __('Cancel') }}</april:alert-dialog-cancel>
                                         <form action="{{ route('admin.users.destroy', $user) }}" method="POST" novalidate>
                                             @csrf
                                             @method('DELETE')
                                             <april:button type="submit" variant="destructive" x-bind="action">
-                                                Delete user
+                                                {{ __('Delete user') }}
                                             </april:button>
                                         </form>
                                     </april:alert-dialog-footer>
@@ -91,9 +90,9 @@
                             <april:tooltip>
                                 <x-slot:trigger>
                                     <span class="cursor-not-allowed text-sm text-muted-foreground opacity-50"
-                                          aria-disabled="true">Delete</span>
+                                          aria-disabled="true">{{ __('Delete') }}</span>
                                 </x-slot:trigger>
-                                <x-slot:content>You cannot delete your own account.</x-slot:content>
+                                <x-slot:content>{{ __('You cannot delete your own account.') }}</x-slot:content>
                             </april:tooltip>
                         @endif
                     </div>
@@ -102,7 +101,7 @@
         @empty
             <tr>
                 <td colspan="5" class="p-4 text-center align-middle text-sm text-muted-foreground">
-                    No users found.
+                    {{ __('No users found.') }}
                 </td>
             </tr>
         @endforelse
@@ -113,11 +112,11 @@
 
 {{-- Summary by role. Counted across the whole table, not just this page. --}}
 <div class="mt-6 grid grid-cols-2 gap-4 md:grid-cols-5">
-    @foreach(['admin', 'producer', 'processor', 'distributor', 'consumer'] as $role)
+    @foreach(['admin' => __('Administrators'), 'producer' => __('Producers'), 'processor' => __('Processors'), 'distributor' => __('Distributors'), 'consumer' => __('Consumers')] as $role => $label)
         <april:card class="text-center">
             <x-slot:content>
                 <p class="text-2xl font-bold">{{ $roleCounts[$role] ?? 0 }}</p>
-                <p class="mt-1 text-xs font-semibold uppercase text-muted-foreground">{{ $role }}s</p>
+                <p class="mt-1 text-xs font-semibold uppercase text-muted-foreground">{{ $label }}</p>
             </x-slot:content>
         </april:card>
     @endforeach

@@ -22,6 +22,22 @@ class Farm extends Model
      */
     public const FARMING_TYPES = ['Organic', 'Sustainable', 'Traditional', 'Biodynamic'];
 
+    /**
+     * Display label for a stored farming type. Values stay English everywhere
+     * they are compared, validated or persisted; only the rendered label
+     * translates.
+     */
+    public static function farmingTypeLabel(?string $type): string
+    {
+        return match ($type) {
+            'Organic' => __('Organic'),
+            'Sustainable' => __('Sustainable'),
+            'Traditional' => __('Traditional'),
+            'Biodynamic' => __('Biodynamic'),
+            default => (string) $type,
+        };
+    }
+
     protected $fillable = [
         'agricultural_region_id',
         'user_id',

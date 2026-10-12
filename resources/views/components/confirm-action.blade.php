@@ -1,7 +1,7 @@
 @props([
     'action',
     'method' => 'DELETE',
-    'label' => 'Confirm',
+    'label' => __('Confirm'),
     'title',
     'description',
     'triggerVariant' => 'ghost',
@@ -36,7 +36,7 @@
         </april:alert-dialog-header>
 
         <april:alert-dialog-footer>
-            <april:alert-dialog-cancel>Cancel</april:alert-dialog-cancel>
+            <april:alert-dialog-cancel>{{ __('Cancel') }}</april:alert-dialog-cancel>
 
             <form method="POST" action="{{ $action }}" class="contents" novalidate>
                 @csrf

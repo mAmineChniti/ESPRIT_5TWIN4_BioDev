@@ -6,6 +6,7 @@ use App\Enums\EnvironmentalScore;
 use App\Enums\ReportReason;
 use App\Enums\ReportStatus;
 use App\Enums\Stage;
+use App\Http\Middleware\EnsureUserHasRole;
 use App\Models\Certification;
 use App\Models\Food;
 use App\Models\GreenwashingReport;
@@ -368,5 +369,27 @@ class ConsumerSpaceTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => 'producer']))
             ->get(route('consumer.dashboard'))
             ->assertForbidden();
+    }
+
+    public function test_the_dashboard_fails_closed_without_the_role_middleware(): void
+    {
+        $this->withoutMiddleware(EnsureUserHasRole::class);
+
+        // The controller repeats the route's consumer gate, so a route
+        // moved out of the group still refuses the wrong role instead of
+        // rendering an empty dashboard.
+        $this->actingAs(User::factory()->create(['role' => 'producer']))
+            ->get(route('consumer.dashboard'))
+            ->assertForbidden();
+    }
+
+    public function test_the_space_and_recommendations_fail_closed_without_the_role_middleware(): void
+    {
+        $this->withoutMiddleware(EnsureUserHasRole::class);
+
+        $producer = User::factory()->create(['role' => 'producer']);
+
+        $this->actingAs($producer)->get(route('consumer.space'))->assertForbidden();
+        $this->actingAs($producer)->get(route('consumer.recommendations'))->assertForbidden();
     }
 }

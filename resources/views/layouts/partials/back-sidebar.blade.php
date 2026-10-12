@@ -19,13 +19,13 @@
 
     <x-slot:content>
         <april:sidebar-menu>
-            <april:sidebar-group-label>Overview</april:sidebar-group-label>
+            <april:sidebar-group-label>{{ __('Overview') }}</april:sidebar-group-label>
             <april:sidebar-menu-item>
                 <april:sidebar-menu-button-link
                     href="{{ $user->dashboardUrl() }}"
                     :active="request()->routeIs('dashboard') || request()->routeIs('admin.dashboard') || request()->routeIs('producer.dashboard') || request()->routeIs('processor.dashboard') || request()->routeIs('distributor.dashboard') || request()->routeIs('consumer.dashboard')">
                     <x-lucide-layout-dashboard />
-                    <span>Dashboard</span>
+                    <span>{{ __('Dashboard') }}</span>
                 </april:sidebar-menu-button-link>
             </april:sidebar-menu-item>
         </april:sidebar-menu>
@@ -33,24 +33,24 @@
         @if($isAdmin)
             {{-- Admin-only destinations --}}
             <april:sidebar-menu>
-                <april:sidebar-group-label>Administration</april:sidebar-group-label>
+                <april:sidebar-group-label>{{ __('Administration') }}</april:sidebar-group-label>
                 <april:sidebar-menu-item>
                     <april:sidebar-menu-button-link href="{{ route('admin.users.index') }}" :active="request()->routeIs('admin.users.*')">
                         <x-lucide-users />
-                        <span>Manage Users</span>
+                        <span>{{ __('Manage Users') }}</span>
                     </april:sidebar-menu-button-link>
                 </april:sidebar-menu-item>
                 <april:sidebar-menu-item>
                     <april:sidebar-menu-button-link href="{{ route('admin.reports.index') }}" :active="request()->routeIs('admin.reports.*')">
                         <x-lucide-flag />
-                        <span>Greenwashing Reports</span>
+                        <span>{{ __('Greenwashing Reports') }}</span>
                     </april:sidebar-menu-button-link>
                 </april:sidebar-menu-item>
                 <april:sidebar-menu-item>
                     <april:sidebar-menu-button-link href="{{ route('admin.analysis-disputes.index') }}" :active="request()->routeIs('admin.analysis-disputes.*')">
                         <x-lucide-message-square-warning />
                         <span class="flex flex-1 items-center justify-between gap-2">
-                            <span>Analysis Reports</span>
+                            <span>{{ __('Analysis Reports') }}</span>
                             @if($pendingDisputesCount > 0)
                                 <april:badge variant="secondary" class="rounded-full px-2 py-0.5 text-xs font-bold leading-none">
                                     {{ $pendingDisputesCount }}
@@ -64,11 +64,11 @@
 
         {{-- Catalog is readable by everyone signed in --}}
         <april:sidebar-menu>
-            <april:sidebar-group-label>Catalog</april:sidebar-group-label>
+            <april:sidebar-group-label>{{ __('Catalog') }}</april:sidebar-group-label>
             <april:sidebar-menu-item>
                 <april:sidebar-menu-button-link href="{{ route('foods.index') }}" :active="request()->routeIs('foods.*')">
                     <x-lucide-apple />
-                    <span>{{ $showsOwnProducts ? 'My Products' : 'Browse Products' }}</span>
+                    <span>{{ $showsOwnProducts ? __('My Products') : __('Browse Products') }}</span>
                 </april:sidebar-menu-button-link>
             </april:sidebar-menu-item>
         </april:sidebar-menu>
@@ -77,11 +77,11 @@
              that make each one up. Without this the whole module is URL-only. --}}
         @if($role === 'processor')
             <april:sidebar-menu>
-                <april:sidebar-group-label>Traceability</april:sidebar-group-label>
+                <april:sidebar-group-label>{{ __('Traceability') }}</april:sidebar-group-label>
                 <april:sidebar-menu-item>
                     <april:sidebar-menu-button-link href="{{ route('processor.journeys.index') }}" :active="request()->routeIs('processor.journeys.*') && ! request()->routeIs('processor.journeys.steps.*')">
                         <x-lucide-route />
-                        <span>Journeys</span>
+                        <span>{{ __('Journeys') }}</span>
                     </april:sidebar-menu-button-link>
                 </april:sidebar-menu-item>
             </april:sidebar-menu>
@@ -89,17 +89,17 @@
 
         @if(in_array($role, ['admin', 'producer'], true))
             <april:sidebar-menu>
-                <april:sidebar-group-label>Agriculture</april:sidebar-group-label>
+                <april:sidebar-group-label>{{ __('Agriculture') }}</april:sidebar-group-label>
                 <april:sidebar-menu-item>
                     <april:sidebar-menu-button-link href="{{ route('regions.index') }}" :active="request()->routeIs('regions.*')">
                         <x-lucide-map-pin />
-                        <span>Agricultural Regions</span>
+                        <span>{{ __('Agricultural Regions') }}</span>
                     </april:sidebar-menu-button-link>
                 </april:sidebar-menu-item>
                 <april:sidebar-menu-item>
                     <april:sidebar-menu-button-link href="{{ route('farms.index') }}" :active="request()->routeIs('farms.*') && ! request()->routeIs('farms.requests')">
                         <x-lucide-tractor />
-                        <span>Farms</span>
+                        <span>{{ __('Farms') }}</span>
                     </april:sidebar-menu-button-link>
                 </april:sidebar-menu-item>
                 @if($isAdmin)
@@ -107,7 +107,7 @@
                         <april:sidebar-menu-button-link href="{{ route('farms.requests') }}" :active="request()->routeIs('farms.requests')">
                             <x-lucide-clipboard-check />
                             <span class="flex flex-1 items-center justify-between gap-2">
-                                <span>Farm Requests</span>
+                                <span>{{ __('Farm Requests') }}</span>
                                 @if($pendingRequestsCount > 0)
                                     <april:badge variant="secondary" class="rounded-full px-2 py-0.5 text-xs font-bold leading-none">
                                         {{ $pendingRequestsCount }}
@@ -123,40 +123,40 @@
         {{-- Logistics: distributors and admins --}}
         @if(in_array($role, ['distributor', 'admin'], true))
             <april:sidebar-menu>
-                <april:sidebar-group-label>Logistics</april:sidebar-group-label>
+                <april:sidebar-group-label>{{ __('Logistics') }}</april:sidebar-group-label>
                 <april:sidebar-menu-item>
                     <april:sidebar-menu-button-link href="{{ route('logistics.warehouses.index') }}" :active="request()->routeIs('logistics.warehouses.*')">
                         <x-lucide-warehouse />
-                        <span>Warehouses</span>
+                        <span>{{ __('Warehouses') }}</span>
                     </april:sidebar-menu-button-link>
                 </april:sidebar-menu-item>
                 <april:sidebar-menu-item>
                     <april:sidebar-menu-button-link href="{{ route('logistics.shipments.index') }}" :active="request()->routeIs('logistics.shipments.*')">
                         <x-lucide-truck />
-                        <span>Shipments</span>
+                        <span>{{ __('Shipments') }}</span>
                     </april:sidebar-menu-button-link>
                 </april:sidebar-menu-item>
             </april:sidebar-menu>
         @endif
         @if($role === 'consumer')
             <april:sidebar-menu>
-                <april:sidebar-group-label>Nutrition</april:sidebar-group-label>
+                <april:sidebar-group-label>{{ __('Nutrition') }}</april:sidebar-group-label>
                 <april:sidebar-menu-item>
                     <april:sidebar-menu-button-link href="{{ route('consumer.space') }}" :active="request()->routeIs('consumer.space')">
                         <x-lucide-sparkles />
-                        <span>Consumer Space</span>
+                        <span>{{ __('Consumer Space') }}</span>
                     </april:sidebar-menu-button-link>
                 </april:sidebar-menu-item>
                 <april:sidebar-menu-item>
                     <april:sidebar-menu-button-link href="{{ route('consumer.recommendations') }}" :active="request()->routeIs('consumer.recommendations')">
                         <x-lucide-leaf />
-                        <span>Recommendations</span>
+                        <span>{{ __('Recommendations') }}</span>
                     </april:sidebar-menu-button-link>
                 </april:sidebar-menu-item>
                 <april:sidebar-menu-item>
                     <april:sidebar-menu-button-link href="{{ route('meals.index') }}" :active="request()->routeIs('meals.*')">
                         <x-lucide-utensils />
-                        <span>My Meals</span>
+                        <span>{{ __('My Meals') }}</span>
                     </april:sidebar-menu-button-link>
                 </april:sidebar-menu-item>
             </april:sidebar-menu>
@@ -167,14 +167,14 @@
         <april:sidebar-menu>
             <april:sidebar-menu-item>
                 <april:sidebar-menu-button-link href="{{ route('profile.edit') }}" :active="request()->routeIs('profile.edit')">
-                    <x-lucide-circle-user-round />
-                    <span>Profile</span>
+                        <x-lucide-circle-user-round />
+                        <span>{{ __('Profile') }}</span>
                 </april:sidebar-menu-button-link>
             </april:sidebar-menu-item>
             <april:sidebar-menu-item>
                 <april:sidebar-menu-button-link href="{{ route('home') }}" :active="false">
-                    <x-lucide-globe />
-                    <span>View site</span>
+                        <x-lucide-globe />
+                        <span>{{ __('View site') }}</span>
                 </april:sidebar-menu-button-link>
             </april:sidebar-menu-item>
         </april:sidebar-menu>
@@ -186,11 +186,11 @@
             <div class="min-w-0 flex-1">
                 <p class="truncate text-sm font-semibold">{{ $user->name }}</p>
                 <p class="truncate text-xs text-muted-foreground">{{ $user->email }}</p>
-                <p class="mt-1 truncate text-xs font-bold uppercase text-primary">{{ $role }}</p>
+                <p class="mt-1 truncate text-xs font-bold uppercase text-primary">{{ \App\Models\User::roleLabel($role) }}</p>
             </div>
             <form method="POST" action="{{ route('logout') }}" novalidate>
                 @csrf
-                <april:button type="submit" variant="ghost" size="icon" title="Log out" aria-label="Log out">
+                <april:button type="submit" variant="ghost" size="icon" title="{{ __('Log out') }}" aria-label="{{ __('Log out') }}">
                     <x-lucide-log-out class="size-4" />
                 </april:button>
             </form>

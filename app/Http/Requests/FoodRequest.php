@@ -10,6 +10,13 @@ use Illuminate\Validation\Validator;
 
 class FoodRequest extends FormRequest
 {
+    public function authorize(): bool
+    {
+        // The route group admits professionals and admins; repeated here so a
+        // route moved out of the group still fails closed.
+        return (bool) $this->user()?->isAdmin() || $this->user()?->isProfessional();
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -35,7 +42,7 @@ class FoodRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'certifications.*.exists' => 'Selected certification is invalid.',
+            'certifications.*.exists' => __('Selected certification is invalid.'),
         ];
     }
 

@@ -203,20 +203,23 @@ class ProductRecommender
      */
     private function computedReason(Food $food, ?Food $comparedTo): string
     {
+        // Static keys only: translators reorder whole sentences, never
+        // fragments, so counts and names travel as placeholders. The leading
+        // capital is mechanical glue applied after translation.
         $parts = [];
 
         if ($food->hasFullChain()) {
-            $parts[] = 'every stage of its supply chain is recorded';
+            $parts[] = __('every stage of its supply chain is recorded');
         } else {
-            $parts[] = sprintf('%d of %d supply chain stages recorded', $food->recordedStageCount(), Stage::total());
+            $parts[] = trans_choice('{1} :recorded of :total supply chain stages recorded|[2,*] :recorded of :total supply chain stages recorded', $food->recordedStageCount(), ['recorded' => $food->recordedStageCount(), 'total' => Stage::total()]);
         }
 
         if ($food->certifications->isNotEmpty()) {
-            $parts[] = 'certified ('.$food->certifications->pluck('name')->implode(', ').')';
+            $parts[] = __('certified (:names)', ['names' => $food->certifications->pluck('name')->implode(', ')]);
         }
 
         if ($food->environmental_score !== null) {
-            $parts[] = 'graded '.$food->environmental_score->value.' ('.$food->environmental_score->label().')';
+            $parts[] = __('graded :score (:label)', ['score' => $food->environmental_score->value, 'label' => $food->environmental_score->label()]);
         }
 
         return ucfirst(implode(', ', $parts)).'.';

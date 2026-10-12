@@ -63,7 +63,7 @@ class AdminUserController extends Controller
 
         $user->update($validated);
 
-        return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
+        return redirect()->route('admin.users.index')->with('success', __('User updated successfully.'));
     }
 
     public function destroy(Request $request, User $user): RedirectResponse
@@ -76,7 +76,7 @@ class AdminUserController extends Controller
 
         $user->delete();
 
-        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
+        return redirect()->route('admin.users.index')->with('success', __('User deleted successfully.'));
     }
 
     /**
@@ -87,6 +87,6 @@ class AdminUserController extends Controller
      */
     private function ensureAdmin(Request $request): void
     {
-        abort_unless($request->user()?->isAdmin(), 403, 'Only an administrator can manage users.');
+        abort_unless($request->user()?->isAdmin(), 403, __('Only an administrator can manage users.'));
     }
 }

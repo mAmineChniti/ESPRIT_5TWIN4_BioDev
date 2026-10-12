@@ -1,24 +1,24 @@
 @extends('layouts.back')
 
-@section('title', 'My Meals')
+@section('title', __('My Meals'))
 
 @section('content')
 <div class="mb-6 flex items-center justify-between">
-    <h1 class="text-2xl font-bold">My Meals</h1>
+    <h1 class="text-2xl font-bold">{{ __('My Meals') }}</h1>
     <april:button-link href="{{ route('meals.create') }}">
         <x-lucide-plus class="size-4" />
-        Log a meal
+        {{ __('Log a meal') }}
     </april:button-link>
 </div>
 
 <april:data-table>
     <x-slot:header>
         <tr>
-            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Meal</th>
-            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Type</th>
-            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Date</th>
-            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Products</th>
-            <th scope="col" class="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Actions</th>
+            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">{{ __('Meal') }}</th>
+            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">{{ __('Type') }}</th>
+            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">{{ __('Date') }}</th>
+            <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">{{ __('Products') }}</th>
+            <th scope="col" class="h-10 px-4 text-right align-middle font-medium text-muted-foreground">{{ __('Actions') }}</th>
         </tr>
     </x-slot:header>
 
@@ -26,7 +26,7 @@
         @forelse($meals as $meal)
             <tr class="border-b transition-colors last:border-0 hover:bg-muted/50">
                 <td class="whitespace-nowrap p-4 align-middle text-sm font-medium text-foreground">{{ $meal->name }}</td>
-                <td class="whitespace-nowrap p-4 align-middle text-sm text-muted-foreground">{{ ucfirst($meal->type) }}</td>
+                <td class="whitespace-nowrap p-4 align-middle text-sm text-muted-foreground">{{ \App\Models\Meal::typeLabel($meal->type) }}</td>
                 <td class="whitespace-nowrap p-4 align-middle text-sm text-muted-foreground">
                     {{ $meal->consumed_on?->format('Y-m-d') }}
                 </td>
@@ -36,30 +36,29 @@
                 <td class="whitespace-nowrap p-4 text-right align-middle">
                     <div class="inline-flex items-center gap-2">
                         <april:button-link href="{{ route('meals.show', $meal) }}" variant="link" size="sm">
-                            View
+                            {{ __('View') }}
                         </april:button-link>
 
                         <april:alert-dialog>
                             <x-slot:trigger>
                                 <april:button type="button" variant="link" size="sm" class="text-destructive">
-                                    Delete
+                                    {{ __('Delete') }}
                                 </april:button>
                             </x-slot:trigger>
                             <x-slot:content>
                                 <div>
-                                    <h2 class="text-lg font-semibold" x-bind="title">Delete this meal?</h2>
+                                    <h2 class="text-lg font-semibold" x-bind="title">{{ __('Delete this meal?') }}</h2>
                                     <p class="mt-2 text-sm text-muted-foreground" x-bind="description">
-                                        <strong>{{ $meal->name }}</strong> and the nutrition it contributed
-                                        to your dashboard will be removed.
+                                        {!! __(':name and the nutrition it contributed to your dashboard will be removed.', ['name' => '<strong>'.e($meal->name).'</strong>']) !!}
                                     </p>
                                 </div>
                                 <april:alert-dialog-footer>
-                                    <april:alert-dialog-cancel>Cancel</april:alert-dialog-cancel>
+                                    <april:alert-dialog-cancel>{{ __('Cancel') }}</april:alert-dialog-cancel>
                                     <form action="{{ route('meals.destroy', $meal) }}" method="POST" novalidate>
                                         @csrf
                                         @method('DELETE')
                                         <april:button type="submit" variant="destructive" x-bind="action">
-                                            Delete meal
+                                            {{ __('Delete meal') }}
                                         </april:button>
                                     </form>
                                 </april:alert-dialog-footer>
@@ -71,9 +70,9 @@
         @empty
             <tr>
                 <td colspan="5" class="p-4 text-center align-middle text-sm text-muted-foreground">
-                    No meals logged yet.
+                    {{ __('No meals logged yet.') }}
                     <april:button-link href="{{ route('meals.create') }}" variant="link" size="sm">
-                        Log your first meal
+                        {{ __('Log your first meal') }}
                     </april:button-link>
                 </td>
             </tr>

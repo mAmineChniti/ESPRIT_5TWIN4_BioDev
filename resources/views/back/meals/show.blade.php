@@ -1,12 +1,12 @@
 @extends('layouts.back')
 
-@section('title', 'Meal')
+@section('title', __('Meal'))
 
 @section('content')
 <div class="mb-6 flex items-center gap-4">
     <april:button-link href="{{ route('meals.index') }}" variant="link" size="sm" class="text-muted-foreground">
         <x-lucide-arrow-left class="size-4" />
-        Back
+        {{ __('Back') }}
     </april:button-link>
     <h1 class="text-2xl font-bold">{{ $meal->name }}</h1>
 </div>
@@ -15,33 +15,33 @@
     <x-slot:content>
     <dl class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
-            <dt class="text-sm font-medium text-muted-foreground">Type</dt>
-            <dd class="mt-1 text-sm text-foreground">{{ ucfirst($meal->type) }}</dd>
+            <dt class="text-sm font-medium text-muted-foreground">{{ __('Type') }}</dt>
+            <dd class="mt-1 text-sm text-foreground">{{ \App\Models\Meal::typeLabel($meal->type) }}</dd>
         </div>
         <div>
-            <dt class="text-sm font-medium text-muted-foreground">Date</dt>
+            <dt class="text-sm font-medium text-muted-foreground">{{ __('Date') }}</dt>
             <dd class="mt-1 text-sm text-foreground">{{ $meal->consumed_on?->format('Y-m-d') }}</dd>
         </div>
         <div>
-            <dt class="text-sm font-medium text-muted-foreground">Estimated calories</dt>
+            <dt class="text-sm font-medium text-muted-foreground">{{ __('Estimated calories') }}</dt>
             <dd class="mt-1 text-sm text-foreground">{{ $meal->totalCalories() }} kcal</dd>
         </div>
         @if($meal->notes)
             <div class="sm:col-span-3">
-                <dt class="text-sm font-medium text-muted-foreground">Notes</dt>
+                <dt class="text-sm font-medium text-muted-foreground">{{ __('Notes') }}</dt>
                 <dd class="mt-1 text-sm text-foreground">{{ $meal->notes }}</dd>
             </div>
         @endif
     </dl>
 
-    <h2 class="mt-6 text-base font-medium text-foreground">Products in this meal</h2>
+    <h2 class="mt-6 text-base font-medium text-foreground">{{ __('Products in this meal') }}</h2>
         <april:data-table class="mt-2">
             <x-slot:header>
                 <tr>
-                    <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Product</th>
-                    <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Category</th>
-                    <th scope="col" class="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Quantity</th>
-                    <th scope="col" class="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Eco score</th>
+                    <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">{{ __('Product') }}</th>
+                    <th scope="col" class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">{{ __('Category') }}</th>
+                    <th scope="col" class="h-10 px-4 text-right align-middle font-medium text-muted-foreground">{{ __('Quantity') }}</th>
+                    <th scope="col" class="h-10 px-4 text-right align-middle font-medium text-muted-foreground">{{ __('Eco score') }}</th>
                 </tr>
             </x-slot:header>
             <x-slot:body>

@@ -52,7 +52,7 @@ class AnalysisDisputeController extends Controller
             AnalysisDispute::create($request->disputePayload());
         });
 
-        return back()->with('success', 'Thank you. An administrator will review the analysis.');
+        return back()->with('success', __('Thank you. An administrator will review the analysis.'));
     }
 
     /**
@@ -99,24 +99,30 @@ class AnalysisDisputeController extends Controller
      */
     public function update(UpdateAnalysisDisputeRequest $request, AnalysisDispute $analysisDispute): RedirectResponse
     {
-        $dispute = $analysisDispute;
-
-        abort_if(
-            ! $dispute->isPending(),
-            422,
-            'This report has already been reviewed. Refresh the queue to see the decision.'
-        );
+        $this->ensureAdmin($request);
 
         $validated = $request->validated();
 
-        $dispute->update([
-            'status' => AnalysisDisputeStatus::from($validated['status']),
-            'resolution_note' => $validated['resolution_note'] ?? null,
-            'reviewed_by' => $request->user()->id,
-            'reviewed_at' => now(),
-        ]);
+        // The row is locked so two concurrent decisions cannot both pass the
+        // pending check and overwrite each other.
+        DB::transaction(function () use ($request, $analysisDispute, $validated): void {
+            $dispute = AnalysisDispute::query()->whereKey($analysisDispute->getKey())->lockForUpdate()->firstOrFail();
 
-        return back()->with('success', 'Decision recorded and the reporter can now see it.');
+            abort_if(
+                ! $dispute->isPending(),
+                422,
+                __('This report has already been reviewed. Refresh the queue to see the decision.')
+            );
+
+            $dispute->update([
+                'status' => AnalysisDisputeStatus::from($validated['status']),
+                'resolution_note' => $validated['resolution_note'] ?? null,
+                'reviewed_by' => $request->user()->id,
+                'reviewed_at' => now(),
+            ]);
+        });
+
+        return back()->with('success', __('Decision recorded and the reporter can now see it.'));
     }
 
     /**
@@ -126,6 +132,6 @@ class AnalysisDisputeController extends Controller
      */
     private function ensureAdmin(Request $request): void
     {
-        abort_unless($request->user()?->isAdmin(), 403, 'Only an administrator can review analysis disputes.');
+        abort_unless($request->user()?->isAdmin(), 403, __('Only an administrator can review analysis disputes.'));
     }
 }

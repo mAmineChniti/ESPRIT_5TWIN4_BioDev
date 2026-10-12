@@ -21,7 +21,7 @@ class ReviewController extends Controller
         // Second layer over the route's role middleware, matching
         // GreenwashingReportController::store, so a route moved out of the
         // group still fails closed.
-        abort_unless($user->role === 'consumer', 403, 'Only consumer accounts can review a product.');
+        abort_unless($user->role === 'consumer', 403, __('Only consumer accounts can review a product.'));
 
         $validated = $request->validate([
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
@@ -33,7 +33,7 @@ class ReviewController extends Controller
             ['rating' => $validated['rating'], 'body' => $validated['body'] ?? null],
         );
 
-        return back()->with('success', 'Thank you — your review is published.');
+        return back()->with('success', __('Thank you — your review is published.'));
     }
 
     /**
@@ -46,24 +46,20 @@ class ReviewController extends Controller
     public function destroy(Request $request, Food $food, Review $review): RedirectResponse
     {
         // The review is real but not reachable at this address.
-        abort_unless($review->food_id === $food->id, 404, 'Review not found.');
+        abort_unless($review->food_id === $food->id, 404, __('Review not found.'));
+
+        // Second layer over the route's role middleware, matching store, so a
+        // route moved out of the group still fails closed.
+        abort_unless($request->user()->role === 'consumer', 403, __('Only consumer accounts can delete a review.'));
 
         abort_unless(
             $review->user_id === $request->user()->id,
             403,
-            'You can only delete your own review.',
-        );
-
-        // The route binds both models, so check the review belongs to the
-        // product actually named in the URL rather than trusting the binding.
-        abort_unless(
-            $review->food_id === $food->id,
-            404,
-            'That review does not belong to this product.',
+            __('You can only delete your own review.'),
         );
 
         $review->delete();
 
-        return back()->with('success', 'Your review was removed.');
+        return back()->with('success', __('Your review was removed.'));
     }
 }

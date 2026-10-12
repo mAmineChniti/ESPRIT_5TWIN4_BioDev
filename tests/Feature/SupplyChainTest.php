@@ -306,4 +306,14 @@ class SupplyChainTest extends TestCase
             'actor_id' => $admin->id,
         ]);
     }
+
+    public function test_a_completed_chain_renders_instead_of_erroring(): void
+    {
+        $food = $this->foodWithStages(count(Stage::cases()));
+
+        $this->actingAs($this->owner())
+            ->get(route('foods.transitions.index', $food))
+            ->assertOk()
+            ->assertSee('completed every supply chain stage');
+    }
 }

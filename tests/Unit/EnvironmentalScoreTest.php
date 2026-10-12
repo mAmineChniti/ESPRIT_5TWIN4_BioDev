@@ -4,7 +4,7 @@ namespace Tests\Unit;
 
 use App\Enums\EnvironmentalScore;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class EnvironmentalScoreTest extends TestCase
 {

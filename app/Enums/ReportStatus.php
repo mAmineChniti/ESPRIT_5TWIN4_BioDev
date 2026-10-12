@@ -11,9 +11,9 @@ enum ReportStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Pending => 'Awaiting review',
-            self::Upheld => 'Upheld',
-            self::Dismissed => 'Dismissed',
+            self::Pending => __('Awaiting review'),
+            self::Upheld => __('Upheld'),
+            self::Dismissed => __('Dismissed'),
         };
     }
 

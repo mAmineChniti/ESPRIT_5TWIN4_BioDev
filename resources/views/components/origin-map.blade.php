@@ -25,27 +25,22 @@
     a shipping route is not an error.
 --}}
 <div class="space-y-3">
-    <h3 class="text-base font-medium leading-6 text-foreground">Origin map</h3>
+    <h3 class="text-base font-medium leading-6 text-foreground">{{ __('Origin map') }}</h3>
 
     @if (! $food->origin)
-        <p class="text-sm text-muted-foreground">No origin is recorded for this product.</p>
+        <p class="text-sm text-muted-foreground">{{ __('No origin is recorded for this product.') }}</p>
     @else
         @if ($route['isKnown'] && $route['isLocal'])
             <p class="text-sm text-muted-foreground">
-                Grown in <span class="font-medium text-foreground">{{ $route['home']['name'] }}</span> —
-                a short supply chain with no import leg.
+                {!! __('Grown in :home — a short supply chain with no import leg.', ['home' => '<span class="font-medium text-foreground">'.e($route['home']['name']).'</span>']) !!}
             </p>
         @elseif ($route['isKnown'])
             <p class="text-sm text-muted-foreground">
-                <span class="font-semibold text-foreground">{{ $route['origin_']['name'] }}</span>
-                to {{ $route['home']['name'] }}: about
-                <span class="font-semibold text-foreground">{{ number_format((float) $route['distanceKm']) }} km</span>
-                of freight.
+                {!! __(':origin to :home: about :distance of freight.', ['origin' => '<span class="font-semibold text-foreground">'.e($route['origin_']['name']).'</span>', 'home' => e($route['home']['name']), 'distance' => '<span class="font-semibold text-foreground">'.e(\App\LocalizedNumber::format($route['distanceKm'])).' km</span>']) !!}
             </p>
         @else
             <p class="text-sm text-muted-foreground">
-                Recorded as <span class="font-medium text-foreground">{{ $food->origin }}</span>.
-                NutriTrace has no coordinates for it, so the map below is a world view.
+                {!! __('Recorded as :origin. NutriTrace has no coordinates for it, so the map below is a world view.', ['origin' => '<span class="font-medium text-foreground">'.e($food->origin).'</span>']) !!}
             </p>
         @endif
 
@@ -63,7 +58,7 @@
                 const known = @js($route['isKnown']);
                 const local = @js($route['isLocal']);
                 const kilometres = @js($route['distanceKm']);
-                const originLabel = @js($route['origin'] ?? 'Unknown origin');
+                const originLabel = @js($route['origin'] ?? __('Unknown origin'));
 
                 function draw() {
                     const el = document.getElementById(@js($mapId));

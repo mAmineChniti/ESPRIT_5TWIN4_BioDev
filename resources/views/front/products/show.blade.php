@@ -4,10 +4,10 @@
 
 @section('content')
 <nav class="mb-4 text-sm">
-    <april:button-link href="{{ route('products.index') }}" variant="link" size="sm" class="text-muted-foreground">
-        <x-lucide-arrow-left class="size-4" />
-        All products
-    </april:button-link>
+        <april:button-link href="{{ route('products.index') }}" variant="link" size="sm" class="text-muted-foreground">
+            <x-lucide-arrow-left class="size-4" />
+            {{ __('All products') }}
+        </april:button-link>
 </nav>
 
 {{-- Trust header: the anti-greenwashing signal, stated plainly --}}
@@ -17,20 +17,18 @@
             <div class="min-w-0">
                 <h1 class="text-2xl font-bold">{{ $food->name }}</h1>
                 <p class="mt-1 text-sm text-muted-foreground">
-                    {{ $food->category->name ?? 'Uncategorised' }}
+                    {{ $food->category->name ?? __('Uncategorised') }}
                     @if($food->origin) · {{ $food->origin }} @endif
                 </p>
                 <p class="mt-1 text-sm text-muted-foreground">
-                    Registered by
-                    <span class="font-medium text-foreground">{{ $food->producer->name ?? 'nobody' }}</span>
-                    on {{ $food->created_at->format('j M Y') }}
+                    {!! __('Registered by :name on :date', ['name' => '<span class="font-medium text-foreground">'.e($food->producer->name ?? __('nobody')).'</span>', 'date' => e($food->created_at->translatedFormat('j M Y'))]) !!}
                 </p>
             </div>
 
             <div class="shrink-0 text-center">
                 <div class="relative mx-auto h-24 w-24"
                      role="img"
-                     aria-label="Transparency score {{ $transparency }} out of 100. Verdict: {{ $verdict['level'] }}.">
+                      aria-label="{{ __('Transparency score :score out of 100. Verdict: :verdict.', ['score' => $transparency, 'verdict' => $verdict['level']]) }}">
                     <svg viewBox="0 0 36 36" class="h-24 w-24 -rotate-90" aria-hidden="true">
                         <circle cx="18" cy="18" r="15.9" fill="none" stroke="currentColor" stroke-width="3"
                                 class="text-muted" />
@@ -49,11 +47,11 @@
 
         <div class="mt-6 grid gap-4 sm:grid-cols-3">
             <div class="rounded-lg bg-muted/60 p-3">
-                <p class="text-xs uppercase tracking-wide text-muted-foreground">Environmental grade</p>
+                <p class="text-xs uppercase tracking-wide text-muted-foreground">{{ __('Environmental grade') }}</p>
                 <div class="mt-1"><x-eco-score :score="$food->environmental_score" /></div>
             </div>
             <div class="rounded-lg bg-muted/60 p-3">
-                <p class="text-xs uppercase tracking-wide text-muted-foreground">Consumer rating</p>
+                <p class="text-xs uppercase tracking-wide text-muted-foreground">{{ __('Consumer rating') }}</p>
                 <p class="mt-1 text-lg font-semibold">
                     @if($averageRating !== null)
                         <span class="inline-flex items-center gap-1">
@@ -61,12 +59,12 @@
                             {{ $averageRating }} <span class="text-sm font-normal text-muted-foreground">/ 5</span>
                         </span>
                     @else
-                        <span class="text-sm font-normal text-muted-foreground">Not reviewed yet</span>
+                        <span class="text-sm font-normal text-muted-foreground">{{ __('Not reviewed yet') }}</span>
                     @endif
                 </p>
             </div>
             <div class="rounded-lg bg-muted/60 p-3">
-                <p class="text-xs uppercase tracking-wide text-muted-foreground">Times scanned</p>
+                <p class="text-xs uppercase tracking-wide text-muted-foreground">{{ __('Times scanned') }}</p>
                 <p class="mt-1 text-lg font-semibold">{{ $food->scans_count }}</p>
             </div>
         </div>
@@ -79,19 +77,19 @@
     {{-- Interactive timeline --}}
     <section class="rounded-2xl border border-border bg-card p-6 shadow-sm"
              x-data='{ selected: null }'>
-        <h2 class="text-lg font-semibold">Supply chain timeline</h2>
+        <h2 class="text-lg font-semibold">{{ __('Supply chain timeline') }}</h2>
         <p class="mt-1 text-sm text-muted-foreground">
-            Each bar is the time a step took. Select a bar to see who recorded it.
+            {{ __('Each bar is the time a step took. Select a bar to see who recorded it.') }}
         </p>
 
         <div class="mt-4 h-64">
             <canvas id="trace-timeline" role="img"
-                    aria-label="Chart of how long the product spent at each recorded supply chain stage."></canvas>
+                    aria-label="{{ __('Chart of how long the product spent at each recorded supply chain stage.') }}"></canvas>
         </div>
 
         @if($timeline === [])
             <p class="mt-4 rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                No supply chain has been recorded for this product.
+                {{ __('No supply chain has been recorded for this product.') }}
             </p>
         @endif
 
@@ -106,18 +104,18 @@
                             x-on:click="selected = { index: {{ $index }}, stage: @js($step['stage']), actor: @js($step['actor'] ?? 'Unknown'), role: @js($step['role'] ?? ''), date: @js($step['date']), notes: @js($step['notes'] ?? '') }">
                         <span class="flex items-center justify-between gap-3">
                             <span class="font-medium">{{ $step['stage'] }}</span>
-                            <span class="text-xs text-muted-foreground">{{ \Carbon\Carbon::parse($step['date'])->format('j M Y') }}</span>
+                            <span class="text-xs text-muted-foreground">{{ \Carbon\Carbon::parse($step['date'])->translatedFormat('j M Y') }}</span>
                         </span>
                         <span class="mt-0.5 block text-xs text-muted-foreground">
-                            {{ $step['actor'] ?? 'Unknown actor' }}
+                            {{ $step['actor'] ?? __('Unknown actor') }}
                             @if($step['daysInStage'] > 0)
-                                · {{ $step['daysInStage'] }} {{ Str::plural('day', $step['daysInStage']) }} before the next step
+                                · {{ trans_choice('{0} :count day before the next step|{1} :count day before the next step|[2,*] :count days before the next step', $step['daysInStage']) }}
                             @endif
                         </span>
                     </button>
                 </li>
             @empty
-                <li class="text-sm text-muted-foreground">Nothing recorded yet.</li>
+                <li class="text-sm text-muted-foreground">{{ __('Nothing recorded yet.') }}</li>
             @endforelse
         </ol>
 
@@ -127,7 +125,7 @@
              role="region" aria-live="polite">
             <p class="font-semibold" x-text="selected?.stage"></p>
             <p class="mt-1 text-muted-foreground">
-                Recorded by <span x-text="selected?.actor"></span>
+                {{ __('Recorded by') }} <span x-text="selected?.actor"></span>
                 <span x-show="selected?.role" x-text="' (' + selected.role + ')'"></span>
             </p>
             <p class="mt-1 text-muted-foreground" x-text="selected?.date"></p>
@@ -142,16 +140,16 @@
                 </x-slot:icon>
                 <x-slot:description>
                     @if($lastStage)
-                        This product is recorded up to <strong>{{ $lastStage->label() }}</strong>.
+                        {!! __('This product is recorded up to :stage.', ['stage' => '<strong>'.e($lastStage->label()).'</strong>']) !!}
                     @else
-                        No stage of this product's chain has been recorded yet.
+                        {{ __("No stage of this product's chain has been recorded yet.") }}
                     @endif
-                    The later steps of the chain have not been recorded, so the journey is not yet fully traceable.
+                    {{ __('The later steps of the chain have not been recorded, so the journey is not yet fully traceable.') }}
                 </x-slot:description>
             </april:alert>
         @endif
 
-        <script type="application/json" id="trace-timeline-data">{!! json_encode(['steps' => $timeline]) !!}</script>
+        <script type="application/json" id="trace-timeline-data">{!! json_encode(['steps' => $timeline, 'labels' => ['daysInStage' => __('Days in stage'), 'daysSince' => __('Days since the product was registered'), 'recorded' => __('Recorded'), 'by' => __('By'), 'unknown' => __('unknown'), 'note' => __('Note:'), 'noNote' => __('No note recorded')]]) !!}</script>
     </section>
 
     {{-- Where it came from, and how far that is from us. --}}
@@ -163,7 +161,7 @@
     <div class="space-y-6">
         {{-- Certifications --}}
         <april:card>
-            <x-slot:title class="text-lg">Certifications on file</x-slot:title>
+            <x-slot:title class="text-lg">{{ __('Certifications on file') }}</x-slot:title>
             <x-slot:content>
                 @forelse($food->certifications as $certification)
                     <div class="mt-3 rounded-lg border border-border p-3">
@@ -171,20 +169,20 @@
                         <dl class="mt-1 space-y-0.5 text-xs text-muted-foreground">
                             @if($certification->issuer)
                                 <div class="flex justify-between gap-2">
-                                    <dt>Issued by</dt><dd class="text-foreground">{{ $certification->issuer }}</dd>
+                                    <dt>{{ __('Issued by') }}</dt><dd class="text-foreground">{{ $certification->issuer }}</dd>
                                 </div>
                             @endif
                             @if($certification->certificate_number)
                                 <div class="flex justify-between gap-2">
-                                    <dt>Certificate</dt><dd class="text-foreground">{{ $certification->certificate_number }}</dd>
+                                    <dt>{{ __('Certificate') }}</dt><dd class="text-foreground">{{ $certification->certificate_number }}</dd>
                                 </div>
                             @endif
                             @if($certification->valid_until)
                                 <div class="flex justify-between gap-2">
-                                    <dt>Valid until</dt>
+                                    <dt>{{ __('Valid until') }}</dt>
                                     <dd class="{{ $certification->isExpired() ? 'font-semibold text-destructive' : 'text-foreground' }}">
-                                        {{ $certification->valid_until->format('j M Y') }}
-                                        @if($certification->isExpired()) (expired) @endif
+                                        {{ $certification->valid_until->translatedFormat('j M Y') }}
+                                        @if($certification->isExpired()) ({{ __('expired') }}) @endif
                                     </dd>
                                 </div>
                             @endif
@@ -192,7 +190,7 @@
                     </div>
                 @empty
                     <p class="mt-3 rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
-                        No certification is recorded for this product. Any claim on the packaging is unverified here.
+                        {{ __('No certification is recorded for this product. Any claim on the packaging is unverified here.') }}
                     </p>
                 @endforelse
             </x-slot:content>
@@ -200,9 +198,9 @@
 
         {{-- Report a claim --}}
         <april:card>
-            <x-slot:title class="text-lg">Something look wrong?</x-slot:title>
+            <x-slot:title class="text-lg">{{ __('Something look wrong?') }}</x-slot:title>
             <x-slot:description>
-                Tell us which claim you cannot verify. Upheld reports lower this product's transparency score.
+                {{ __('Tell us which claim you cannot verify. Upheld reports lower this product\'s transparency score.') }}
             </x-slot:description>
             <x-slot:content>
                 @auth
@@ -211,7 +209,7 @@
                             @csrf
                             <div>
                                 <april:label for="reason" class="text-xs uppercase tracking-wide text-muted-foreground">
-                                    Reason
+                                    {{ __('Reason') }}
                                 </april:label>
                                 <april:native-select id="reason" name="reason" required
                                                        class="mt-1"
@@ -227,21 +225,21 @@
                             </div>
                             <div>
                                 <april:label for="details" class="text-xs uppercase tracking-wide text-muted-foreground">
-                                    Details
+                                    {{ __('Details') }}
                                 </april:label>
                                 <x-textarea-field id="details" name="details" rows="3" class="mt-1" :value="old('details')" describedby="details-error" />
                                 @error('details') <p id="details-error" class="mt-1 text-sm text-destructive" role="alert">{{ $message }}</p> @enderror
                             </div>
-                            <april:button type="submit" variant="destructive" class="w-full">Submit report</april:button>
+                            <april:button type="submit" variant="destructive" class="w-full">{{ __('Submit report') }}</april:button>
                         </form>
                     @else
                         <p class="mt-3 rounded-lg bg-muted p-3 text-sm text-muted-foreground">
-                            Only consumer accounts can file reports.
+                            {{ __('Only consumer accounts can file reports.') }}
                         </p>
                     @endif
                 @else
                     <april:button-link href="{{ route('login') }}" variant="outline" class="mt-4 w-full">
-                        Log in to report a claim
+                        {{ __('Log in to report a claim') }}
                     </april:button-link>
                 @endauth
             </x-slot:content>
@@ -255,12 +253,11 @@
         <x-slot:title class="text-lg">
             <span class="flex items-center gap-2">
                 <x-lucide-scan-search class="size-5 text-primary" />
-                AI greenwashing audit
+                {{ __('AI greenwashing audit') }}
             </span>
         </x-slot:title>
         <x-slot:description>
-            An automated auditor reads everything on this page and looks for claims the record does not
-            support.
+            {{ __('An automated auditor reads everything on this page and looks for claims the record does not support.') }}
         </x-slot:description>
         <x-slot:content>
             <x-greenwashing-report :report="$analysis" :food="$food" />
@@ -274,11 +271,11 @@
         <x-slot:title class="text-lg">
             <span class="flex items-center gap-2">
                 <x-lucide-message-circle-question class="size-5 text-primary" />
-                Ask about this product
+                {{ __('Ask about this product') }}
             </span>
         </x-slot:title>
         <x-slot:description>
-            Answers come from the traceability record only, and cite the fields they used.
+            {{ __('Answers come from the traceability record only, and cite the fields they used.') }}
         </x-slot:description>
         <x-slot:content>
             <x-product-assistant :food="$food" :enabled="$assistantEnabled" />
@@ -289,9 +286,9 @@
 {{-- Better-evidenced alternatives --}}
 @if($alternatives->isNotEmpty())
     <section class="mt-6">
-        <h2 class="text-lg font-semibold">Better-evidenced alternatives</h2>
+        <h2 class="text-lg font-semibold">{{ __('Better-evidenced alternatives') }}</h2>
         <p class="mt-1 text-sm text-muted-foreground">
-            In the same category, scoring at least as well on transparency and environmental grade.
+            {{ __('In the same category, scoring at least as well on transparency and environmental grade.') }}
         </p>
         <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             @foreach($alternatives as $alternative)
@@ -305,10 +302,10 @@
 <april:card class="mt-6">
     <x-slot:content>
         <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold">Consumer reviews</h2>
+            <h2 class="text-lg font-semibold">{{ __('Consumer reviews') }}</h2>
             @if($averageRating !== null)
                 <span class="text-sm text-muted-foreground">
-                    {{ $averageRating }} / 5 from {{ $food->reviews->count() }} {{ Str::plural('review', $food->reviews->count()) }}
+                    {{ $averageRating }} / 5 {{ trans_choice('{0} from :count review|{1} from :count review|[2,*] from :count reviews', $food->reviews->count()) }}
                 </span>
             @endif
         </div>
@@ -317,11 +314,11 @@
             @if($canReview)
                 <form action="{{ route('products.reviews.store', $food) }}" method="POST" class="mt-4 rounded-lg bg-muted/50 p-4" novalidate>
                     @csrf
-                    <p class="text-sm font-medium">{{ $myReview ? 'Update your review' : 'Leave a review' }}</p>
+                    <p class="text-sm font-medium">{{ $myReview ? __('Update your review') : __('Leave a review') }}</p>
                     <div class="mt-3 flex flex-wrap items-end gap-3">
                         <div>
                             <april:label for="rating" class="text-xs uppercase tracking-wide text-muted-foreground">
-                                Rating
+                                {{ __('Rating') }}
                             </april:label>
                             <april:native-select id="rating" name="rating" required class="mt-1"
                                                    aria-describedby="rating-error"
@@ -333,15 +330,15 @@
                         </div>
                         <div class="min-w-[16rem] flex-1">
                             <april:label for="body" class="text-xs uppercase tracking-wide text-muted-foreground">
-                                Your experience
+                                {{ __('Your experience') }}
                             </april:label>
                             <x-textarea-field id="body" name="body" rows="2" class="mt-1"
                                 :value="old('body', $myReview?->body)"
                                 describedby="body-error"
-                                placeholder="Did the product match its label?" />
+                                placeholder="{{ __('Did the product match its label?') }}" />
                         </div>
                         <april:button type="submit">
-                            {{ $myReview ? 'Update' : 'Publish' }}
+                            {{ $myReview ? __('Update') : __('Publish') }}
                         </april:button>
                     </div>
                     @error('rating') <p id="rating-error" class="mt-2 text-sm text-destructive" role="alert">{{ $message }}</p> @enderror
@@ -355,7 +352,7 @@
                 <li class="py-4">
                     <div class="flex items-center justify-between gap-3">
                         <div>
-                            <p class="text-sm font-semibold">{{ $review->user->name ?? 'Former user' }}</p>
+                            <p class="text-sm font-semibold">{{ $review->user->name ?? __('Former user') }}</p>
                             <p class="text-xs text-muted-foreground">{{ $review->created_at->diffForHumans() }}</p>
                         </div>
                         <span class="text-sm font-semibold text-secondary-foreground">{{ $review->rating }} / 5</span>
@@ -365,7 +362,7 @@
                     @endif
                 </li>
             @empty
-                <li class="py-6 text-center text-sm text-muted-foreground">No reviews yet. Be the first to say whether the label matched reality.</li>
+                <li class="py-6 text-center text-sm text-muted-foreground">{{ __('No reviews yet. Be the first to say whether the label matched reality.') }}</li>
             @endforelse
         </ul>
     </x-slot:content>

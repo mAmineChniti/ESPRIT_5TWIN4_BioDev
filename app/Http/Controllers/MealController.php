@@ -17,6 +17,8 @@ class MealController extends Controller
      */
     public function index(Request $request): View
     {
+        $this->ensureConsumer($request);
+
         $meals = $request->user()->meals()
             ->with('foods.category')
             ->latest('consumed_on')
@@ -35,6 +37,8 @@ class MealController extends Controller
 
     public function create(Request $request): View
     {
+        $this->ensureConsumer($request);
+
         $request->validate([
             'q' => ['nullable', 'string', 'max:120'],
         ]);
@@ -67,6 +71,8 @@ class MealController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $this->ensureConsumer($request);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', 'in:'.implode(',', Meal::TYPES)],
@@ -103,7 +109,7 @@ class MealController extends Controller
         });
 
         return redirect()->route('meals.index')
-            ->with('success', 'Meal logged successfully.');
+            ->with('success', __('Meal logged successfully.'));
     }
 
     public function show(Request $request, Meal $meal): View|RedirectResponse
@@ -122,7 +128,20 @@ class MealController extends Controller
         $meal->delete();
 
         return redirect()->route('meals.index')
-            ->with('success', 'Meal deleted.');
+            ->with('success', __('Meal deleted.'));
+    }
+
+    /**
+     * Second layer over the route's consumer gate, so an action moved out
+     * of the group still fails closed.
+     */
+    private function ensureConsumer(Request $request): void
+    {
+        abort_unless(
+            $request->user()?->role === 'consumer',
+            403,
+            __('Only consumer accounts can log meals.'),
+        );
     }
 
     /**
@@ -133,7 +152,7 @@ class MealController extends Controller
         abort_unless(
             $meal->user_id === $request->user()->id,
             403,
-            'You can only access your own meals.',
+            __('You can only access your own meals.'),
         );
     }
 }

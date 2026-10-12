@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\EnvironmentalScore;
 use App\Enums\FindingCategory;
+use App\Enums\FindingSeverity;
 use App\Enums\ReportReason;
 use App\Enums\ReportStatus;
 use App\Enums\Stage;
@@ -12,6 +13,7 @@ use App\Models\Food;
 use App\Models\Meal;
 use App\Models\User;
 use App\Services\Assistant\ProductAssistant;
+use App\Services\Greenwashing\AnalysisReport;
 use App\Services\Greenwashing\GreenwashingDetector;
 use App\Services\Recommendations\ProductRecommender;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -187,13 +189,17 @@ class ConsumerIntelligenceTest extends TestCase
 
         $report = app(GreenwashingDetector::class)->analyze(Food::factory()->create());
 
+        // The stable part is the typed finding and its score, not the
+        // model's wording: verdict and title echo the stubbed reply.
         $this->assertFalse($report->hasFailed());
-        $this->assertSame('Likely misleading', $report->verdict);
+        $this->assertTrue($report->hasFindings());
         $this->assertCount(1, $report->findings);
 
         $finding = $report->findings[0];
         $this->assertSame(FindingCategory::UnverifiableClaim, $finding->category);
-        $this->assertSame('Eco claim with no certification', $finding->title);
+        $this->assertSame(FindingSeverity::High, $finding->severity);
+        $this->assertSame(FindingSeverity::High, $report->worstSeverity());
+        $this->assertSame(AnalysisReport::riskScore($report->findings), $report->riskScore);
         $this->assertSame('claims.certifications = []', $finding->evidence);
     }
 
@@ -530,8 +536,9 @@ class ConsumerIntelligenceTest extends TestCase
         $recommendations = app(ProductRecommender::class)->recommendedFor($consumer);
 
         $this->assertGreaterThan(0, $recommendations->count());
-        // The reason is computed from the record, never blank.
-        $this->assertNotSame('', $recommendations->first()->why);
+        // The reason is computed from the record, never blank, and built
+        // from static catalog keys rather than concatenated fragments.
+        $this->assertStringContainsString('supply chain stages recorded', $recommendations->first()->why);
     }
 
     public function test_recommendations_are_scoped_to_categories_they_already_buy(): void

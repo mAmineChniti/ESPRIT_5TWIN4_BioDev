@@ -136,7 +136,11 @@ class ConsumerSearchController extends Controller
             $next = $steps->get($index + 1);
 
             $timeline[] = [
-                'stage' => $transition->to_stage?->label() ?? 'Unknown',
+                // The label is display text (translated); the key is the
+                // stable value chart colours match on, so a translation
+                // never silently repaints every stage.
+                'stage' => $transition->to_stage?->label() ?? __('Unknown'),
+                'stageKey' => $transition->to_stage?->value,
                 'actor' => $transition->actor?->name,
                 'role' => $transition->actor?->role,
                 'date' => $transition->occurred_at->toDateString(),

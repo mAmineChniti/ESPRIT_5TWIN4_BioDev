@@ -289,46 +289,45 @@ class Food extends Model
 
         if ($upheld > 0) {
             return [
-                'level' => 'At risk',
+                'level' => __('At risk'),
                 'tone' => VerdictTone::High,
-                'message' => $upheld === 1
-                    ? 'One greenwashing report was upheld against this product.'
-                    : "{$upheld} greenwashing reports were upheld against this product.",
+                'message' => trans_choice('{1} One greenwashing report was upheld against this product.|[2,*] :count greenwashing reports were upheld against this product.', $upheld),
+
             ];
         }
 
         if ($this->recordedStageCount() === 0) {
             return [
-                'level' => 'Unverified',
+                'level' => __('Unverified'),
                 'tone' => VerdictTone::Medium,
-                'message' => 'No supply chain has been recorded for this product yet.',
+                'message' => __('No supply chain has been recorded for this product yet.'),
             ];
         }
 
         if (! $this->hasFullChain()) {
-            $current = $this->currentStage()?->label() ?? 'an earlier stage';
+            $current = $this->currentStage()?->label() ?? __('an earlier stage');
 
             return [
-                'level' => 'Partly traced',
+                'level' => __('Partly traced'),
                 'tone' => VerdictTone::Medium,
-                'message' => "Recorded up to {$current}. The later steps of the chain have not been recorded yet.",
+                'message' => __('Recorded up to :stage. The later steps of the chain have not been recorded yet.', ['stage' => $current]),
             ];
         }
 
         if ($this->transparencyScore() >= 80) {
             return [
-                'level' => 'Well traced',
+                'level' => __('Well traced'),
                 'tone' => VerdictTone::Low,
                 'message' => $this->certifications->isNotEmpty()
-                    ? 'The full chain is recorded and every certification is on file.'
-                    : 'The full chain is recorded, but no certification backs it up.',
+                    ? __('The full chain is recorded and every certification is on file.')
+                    : __('The full chain is recorded, but no certification backs it up.'),
             ];
         }
 
         return [
-            'level' => 'Partly traced',
+            'level' => __('Partly traced'),
             'tone' => VerdictTone::Medium,
-            'message' => 'The full chain is recorded, but certifications or other evidence are missing.',
+            'message' => __('The full chain is recorded, but certifications or other evidence are missing.'),
         ];
     }
 

@@ -34,6 +34,15 @@ export function renderConsumerCharts() {
         return;
     }
 
+    // Chart chrome comes from the server-rendered JSON blob so it follows
+    // the page locale; the English defaults keep the chart working if the
+    // blob predates them.
+    const labels = {
+        calories: 'Calories (kcal)',
+        grade: 'Grade',
+        ...(data.labels ?? {}),
+    };
+
     // Read the tokens once and share them across both charts.
     const theme = readTheme();
 
@@ -50,7 +59,7 @@ export function renderConsumerCharts() {
                     labels: energy.map((point) => point.date),
                     datasets: [
                         {
-                            label: 'Calories (kcal)',
+                            label: labels.calories,
                             data: energy.map((point) => point.calories),
                             // Painted up front rather than left empty for the
                             // recolour callback to fill in.
@@ -94,7 +103,7 @@ export function renderConsumerCharts() {
             {
                 type: 'doughnut',
                 data: {
-                    labels: grades.map((grade) => `Grade ${grade.grade}`),
+                    labels: grades.map((grade) => `${labels.grade} ${grade.grade}`),
                     datasets: [
                         {
                             data: grades.map((grade) => grade.total),

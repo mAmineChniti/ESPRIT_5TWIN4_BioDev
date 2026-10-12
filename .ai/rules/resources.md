@@ -5,8 +5,12 @@ paths:
 
 # Resources
 
-## English-only UI, names and identifiers
-The app UI is English-only. All Blade copy, section titles, table headers, `aria-label`/`sr-only` text, alt text, `<caption>`, validation messages, flash messages and notification text must be English. No French or other non-English string in markup, including comments intended for end users. When a view is renamed or translated, grep the whole file for leftover French — the `Parcours`→`Journey` and `Region`→`AgriculturalRegion` renames both left stale strings in `back/farms` and the agricultural-region views that no test caught.
+## UI languages and the English source of truth
+English is the source language: every user-facing string lives in markup (or code) in English first, wrapped in `__()` with the exact English text as the key. French and Arabic live only in `lang/fr.json` and `lang/ar.json` — never hardcode a French or Arabic string in markup. When a view is renamed or reworded, grep the whole file for strings missing from the catalogs; a key renamed in markup but not in `fr.json`/`ar.json` silently falls back to English with no error.
+The locale comes from the URL prefix (`/{locale}`, `Locale` enum is the single list), then the visitor's locale cookie, then English; `SetLocale` owns that chain and forgets the segment before dispatch so positional model binding keeps working. New translated surface needs a test that renders the page under `/fr` (and `/ar` for `dir="rtl"`) and asserts on the translated output.
+
+## English-only names and identifiers
+Files and directories are English and `kebab-case` for views (`farm-fields.blade.php`), `PascalCase` for classes (`JourneyStepController.php`), `snake_case` for tables and columns (`journey_steps`, `step_date`). Never French or accented names: no `etapes_parcours`, `EtapeParcours`, `parcours/`, `regions/`.
 
 Files and directories are English and `kebab-case` for views (`farm-fields.blade.php`), `PascalCase` for classes (`JourneyStepController.php`), `snake_case` for tables and columns (`journey_steps`, `step_date`). Never French or accented names: no `etapes_parcours`, `EtapeParcours`, `parcours/`, `regions/`.
 

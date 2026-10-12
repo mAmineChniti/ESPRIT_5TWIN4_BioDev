@@ -74,6 +74,6 @@ class StageTransitionController extends Controller
             ]);
         });
 
-        return back()->with('success', "Step recorded: {$next->label()}.");
+        return back()->with('success', __('Step recorded: :stage.', ['stage' => $next->label()]));
     }
 }

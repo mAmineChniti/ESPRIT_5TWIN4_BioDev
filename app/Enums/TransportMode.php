@@ -13,11 +13,11 @@ enum TransportMode: string
     public function label(): string
     {
         return match ($this) {
-            self::Truck => 'Truck (diesel)',
-            self::ElectricTruck => 'Electric truck',
-            self::Train => 'Freight train',
-            self::Ship => 'Cargo ship',
-            self::Plane => 'Air cargo',
+            self::Truck => __('Truck (diesel)'),
+            self::ElectricTruck => __('Electric truck'),
+            self::Train => __('Freight train'),
+            self::Ship => __('Cargo ship'),
+            self::Plane => __('Air cargo'),
         };
     }
 

@@ -57,10 +57,13 @@ export function gradeColour(grade, theme) {
  * Supply chain stages use the same three-step signal.
  */
 export function stageColour(stage, theme) {
-    switch (stage) {
-        case 'Produced':
+    // Matched on the stable stage value, never the translated label, so a
+    // locale change cannot silently repaint every stage. Unknown values fall
+    // through to destructive, the same signal as the last stage.
+    switch (String(stage).toLowerCase()) {
+        case 'produced':
             return theme.primary;
-        case 'Processed':
+        case 'processed':
             return theme.secondary;
         default:
             return theme.destructive;

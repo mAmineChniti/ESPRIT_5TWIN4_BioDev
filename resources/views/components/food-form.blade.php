@@ -15,9 +15,9 @@
 <div class="mb-6 flex items-center gap-4">
     <april:button-link href="{{ route('foods.index') }}" variant="link" size="sm" class="text-muted-foreground">
         <x-lucide-arrow-left class="size-4" />
-        Back
+        {{ __('Back') }}
     </april:button-link>
-    <h1 class="text-2xl font-bold">{{ $editing ? 'Edit product' : 'Add a product' }}</h1>
+    <h1 class="text-2xl font-bold">{{ $editing ? __('Edit product') : __('Add a product') }}</h1>
 </div>
 
 <april:card class="max-w-2xl">
@@ -27,7 +27,7 @@
             @if($editing) @method('PUT') @endif
 
             <div class="space-y-2">
-                <april:label for="name">Product name <span aria-hidden="true">*</span></april:label>
+                <april:label for="name">{{ __('Product name') }} <span aria-hidden="true">*</span></april:label>
                 <april:input id="name" name="name" :value="old('name', $food?->name)" required
                              aria-describedby="name-error"
                              :aria-invalid="$errors->has('name') ? 'true' : 'false'" />
@@ -37,11 +37,11 @@
             </div>
 
             <div class="space-y-2">
-                <april:label for="category_id">Category <span aria-hidden="true">*</span></april:label>
+                <april:label for="category_id">{{ __('Category') }} <span aria-hidden="true">*</span></april:label>
                 <april:native-select id="category_id" name="category_id" required
                                        aria-describedby="category_id-error"
                                        :aria-invalid="$errors->has('category_id') ? 'true' : 'false'">
-                    <option value="">Select a category…</option>
+                    <option value="">{{ __('Select a category…') }}</option>
                     @foreach($categories as $category)
                         <option value="{{ $category->id }}"
                             @selected((string) old('category_id', $food?->category_id) === (string) $category->id)>
@@ -56,9 +56,9 @@
 
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div class="space-y-2">
-                    <april:label for="origin">Origin</april:label>
+                    <april:label for="origin">{{ __('Origin') }}</april:label>
                     <april:input id="origin" name="origin" :value="old('origin', $food?->origin)"
-                                 placeholder="e.g. France" aria-describedby="origin-error"
+                         placeholder="{{ __('e.g. France') }}" aria-describedby="origin-error"
                                  :aria-invalid="$errors->has('origin') ? 'true' : 'false'" />
                     <p id="origin-error" class="text-sm text-destructive" role="alert" aria-live="polite">
                         @error('origin') {{ $message }} @enderror
@@ -66,11 +66,11 @@
                 </div>
 
                 <div class="space-y-2">
-                    <april:label for="environmental_score">Environmental grade</april:label>
+                    <april:label for="environmental_score">{{ __('Environmental grade') }}</april:label>
                     <april:native-select id="environmental_score" name="environmental_score"
                                            aria-describedby="environmental_score-error"
                                            :aria-invalid="$errors->has('environmental_score') ? 'true' : 'false'">
-                        <option value="">Not set</option>
+                        <option value="">{{ __('Not set') }}</option>
                         @foreach(\App\Enums\EnvironmentalScore::cases() as $score)
                             <option value="{{ $score->value }}"
                                 @selected(old('environmental_score', $food?->environmental_score?->value) === $score->value)>
@@ -85,10 +85,9 @@
             </div>
 
             <fieldset class="space-y-2">
-                <legend class="text-sm font-medium text-foreground">Certifications (verified)</legend>
+                <legend class="text-sm font-medium text-foreground">{{ __('Certifications (verified)') }}</legend>
                 <p id="certifications-hint" class="text-xs text-muted-foreground">
-                    Only certifications recorded with an issuing body and a validity date can be selected.
-                    Clearing every box removes them all on save.
+                    {{ __('Only certifications recorded with an issuing body and a validity date can be selected. Clearing every box removes them all on save.') }}
                 </p>
                 <div class="mt-2 grid grid-cols-1 gap-2 md:grid-cols-3">
                     @forelse($certifications as $certification)
@@ -103,12 +102,12 @@
                                 <span class="block text-sm font-medium text-foreground">{{ $certification->name }}</span>
                                 <span class="block text-xs text-muted-foreground">{{ $certification->issuer }}</span>
                                 @if($certification->isExpired())
-                                    <span class="block text-xs text-destructive">Expired</span>
+                                    <span class="block text-xs text-destructive">{{ __('Expired') }}</span>
                                 @endif
                             </april:label>
                         </div>
                     @empty
-                        <p class="text-sm text-muted-foreground">No certifications recorded yet.</p>
+                        <p class="text-sm text-muted-foreground">{{ __('No certifications recorded yet.') }}</p>
                     @endforelse
                 </div>
                 <p class="text-sm text-destructive" role="alert" aria-live="polite">
@@ -119,10 +118,10 @@
 
             <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
                 @foreach([
-                    'calories' => ['Calories', 1],
-                    'protein' => ['Protein (g)', '0.01'],
-                    'carbs' => ['Carbs (g)', '0.01'],
-                    'fat' => ['Fat (g)', '0.01'],
+                    'calories' => [__('Calories'), 1],
+                    'protein' => [__('Protein (g)'), '0.01'],
+                    'carbs' => [__('Carbs (g)'), '0.01'],
+                    'fat' => [__('Fat (g)'), '0.01'],
                 ] as $field => [$label, $step])
                     <div class="space-y-2">
                         <april:label for="{{ $field }}">{{ $label }}</april:label>
@@ -140,7 +139,7 @@
             </div>
 
             <div class="flex justify-end pt-4">
-                <april:button type="submit">{{ $editing ? 'Save changes' : 'Save' }}</april:button>
+                <april:button type="submit">{{ $editing ? __('Save changes') : __('Save') }}</april:button>
             </div>
         </form>
     </x-slot:content>

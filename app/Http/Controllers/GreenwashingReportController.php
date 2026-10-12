@@ -20,7 +20,7 @@ class GreenwashingReportController extends Controller
      */
     public function index(Request $request): View
     {
-        abort_unless($request->user()->isAdmin(), 403, 'Only admins can view reports.');
+        abort_unless($request->user()->isAdmin(), 403, __('Only admins can view reports.'));
 
         $reports = GreenwashingReport::with(['food', 'user'])
             ->latest()
@@ -39,7 +39,7 @@ class GreenwashingReportController extends Controller
     {
         $user = $request->user();
 
-        abort_unless($user->role === 'consumer', 403, 'Only consumers can report greenwashing claims.');
+        abort_unless($user->role === 'consumer', 403, __('Only consumers can report greenwashing claims.'));
 
         $validated = $request->validate([
             'reason' => ['required', Rule::enum(ReportReason::class)],
@@ -73,7 +73,7 @@ class GreenwashingReportController extends Controller
             ]);
         });
 
-        return back()->with('success', 'Report received. A reviewer will look at it.');
+        return back()->with('success', __('Report received. A reviewer will look at it.'));
     }
 
     /**
@@ -86,15 +86,7 @@ class GreenwashingReportController extends Controller
     {
         $user = $request->user();
 
-        abort_unless($user->isAdmin(), 403, 'Only admins can review reports.');
-
-        // A decided report is final: re-deciding it would silently rewrite the
-        // trust signal a consumer has already been shown.
-        if ($report->status !== ReportStatus::Pending) {
-            return back()->withErrors([
-                'status' => "This report was already reviewed as \"{$report->status->label()}\".",
-            ]);
-        }
+        abort_unless($user->isAdmin(), 403, __('Only admins can review reports.'));
 
         $validated = $request->validate([
             'status' => ['required', Rule::enum(ReportStatus::class), Rule::notIn([ReportStatus::Pending->value])],
@@ -102,12 +94,29 @@ class GreenwashingReportController extends Controller
 
         $status = ReportStatus::from($validated['status']);
 
-        $report->update([
-            'status' => $status,
-            'reviewed_by' => $request->user()->id,
-            'reviewed_at' => now(),
-        ]);
+        // A decided report is final: re-deciding it would silently rewrite the
+        // trust signal a consumer has already been shown. The row is locked so
+        // two concurrent decisions cannot both pass the check.
+        try {
+            DB::transaction(function () use ($report, $status, $user): void {
+                $locked = GreenwashingReport::query()->whereKey($report->getKey())->lockForUpdate()->firstOrFail();
 
-        return back()->with('success', "Report marked as {$status->label()}.");
+                if ($locked->status !== ReportStatus::Pending) {
+                    throw ValidationException::withMessages([
+                        'status' => "This report was already reviewed as \"{$locked->status->label()}\".",
+                    ]);
+                }
+
+                $locked->update([
+                    'status' => $status,
+                    'reviewed_by' => $user->id,
+                    'reviewed_at' => now(),
+                ]);
+            });
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors());
+        }
+
+        return back()->with('success', __('Report marked as :status.', ['status' => $status->label()]));
     }
 }

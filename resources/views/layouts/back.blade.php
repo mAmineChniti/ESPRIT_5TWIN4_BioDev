@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ \App\Enums\Locale::resolve(app()->getLocale())->dir() }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,7 +20,7 @@
 
         <main class="flex-1 space-y-6 p-6">
             @if(session('success'))
-                <april:alert title="Success">
+                <april:alert title="{{ __('Success') }}">
                     <x-slot:description>{{ session('success') }}</x-slot:description>
                 </april:alert>
             @endif

@@ -72,7 +72,7 @@ class AgriculturalRegionController extends Controller
         AgriculturalRegion::create($request->validate($this->regionRules()));
 
         return redirect()->route('regions.index')
-            ->with('success', 'Agricultural region created successfully.');
+            ->with('success', __('Agricultural region created successfully.'));
     }
 
     /**
@@ -114,7 +114,7 @@ class AgriculturalRegionController extends Controller
         $region->update($request->validate($this->regionRules($region)));
 
         return redirect()->route('regions.index')
-            ->with('success', 'Agricultural region updated successfully.');
+            ->with('success', __('Agricultural region updated successfully.'));
     }
 
     /**
@@ -127,7 +127,7 @@ class AgriculturalRegionController extends Controller
         $region->delete();
 
         return redirect()->route('regions.index')
-            ->with('success', 'Agricultural region deleted successfully.');
+            ->with('success', __('Agricultural region deleted successfully.'));
     }
 
     /**
@@ -137,6 +137,6 @@ class AgriculturalRegionController extends Controller
      */
     private function ensureAdmin(Request $request): void
     {
-        abort_unless($request->user()?->isAdmin(), 403, 'Only an administrator can manage agricultural regions.');
+        abort_unless($request->user()?->isAdmin(), 403, __('Only an administrator can manage agricultural regions.'));
     }
 }

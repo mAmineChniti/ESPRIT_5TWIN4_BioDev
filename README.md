@@ -265,6 +265,9 @@ The detector and assistant need an API key. Set it in `.env`:
 AI_PROVIDER=groq
 AI_KEY=your_key_here
 AI_MODEL=openai/gpt-oss-120b
+# Gemini uses its own model setting; AI_MODEL is ignored for gemini unless it
+# looks like a Gemini name. Prefer setting this when AI_PROVIDER=gemini.
+AI_GEMINI_MODEL=gemini-2.5-flash
 ```
 
 Free tiers, no payment card required:

@@ -24,7 +24,7 @@
             {{-- april:button so the focus ring and sizing match every other
                  control, including the ring-offset the hand-rolled version
                  was missing. --}}
-            <april:button variant="outline" size="icon" aria-label="Change colour theme">
+            <april:button variant="outline" size="icon" aria-label="{{ __('Change colour theme') }}">
                 <template x-if="mode === 'light'">
                     <x-lucide-sun class="size-4" />
                 </template>
@@ -38,14 +38,14 @@
         </x-slot:trigger>
 
         <x-slot:content class="absolute right-0 top-full z-50 mt-2 min-w-[11rem]">
-            <april:dropdown-menu-label>Theme</april:dropdown-menu-label>
+            <april:dropdown-menu-label>{{ __('Theme') }}</april:dropdown-menu-label>
 
             <april:dropdown-menu-item
                 x-on:click="NutriTraceTheme.set('light'); mode = 'light'"
                 x-bind:class="mode === 'light' && 'bg-accent text-accent-foreground'">
                 <span class="flex w-full items-center gap-2">
                     <x-lucide-sun class="size-4" />
-                    <span>Light</span>
+                    <span>{{ __('Light') }}</span>
                     <x-lucide-check class="ml-auto size-4" x-show="mode === 'light'" />
                 </span>
             </april:dropdown-menu-item>
@@ -55,7 +55,7 @@
                 x-bind:class="mode === 'dark' && 'bg-accent text-accent-foreground'">
                 <span class="flex w-full items-center gap-2">
                     <x-lucide-moon class="size-4" />
-                    <span>Dark</span>
+                    <span>{{ __('Dark') }}</span>
                     <x-lucide-check class="ml-auto size-4" x-show="mode === 'dark'" />
                 </span>
             </april:dropdown-menu-item>
@@ -67,7 +67,7 @@
                 x-bind:class="mode === 'system' && 'bg-accent text-accent-foreground'">
                 <span class="flex w-full items-center gap-2">
                     <x-lucide-monitor class="size-4" />
-                    <span>System</span>
+                    <span>{{ __('System') }}</span>
                     <x-lucide-check class="ml-auto size-4" x-show="mode === 'system'" />
                 </span>
             </april:dropdown-menu-item>

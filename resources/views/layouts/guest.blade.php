@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ \App\Enums\Locale::resolve(app()->getLocale())->dir() }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -16,7 +16,7 @@
     @include('layouts.partials.front-nav')
 
     <main class="relative flex flex-1 items-center justify-center overflow-hidden px-4 py-10">
-        <div class="absolute -top-32 left-1/2 h-80 w-[36rem] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" aria-hidden="true"></div>
+        <div class="absolute -top-32 start-1/2 h-80 w-[36rem] -translate-x-1/2 rtl:translate-x-1/2 rounded-full bg-primary/10 blur-3xl" aria-hidden="true"></div>
 
         <div class="relative grid w-full max-w-4xl overflow-hidden rounded-2xl border border-border bg-card shadow-sm lg:grid-cols-[1fr_1.1fr]">
             {{-- Brand panel --}}
@@ -32,12 +32,12 @@
                 </div>
 
                 <div class="relative">
-                    <p class="text-2xl font-bold leading-snug">Honest food starts with knowing its story.</p>
-                    <p class="mt-2 text-sm text-primary-foreground/80">Track every product from farm to plate — footprint and certifications included.</p>
+                    <p class="text-2xl font-bold leading-snug">{{ __('Honest food starts with knowing its story.') }}</p>
+                    <p class="mt-2 text-sm text-primary-foreground/80">{{ __('Track every product from farm to plate — footprint and certifications included.') }}</p>
                     <div class="mt-5 flex flex-wrap gap-2">
-                        <april:badge variant="none" class="border-primary-foreground/25 bg-primary-foreground/10 text-primary-foreground">Organic</april:badge>
-                        <april:badge variant="none" class="border-primary-foreground/25 bg-primary-foreground/10 text-primary-foreground">Local</april:badge>
-                        <april:badge variant="none" class="border-primary-foreground/25 bg-primary-foreground/10 text-primary-foreground">Fair trade</april:badge>
+                        <april:badge variant="none" class="border-primary-foreground/25 bg-primary-foreground/10 text-primary-foreground">{{ __('Organic') }}</april:badge>
+                        <april:badge variant="none" class="border-primary-foreground/25 bg-primary-foreground/10 text-primary-foreground">{{ __('Local') }}</april:badge>
+                        <april:badge variant="none" class="border-primary-foreground/25 bg-primary-foreground/10 text-primary-foreground">{{ __('Fair trade') }}</april:badge>
                     </div>
                 </div>
             </div>

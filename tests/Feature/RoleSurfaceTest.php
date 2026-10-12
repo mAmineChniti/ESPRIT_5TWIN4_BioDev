@@ -99,13 +99,13 @@ class RoleSurfaceTest extends TestCase
     #[DataProvider('roleProvider')]
     public function test_every_role_dashboard_sits_at_the_same_depth(string $role): void
     {
-        // /admin/dashboard next to /producer/dashboard, not a bare /admin.
+        // /en/admin/dashboard next to /en/producer/dashboard, not a bare /admin.
         $dashboard = $this->user($role)->dashboardUrl();
 
         $this->assertSame(
-            '/'.$role.'/dashboard',
+            '/en/'.$role.'/dashboard',
             parse_url($dashboard, PHP_URL_PATH),
-            "The {$role} dashboard is not at /{$role}/dashboard."
+            "The {$role} dashboard is not at /en/{$role}/dashboard."
         );
 
         $this->actingAs($this->user($role))->get($dashboard)->assertOk();
@@ -185,6 +185,11 @@ class RoleSurfaceTest extends TestCase
 
         $qr = $this->actingAs($processor)->get(route('processor.journeys.qr', $journey))->assertOk()->getContent();
         $this->assertStringContainsString(route('journeys.public', 'TESTQR42'), $qr);
+
+        // The quiet zone is baked into the image, not the panel: white
+        // background in the SVG, theme tokens on the panel.
+        $this->assertStringContainsString('fill="#ffffff"', $qr);
+        $this->assertStringNotContainsString('bg-white', $qr);
     }
 
     // ---------- The consumer space belongs to consumers ----------
@@ -410,6 +415,10 @@ class RoleSurfaceTest extends TestCase
     private function keyFor(string $parameter): int|string
     {
         return match ($parameter) {
+            // The locale prefix is filled explicitly: relying on URL defaults
+            // here would still work, but the walk must pin the language it
+            // audits rather than inheriting ambient state.
+            'locale' => 'en',
             'food' => $this->fixtures['food']->getRouteKey(),
             'user' => $this->user('consumer')->getRouteKey(),
             'journey' => $this->fixtures['journey']->getRouteKey(),

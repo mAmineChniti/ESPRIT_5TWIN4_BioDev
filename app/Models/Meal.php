@@ -21,6 +21,22 @@ class Meal extends Model
     public const TYPES = ['breakfast', 'lunch', 'dinner', 'snack', 'other'];
 
     /**
+     * Display label for a stored meal type. Values stay English everywhere
+     * they are compared or persisted; only the rendered label translates.
+     */
+    public static function typeLabel(?string $type): string
+    {
+        return match ($type) {
+            'breakfast' => __('Breakfast'),
+            'lunch' => __('Lunch'),
+            'dinner' => __('Dinner'),
+            'snack' => __('Snack'),
+            'other' => __('Other'),
+            default => ucfirst((string) $type),
+        };
+    }
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>

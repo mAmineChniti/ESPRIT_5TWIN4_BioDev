@@ -10,10 +10,9 @@
 @if ($report->hasFailed())
     <april:alert variant="none" class="border-border bg-muted/50">
         <x-slot:icon><x-lucide-wifi-off class="size-4" /></x-slot:icon>
-        <x-slot:title>Analysis unavailable</x-slot:title>
+        <x-slot:title>{{ __('Analysis unavailable') }}</x-slot:title>
         <x-slot:description>
-            The detector could not be reached, so this product has <strong>not</strong> been cleared.
-            Nothing below should be read as an all-clear.
+            {!! __('The detector could not be reached, so this product has <strong>not</strong> been cleared. Nothing below should be read as an all-clear.') !!}
         </x-slot:description>
     </april:alert>
 @else
@@ -23,14 +22,14 @@
             <span class="text-2xl font-bold tabular-nums" aria-hidden="true">{{ $report->riskScore }}</span>
             <div>
                 <p class="text-sm font-semibold">{{ $report->verdict }}</p>
-                <p class="text-xs text-muted-foreground">Misleading-claim risk, higher is worse</p>
+                <p class="text-xs text-muted-foreground">{{ __('Misleading-claim risk, higher is worse') }}</p>
             </div>
         </div>
 
         <april:badge variant="{{ $report->worstSeverity()?->value === 'high' ? 'destructive' : ($report->hasFindings() ? 'secondary' : 'outline') }}">
             {{ $report->findings === []
-                ? 'No issues found'
-                : count($report->findings).' '.Str::plural('finding', count($report->findings)) }}
+                ? __('No issues found')
+                : trans_choice('{1} :count finding|[2,*] :count findings', count($report->findings), ['count' => count($report->findings)]) }}
         </april:badge>
     </div>
 
@@ -53,7 +52,7 @@
 
                     @if ($finding->evidence !== '')
                         <p class="mt-2 rounded-md bg-muted/60 px-2.5 py-1.5 font-mono text-xs text-muted-foreground">
-                            <span class="font-sans font-medium">On file:</span> {{ $finding->evidence }}
+                            <span class="font-sans font-medium">{{ __('On file:') }}</span> {{ $finding->evidence }}
                         </p>
                     @endif
 
@@ -68,17 +67,16 @@
                                 <input type="hidden" name="detail" value="{{ $finding->detail }}">
                                 <april:button type="submit" size="sm" variant="outline">
                                     <x-lucide-flag class="size-4" />
-                                    Report this
+                                    {{ __('Report this') }}
                                 </april:button>
                                 <span class="ml-2 text-xs text-muted-foreground">
-                                    files it under &ldquo;{{ $finding->category->reportLabel() }}&rdquo;
+                                    {{ __('files it under “:category”', ['category' => $finding->category->reportLabel()]) }}
                                 </span>
                             </form>
                         @endif
                     @else
                         <p class="mt-3 text-xs text-muted-foreground">
-                            <a href="{{ route('login') }}" class="text-primary underline underline-offset-2">Sign in</a>
-                            to report this.
+                            {!! __(':sign_in to report this.', ['sign_in' => '<a href="'.e(route('login')).'" class="text-primary underline underline-offset-2">'.e(__('Sign in')).'</a>']) !!}
                         </p>
                     @endauth
                 </li>
@@ -88,8 +86,7 @@
         <div class="mt-4 flex items-start gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
             <x-lucide-shield-check class="mt-0.5 size-5 shrink-0 text-primary" />
             <p class="text-sm">
-                The detector found no gap between what this product claims and what NutriTrace holds on
-                record. That is a statement about the record, not a judgement of the product itself.
+                {{ __('The detector found no gap between what this product claims and what NutriTrace holds on record. That is a statement about the record, not a judgement of the product itself.') }}
             </p>
         </div>
     @endif
