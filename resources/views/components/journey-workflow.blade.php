@@ -34,7 +34,7 @@
                 'step' => $index + 1,
                 'state' => 'completed',
                 'label' => $hit->label(),
-                'description' => $hit->location.' · '.($hit->step_date?->format('j M Y') ?? 'No date'),
+                'description' => $hit->location.' · '.($hit->step_date?->translatedFormat('j M Y') ?? __('No date')),
                 'href' => route('processor.journeys.steps.show', [$journey, $hit]),
             ];
         } elseif ($type === $suggested) {
@@ -42,21 +42,21 @@
                 'step' => $index + 1,
                 'state' => 'current',
                 'label' => JourneyStep::labels()[$type],
-                'description' => 'Suggested next',
+                'description' => __('Suggested next'),
             ];
         } else {
             $items[] = [
                 'step' => $index + 1,
                 'state' => 'upcoming',
                 'label' => JourneyStep::labels()[$type],
-                'description' => 'Not recorded yet',
+                'description' => __('Not recorded yet'),
             ];
         }
     }
 @endphp
 
 <p class="text-sm text-muted-foreground" aria-live="polite">
-    {{ $recordedStages }} of {{ count(JourneyStep::FLOW) }} stages recorded
+    {{ trans_choice('{0} No stages recorded|{1} :recorded of :total stages recorded|[2,*] :recorded of :total stages recorded', $recordedStages, ['recorded' => $recordedStages, 'total' => count(JourneyStep::FLOW)]) }}
 </p>
 
 <april:steps orientation="vertical" :items="$items" :current="array_search($suggested, JourneyStep::FLOW, true) + 1" />
@@ -69,7 +69,7 @@
                     <p class="flex flex-wrap items-center gap-2 text-sm">
                         <span class="font-semibold tabular-nums text-muted-foreground">#{{ $step->step_order }}</span>
                         <april:badge variant="secondary">{{ $step->label() }}</april:badge>
-                        <span class="text-xs text-muted-foreground">{{ $step->step_date?->format('j M Y') }}</span>
+                        <span class="text-xs text-muted-foreground">{{ $step->step_date?->translatedFormat('j M Y') }}</span>
                     </p>
                     <p class="mt-1 text-sm font-medium">{{ $step->location }}</p>
                     @if ($step->description)
@@ -82,26 +82,26 @@
                             href="{{ route('processor.journeys.steps.show', [$journey, $step]) }}"
                             variant="ghost"
                             size="sm"
-                            aria-label="View step {{ $step->step_order }}"
+                            aria-label="{{ __('View step :order', ['order' => $step->step_order]) }}"
                         >
-                            Details
+                            {{ __('Details') }}
                         </april:button-link>
                         <april:button-link
                             href="{{ route('processor.journeys.steps.edit', [$journey, $step]) }}"
                             variant="ghost"
                             size="sm"
-                            aria-label="Edit step {{ $step->step_order }}"
+                            aria-label="{{ __('Edit step :order', ['order' => $step->step_order]) }}"
                         >
-                            Edit
+                            {{ __('Edit') }}
                         </april:button-link>
                         <x-confirm-action
                             :action="route('processor.journeys.steps.destroy', [$journey, $step])"
-                            label="Delete step"
-                            title="Delete this step?"
-                            description="Step {{ $step->step_order }} ({{ $step->label() }}) will be permanently deleted from this journey."
+                            :label="__('Delete step')"
+                            :title="__('Delete this step?')"
+                            :description="__('Step :order (:label) will be permanently deleted from this journey.', ['order' => $step->step_order, 'label' => $step->label()])"
                             triggerVariant="ghost"
                             triggerSize="sm"
-                        >Delete</x-confirm-action>
+                        >{{ __('Delete') }}</x-confirm-action>
                     </div>
                 @endif
             </li>
@@ -109,7 +109,7 @@
     </ol>
 @elseif ($manage)
     <p class="mt-6 rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-        No steps recorded yet. Start with the origin, where the product was grown.
+        {{ __('No steps recorded yet. Start with the origin, where the product was grown.') }}
     </p>
 @endif
 
@@ -118,7 +118,7 @@
         <april:alert variant="none" class="mt-6 border-secondary/50 bg-secondary/50 text-secondary-foreground">
             <x-slot:icon><x-lucide-circle-check class="size-4" /></x-slot:icon>
             <x-slot:description>
-                Every workflow stage is recorded. You can still add further steps of any stage.
+                {{ __('Every workflow stage is recorded. You can still add further steps of any stage.') }}
             </x-slot:description>
         </april:alert>
     @else
@@ -127,7 +127,7 @@
             class="mt-6"
         >
             <x-lucide-plus class="size-4" />
-            Record {{ JourneyStep::labels()[$suggested] }} — step {{ $nextOrder }}
+            {{ __('Record :label — step :order', ['label' => JourneyStep::labels()[$suggested], 'order' => $nextOrder]) }}
         </april:button-link>
     @endif
 @endif

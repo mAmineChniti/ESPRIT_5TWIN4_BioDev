@@ -18,9 +18,9 @@ enum AnalysisDisputeStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Pending => 'Awaiting review',
-            self::Upheld => 'Analysis is wrong',
-            self::Dismissed => 'Analysis stands',
+            self::Pending => __('Awaiting review'),
+            self::Upheld => __('Analysis is wrong'),
+            self::Dismissed => __('Analysis stands'),
         };
     }
 

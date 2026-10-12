@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Middleware\EnsureUserHasRole;
 use App\Models\Food;
 use App\Models\Meal;
 use App\Models\User;
@@ -132,6 +133,19 @@ class MealLoggingTest extends TestCase
             ->assertRedirect(route('meals.index'));
 
         $this->assertDatabaseMissing('meals', ['id' => $mine->id]);
+    }
+
+    public function test_meal_pages_fail_closed_without_the_role_middleware(): void
+    {
+        $this->withoutMiddleware(EnsureUserHasRole::class);
+
+        $producer = User::factory()->create(['role' => 'producer']);
+
+        // The controller repeats the route's consumer gate, so a route
+        // moved out of the group still refuses the wrong role.
+        $this->actingAs($producer)->get(route('meals.index'))->assertForbidden();
+        $this->actingAs($producer)->get(route('meals.create'))->assertForbidden();
+        $this->actingAs($producer)->post(route('meals.store'), [])->assertForbidden();
     }
 
     public function test_calories_are_derived_from_the_products_and_quantities(): void

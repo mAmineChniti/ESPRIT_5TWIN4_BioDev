@@ -1,8 +1,9 @@
 <div class="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-card/85 px-4 py-3 backdrop-blur sm:px-6">
     <april:sidebar-trigger />
-    <h1 class="text-base font-semibold tracking-tight">@yield('title', 'Dashboard')</h1>
-    <div class="ml-auto flex items-center gap-3">
-        <april:badge variant="secondary" class="hidden sm:inline-flex">Back Office</april:badge>
+    <h1 class="text-base font-semibold tracking-tight">@yield('title', __('Dashboard'))</h1>
+    <div class="ms-auto flex items-center gap-3">
+        <april:badge variant="secondary" class="hidden sm:inline-flex">{{ __('Back Office') }}</april:badge>
+        <x-language-switcher />
         <x-theme-toggle />
         @auth
             <april:avatar size="sm" title="{{ Auth::user()->name }}">

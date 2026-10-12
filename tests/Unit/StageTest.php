@@ -4,7 +4,7 @@ namespace Tests\Unit;
 
 use App\Enums\Stage;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class StageTest extends TestCase
 {

@@ -2,8 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Enums\FarmStatus;
+use App\Enums\ShipmentStatus;
+use App\Http\Middleware\EnsureUserHasRole;
+use App\Models\Farm;
 use App\Models\Journey;
 use App\Models\JourneyStep;
+use App\Models\Shipment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -119,6 +124,54 @@ class JourneyStepTest extends TestCase
         $this->assertDatabaseCount('journey_steps', 0);
     }
 
+    public function test_a_step_cannot_cite_an_unapproved_farm(): void
+    {
+        $processor = User::factory()->create(['role' => 'processor']);
+        $journey = Journey::factory()->create();
+        $pendingFarm = Farm::factory()->create([
+            'status' => FarmStatus::Pending,
+            'user_id' => User::factory()->create(['role' => 'producer'])->id,
+        ]);
+
+        $this->actingAs($processor)
+            ->post(route('processor.journeys.steps.store', $journey), $this->validStep(['farm_id' => $pendingFarm->id]))
+            ->assertSessionHasErrors(['farm_id']);
+
+        $this->assertDatabaseCount('journey_steps', 0);
+    }
+
+    public function test_a_step_cannot_cite_a_cancelled_shipment(): void
+    {
+        $processor = User::factory()->create(['role' => 'processor']);
+        $journey = Journey::factory()->create();
+        $cancelled = Shipment::factory()->create(['status' => ShipmentStatus::Cancelled]);
+
+        $this->actingAs($processor)
+            ->post(route('processor.journeys.steps.store', $journey), $this->validStep(['shipment_id' => $cancelled->id]))
+            ->assertSessionHasErrors(['shipment_id']);
+
+        $this->assertDatabaseCount('journey_steps', 0);
+    }
+
+    public function test_a_step_may_cite_an_approved_farm(): void
+    {
+        $processor = User::factory()->create(['role' => 'processor']);
+        $journey = Journey::factory()->create();
+        $farm = Farm::factory()->create([
+            'status' => FarmStatus::Approved,
+            'user_id' => User::factory()->create(['role' => 'producer'])->id,
+        ]);
+
+        $this->actingAs($processor)
+            ->post(route('processor.journeys.steps.store', $journey), $this->validStep(['farm_id' => $farm->id]))
+            ->assertRedirect(route('processor.journeys.steps.index', $journey));
+
+        $this->assertDatabaseHas('journey_steps', [
+            'journey_id' => $journey->id,
+            'farm_id' => $farm->id,
+        ]);
+    }
+
     public function test_the_create_form_prefills_the_next_free_order_and_suggested_type(): void
     {
         $processor = User::factory()->create(['role' => 'processor']);
@@ -138,6 +191,21 @@ class JourneyStepTest extends TestCase
         $this->assertStringContainsString('value="2"', $html);
         $this->assertStringContainsString('value="transport" selected', $html);
         $this->assertStringContainsString('Step 2', $html);
+    }
+
+    public function test_journey_pages_fail_closed_without_the_role_middleware(): void
+    {
+        $this->withoutMiddleware(EnsureUserHasRole::class);
+
+        $consumer = User::factory()->create(['role' => 'consumer']);
+        $journey = Journey::factory()->create();
+
+        // The controller repeats the route's processor gate, so a route
+        // moved out of the group still refuses the wrong role.
+        $this->actingAs($consumer)->get(route('processor.journeys.index'))->assertForbidden();
+        $this->actingAs($consumer)->get(route('processor.journeys.show', $journey))->assertForbidden();
+        $this->actingAs($consumer)->get(route('processor.journeys.steps.index', $journey))->assertForbidden();
+        $this->actingAs($consumer)->get(route('processor.journeys.steps.create', $journey))->assertForbidden();
     }
 
     public function test_the_steps_page_renders_the_workflow_tracker(): void

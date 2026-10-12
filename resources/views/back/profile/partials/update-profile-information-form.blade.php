@@ -11,7 +11,7 @@
     @method('patch')
 
     <div class="space-y-2">
-        <april:label for="name">Name</april:label>
+        <april:label for="name">{{ __("Name") }}</april:label>
         <april:input id="name" name="name" type="text" :value="old('name', $user->name)" required autofocus
                      autocomplete="name" aria-describedby="name-error"
                      :aria-invalid="$errors->has('name') ? 'true' : 'false'" />
@@ -19,7 +19,7 @@
     </div>
 
     <div class="space-y-2">
-        <april:label for="email">Email</april:label>
+        <april:label for="email">{{ __("Email") }}</april:label>
         <april:input id="email" name="email" type="email" :value="old('email', $user->email)" required
                      autocomplete="username" aria-describedby="email-error"
                      :aria-invalid="$errors->has('email') ? 'true' : 'false'" />
@@ -27,22 +27,20 @@
 
         @if (! $user->hasVerifiedEmail())
             <p class="text-sm text-muted-foreground">
-                Your email address is unverified.
-                <april:button type="submit" form="send-verification" variant="link" size="sm" class="px-1">
-                    Re-send verification email.
-                </april:button>
+                {{ __('Your email address is unverified.') }}
+                <april:button type="submit" form="send-verification" variant="link" size="sm" class="px-1">{{ __("Re-send verification email") }}</april:button>
             </p>
 
             @if (session('status') === 'verification-link-sent')
                 <p class="text-sm font-medium text-primary" role="status" aria-live="polite">
-                    A new verification link has been sent to your email address.
+                    {{ __('A new verification link has been sent to your email address.') }}
                 </p>
             @endif
         @endif
     </div>
 
     <div class="flex items-center gap-4 pt-1">
-        <april:button type="submit">Save</april:button>
+        <april:button type="submit">{{ __("Save") }}</april:button>
 
         @if (session('status') === 'profile-updated')
             <p
@@ -53,7 +51,7 @@
                 class="text-sm text-primary"
                 role="status"
                 aria-live="polite"
-            >Saved.</p>
+            >{{ __('Saved.') }}</p>
         @endif
     </div>
 </form>

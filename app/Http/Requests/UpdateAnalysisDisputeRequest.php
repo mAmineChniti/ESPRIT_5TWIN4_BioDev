@@ -40,8 +40,8 @@ class UpdateAnalysisDisputeRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'resolution_note.required' => 'Say why the analysis stands, so the reporter is not left without an answer.',
-            'resolution_note.max' => 'Please keep this under 2000 characters.',
+            'resolution_note.required' => __('Say why the analysis stands, so the reporter is not left without an answer.'),
+            'resolution_note.max' => __('Please keep this under 2000 characters.'),
         ];
     }
 }

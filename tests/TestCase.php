@@ -3,10 +3,23 @@
 namespace Tests;
 
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Support\Facades\URL;
 use RuntimeException;
 
 abstract class TestCase extends BaseTestCase
 {
+    /**
+     * Every route lives under /{locale}, so URL generation needs a locale even
+     * outside a request. English here; the SetLocale middleware overrides it
+     * per request, and tests that need another locale pass it explicitly.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        URL::defaults(['locale' => 'en']);
+    }
+
     /**
      * Runs after the application is booted but before the test traits set
      * themselves up, which is the window where RefreshDatabase migrates. That

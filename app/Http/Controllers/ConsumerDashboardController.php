@@ -25,6 +25,11 @@ class ConsumerDashboardController extends Controller
      */
     public function __invoke(Request $request): View
     {
+        // Second layer over the route's consumer gate, so a route moved out
+        // of the group still fails closed instead of rendering an empty
+        // dashboard for the wrong role.
+        abort_unless($request->user()?->role === 'consumer', 403, __('Only consumer accounts can view this dashboard.'));
+
         $user = $request->user();
 
         // The chart covers a rolling window rather than the last N rows: taking
@@ -43,7 +48,7 @@ class ConsumerDashboardController extends Controller
             ->filter(fn (Meal $meal): bool => $meal->consumed_on !== null)
             ->groupBy(fn (Meal $meal): string => $meal->consumed_on->toDateString())
             ->map(fn ($group) => [
-                'date' => $group->first()->consumed_on->format('j M'),
+                'date' => $group->first()->consumed_on->translatedFormat('j M'),
                 'calories' => (int) round($group->sum(fn (Meal $meal): float => $meal->totalCalories())),
             ])
             ->sortKeysDesc()

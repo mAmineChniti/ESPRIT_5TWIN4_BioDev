@@ -38,10 +38,10 @@ class StoreAnalysisDisputeRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'reason.required' => 'Say what the analysis got wrong.',
-            'comment.required' => 'Explain what the analysis got wrong, so an admin can act on it.',
-            'comment.min' => 'Please give at least 10 characters of detail.',
-            'comment.max' => 'Please keep this under 2000 characters.',
+            'reason.required' => __('Say what the analysis got wrong.'),
+            'comment.required' => __('Explain what the analysis got wrong, so an admin can act on it.'),
+            'comment.min' => __('Please give at least 10 characters of detail.'),
+            'comment.max' => __('Please keep this under 2000 characters.'),
         ];
     }
 

@@ -145,6 +145,22 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Display label for a stored role value. Values stay English everywhere
+     * they are compared or persisted; only the rendered label translates.
+     */
+    public static function roleLabel(?string $role): string
+    {
+        return match ($role) {
+            'admin' => __('Administrator'),
+            'producer' => __('Producer'),
+            'processor' => __('Processor'),
+            'distributor' => __('Distributor'),
+            'consumer' => __('Consumer'),
+            default => (string) $role,
+        };
+    }
+
+    /**
      * The named route of the dashboard this user belongs on.
      *
      * Navigation resolves the destination from the role rather than guessing a

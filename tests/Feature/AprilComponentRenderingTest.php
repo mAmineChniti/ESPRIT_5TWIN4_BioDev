@@ -177,7 +177,7 @@ class AprilComponentRenderingTest extends TestCase
             ->from(route('profile.edit'))
             ->delete(route('profile.destroy'), ['password' => 'secret-password']);
 
-        $response->assertRedirect('/');
+        $response->assertRedirect(route('home'));
         $this->assertGuest();
         $this->assertDatabaseMissing('users', ['id' => $user->id]);
     }
@@ -357,7 +357,7 @@ class AprilComponentRenderingTest extends TestCase
 
     public function test_the_theme_toggle_is_an_april_button_with_a_label(): void
     {
-        $html = $this->get('/')->assertOk()->getContent();
+        $html = $this->get(route('home'))->assertOk()->getContent();
 
         $this->assertStringContainsString('aria-label="Change colour theme"', $html);
         $this->assertStringContainsString('data-slot="button"', $html);

@@ -7,10 +7,12 @@
  * grounding cannot be bypassed from the browser.
  */
 document.addEventListener('alpine:init', () => {
-    Alpine.data('nutritraceAssistant', (foodId, endpoint, enabled) => ({
+    Alpine.data('nutritraceAssistant', (foodId, endpoint, enabled, intro, unreachable) => ({
         foodId,
         endpoint,
         enabled,
+        intro: intro || 'I answer questions about this product using only what NutriTrace has recorded for it. Ask me anything about its origin, its certifications, or its supply chain.',
+        unreachable: unreachable || 'The assistant could not be reached. Please try again in a moment.',
         question: '',
         loading: false,
         error: '',
@@ -19,9 +21,7 @@ document.addEventListener('alpine:init', () => {
             {
                 id: 'intro',
                 role: 'assistant',
-                body:
-                    'I answer questions about this product using only what NutriTrace has recorded for it. ' +
-                    'Ask me anything about its origin, its certifications, or its supply chain.',
+                body: intro,
                 sources: [],
                 cannotAnswer: false,
             },
@@ -92,16 +92,14 @@ document.addEventListener('alpine:init', () => {
                 }
 
                 if (!response.ok) {
-                    this.error =
-                        data.message ||
-                        'The assistant could not be reached. Please try again in a moment.';
+                    this.error = data.message || this.unreachable;
 
                     return;
                 }
 
                 this.push('assistant', data.answer, data.sources, data.cannot_answer);
             } catch {
-                this.error = 'The assistant could not be reached. Please try again in a moment.';
+                this.error = this.unreachable;
             } finally {
                 this.loading = false;
                 this.question = '';

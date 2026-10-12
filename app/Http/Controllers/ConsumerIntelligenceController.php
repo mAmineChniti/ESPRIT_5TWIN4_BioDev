@@ -42,6 +42,11 @@ class ConsumerIntelligenceController extends Controller
      */
     public function index(Request $request): View
     {
+        // Second layer over the route's consumer gate, matching the other
+        // consumer controllers, so a route moved out of the group still
+        // fails closed.
+        abort_unless($request->user()?->role === 'consumer', 403, __('Only consumer accounts can view this page.'));
+
         $user = $request->user();
 
         $recommendations = $this->recommender->recommendedFor($user);
@@ -146,7 +151,7 @@ class ConsumerIntelligenceController extends Controller
     {
         $user = $request->user();
 
-        abort_unless($user->role === 'consumer', 403, 'Only consumers can report greenwashing claims.');
+        abort_unless($user->role === 'consumer', 403, __('Only consumers can report greenwashing claims.'));
 
         $validated = $request->validate([
             'category' => ['required', Rule::enum(FindingCategory::class)],
@@ -194,7 +199,7 @@ class ConsumerIntelligenceController extends Controller
             return back()->withErrors($e->errors());
         }
 
-        return back()->with('success', 'Report received. A reviewer will look at it.');
+        return back()->with('success', __('Report received. A reviewer will look at it.'));
     }
 
     /**
@@ -202,6 +207,8 @@ class ConsumerIntelligenceController extends Controller
      */
     public function recommendations(Request $request): View
     {
+        abort_unless($request->user()?->role === 'consumer', 403, __('Only consumer accounts can view this page.'));
+
         return view('back.consumer.recommendations', [
             'recommendations' => $this->recommender->recommendedFor($request->user()),
         ]);

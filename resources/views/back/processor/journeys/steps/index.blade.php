@@ -1,20 +1,20 @@
 @extends('layouts.back')
 
-@section('title', 'Journey steps')
+@section('title', __('Journey steps'))
 
 @section('content')
 <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
     <div>
         <april:button-link href="{{ route('processor.journeys.show', $journey) }}" variant="link" size="sm" class="text-muted-foreground">
             <x-lucide-arrow-left class="size-4" />
-            Back to journey
+            {{ __('Back to journey') }}
         </april:button-link>
-        <h1 class="mt-2 text-2xl font-bold">Journey workflow</h1>
-        <p class="mt-1 text-muted-foreground">{{ $journey->product?->name ?? 'Product #'.$journey->product_id }}</p>
+        <h1 class="mt-2 text-2xl font-bold">{{ __('Journey workflow') }}</h1>
+        <p class="mt-1 text-muted-foreground">{{ $journey->product?->name ?? __('Product #:id', ['id' => $journey->product_id]) }}</p>
     </div>
     <april:button-link href="{{ route('processor.journeys.steps.create', $journey) }}">
         <x-lucide-plus class="size-4" />
-        Add a step
+        {{ __('Add a step') }}
     </april:button-link>
 </div>
 

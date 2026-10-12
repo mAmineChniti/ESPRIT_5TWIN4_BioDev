@@ -36,7 +36,7 @@ class AuthenticatedSessionController extends Controller
             'processor' => redirect()->route('processor.dashboard'),
             'distributor' => redirect()->route('distributor.dashboard'),
             'consumer' => redirect()->route('consumer.dashboard'),
-            default => redirect('/'),
+            default => redirect()->route('home'),
         };
     }
 
@@ -51,6 +51,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect()->route('home');
     }
 }

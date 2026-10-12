@@ -123,10 +123,14 @@ class FarmController extends Controller
     public function approve(Request $request, Farm $farm): RedirectResponse
     {
         $this->ensureAdmin($request);
+        $this->ensureApprovable($farm);
 
+        // Approving a rejected farm is reconsideration, not a re-decision:
+        // the rejection_reason is cleared on purpose (pinned by
+        // test_approving_clears_a_previous_rejection_reason).
         $farm->update(['status' => FarmStatus::Approved, 'rejection_reason' => null]);
 
-        return back()->with('success', "Farm \"{$farm->name}\" was approved.");
+        return back()->with('success', __('Farm ":name" was approved.', ['name' => $farm->name]));
     }
 
     /**
@@ -135,6 +139,7 @@ class FarmController extends Controller
     public function reject(Request $request, Farm $farm): RedirectResponse
     {
         $this->ensureAdmin($request);
+        $this->ensurePending($farm);
 
         $validated = $request->validate([
             'rejection_reason' => ['required', 'string', 'max:1000'],
@@ -145,7 +150,7 @@ class FarmController extends Controller
             'rejection_reason' => $validated['rejection_reason'],
         ]);
 
-        return back()->with('success', "Farm \"{$farm->name}\" was rejected.");
+        return back()->with('success', __('Farm ":name" was rejected.', ['name' => $farm->name]));
     }
 
     /**
@@ -181,11 +186,11 @@ class FarmController extends Controller
 
         if ($user->isAdmin()) {
             return redirect()->route('farms.index')
-                ->with('success', 'Farm created and approved successfully.');
+                ->with('success', __('Farm created and approved successfully.'));
         }
 
         return redirect()->route('farms.index')
-            ->with('success', 'Your farm was saved and sent to an administrator for approval.');
+            ->with('success', __('Your farm was saved and sent to an administrator for approval.'));
     }
 
     /**
@@ -225,7 +230,7 @@ class FarmController extends Controller
         $farm->update($request->validate($this->farmRules()));
 
         return redirect()->route('farms.index')
-            ->with('success', 'Farm updated successfully.');
+            ->with('success', __('Farm updated successfully.'));
     }
 
     /**
@@ -239,7 +244,7 @@ class FarmController extends Controller
         $farm->delete();
 
         return redirect()->route('farms.index')
-            ->with('success', 'Farm deleted successfully.');
+            ->with('success', __('Farm deleted successfully.'));
     }
 
     /**
@@ -259,7 +264,7 @@ class FarmController extends Controller
      */
     private function ensureAdmin(Request $request): void
     {
-        abort_unless($request->user()?->isAdmin(), 403, 'Only an administrator can approve a farm.');
+        abort_unless($request->user()?->isAdmin(), 403, __('Only an administrator can approve a farm.'));
     }
 
     /**
@@ -270,7 +275,7 @@ class FarmController extends Controller
         abort_if(
             ! $request->user()?->isAdmin() && $farm->user_id !== $request->user()->id,
             403,
-            'Access denied. You can only manage your own farms.',
+            __('Access denied. You can only manage your own farms.'),
         );
     }
 
@@ -283,7 +288,37 @@ class FarmController extends Controller
         abort_if(
             ! $farm->canBeEdited(),
             422,
-            'This farm request was rejected and can no longer be edited or deleted.'
+            __('This farm request was rejected and can no longer be edited or deleted.')
+        );
+    }
+
+    /**
+     * A rejection applies to an open request only: re-deciding would silently
+     * rewrite a verdict the producer has already been shown. Approving is
+     * deliberately looser — reconsidering a rejection is a pinned flow — so
+     * only an already approved farm is refused here.
+     */
+    private function ensurePending(Farm $farm): void
+    {
+        abort_if(
+            ! $farm->isPending(),
+            422,
+            __('This farm request has already been decided.')
+        );
+    }
+
+    /**
+     * Approving an approved farm would silently re-decide a verdict the
+     * producer has already been shown. A rejected farm stays approvable:
+     * that is reconsideration, pinned by
+     * test_approving_clears_a_previous_rejection_reason.
+     */
+    private function ensureApprovable(Farm $farm): void
+    {
+        abort_if(
+            $farm->status === FarmStatus::Approved,
+            422,
+            __('This farm is already approved.')
         );
     }
 }

@@ -117,6 +117,23 @@ class LogisticsTest extends TestCase
         );
     }
 
+    public function test_a_distributor_only_counts_their_own_shipments_per_warehouse(): void
+    {
+        $mine = User::factory()->create(['role' => 'distributor']);
+        $theirs = User::factory()->create(['role' => 'distributor']);
+        $warehouse = Warehouse::factory()->create();
+        Shipment::factory()->create(['user_id' => $mine->id, 'warehouse_id' => $warehouse->id]);
+        Shipment::factory()->create(['user_id' => $theirs->id, 'warehouse_id' => $warehouse->id]);
+
+        $html = $this->actingAs($mine)
+            ->get(route('logistics.warehouses.index'))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('1 shipment', $html);
+        $this->assertStringNotContainsString('2 shipments', $html);
+    }
+
     public function test_a_distributor_cannot_touch_another_distributors_shipment(): void
     {
         $owner = User::factory()->create(['role' => 'distributor']);

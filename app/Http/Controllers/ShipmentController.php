@@ -76,7 +76,7 @@ class ShipmentController extends Controller
         ]);
 
         return redirect()->route('logistics.shipments.index')
-            ->with('success', 'Shipment added successfully.');
+            ->with('success', __('Shipment added successfully.'));
     }
 
     public function show(Request $request, Shipment $shipment): View
@@ -107,7 +107,7 @@ class ShipmentController extends Controller
         $shipment->update($request->shipmentPayload());
 
         return redirect()->route('logistics.shipments.index')
-            ->with('success', 'Shipment updated successfully.');
+            ->with('success', __('Shipment updated successfully.'));
     }
 
     public function destroy(Request $request, Shipment $shipment): RedirectResponse
@@ -117,7 +117,7 @@ class ShipmentController extends Controller
         $shipment->delete();
 
         return redirect()->route('logistics.shipments.index')
-            ->with('success', 'Shipment deleted.');
+            ->with('success', __('Shipment deleted.'));
     }
 
     /**
@@ -135,7 +135,7 @@ class ShipmentController extends Controller
         abort_unless(
             $isAdmin || $shipment->user_id === $request->user()?->id,
             403,
-            'You can only manage your own shipments.',
+            __('You can only manage your own shipments.'),
         );
     }
 

@@ -30,7 +30,7 @@ class ProAccess
         // grants the same set, minus registering products, which stays with the
         // professionals who actually perform the first step.
         if (! in_array($role, [...User::PROFESSIONAL_ROLES, 'admin'], true)) {
-            abort(403, 'Restricted to supply chain professionals.');
+            abort(403, __('Restricted to supply chain professionals.'));
         }
 
         return $next($request);

@@ -55,7 +55,7 @@ class NavigationAccessTest extends TestCase
     {
         $user = $this->user($role);
 
-        $html = $this->actingAs($user)->get('/')->assertOk()->getContent();
+        $html = $this->actingAs($user)->get(route('home'))->assertOk()->getContent();
 
         $href = $this->footerDashboardHref($html);
         $this->assertNotNull($href, 'The footer offers no dashboard link.');
@@ -67,7 +67,7 @@ class NavigationAccessTest extends TestCase
 
     public function test_the_footer_offers_a_guest_the_login_page_instead_of_a_gated_dashboard(): void
     {
-        $html = $this->get('/')->assertOk()->getContent();
+        $html = $this->get(route('home'))->assertOk()->getContent();
 
         $this->assertNull(
             $this->footerDashboardHref($html),

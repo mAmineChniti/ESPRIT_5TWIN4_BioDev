@@ -1,19 +1,19 @@
-<x-guest-layout title="Verify your email" description="Click the link we just emailed you to get started.">
+<x-guest-layout title="{{ __('Verify your email') }}" description="{{ __('Click the link we just emailed you to get started.') }}">
     @if (session('status') === 'verification-link-sent')
-        <april:alert title="Link sent" class="mb-4">
-            <x-slot:description>A new verification link has been sent to your email address.</x-slot:description>
+        <april:alert title="{{ __('Link sent') }}" class="mb-4">
+            <x-slot:description>{{ __('A new verification link has been sent to your email address.') }}</x-slot:description>
         </april:alert>
     @endif
 
     <div class="flex items-center justify-between gap-3">
         <form method="POST" action="{{ route('verification.send') }}" novalidate>
             @csrf
-            <april:button type="submit" variant="outline">Resend email</april:button>
+            <april:button type="submit" variant="outline">{{ __('Resend email') }}</april:button>
         </form>
 
         <form method="POST" action="{{ route('logout') }}" novalidate>
             @csrf
-            <april:button type="submit" variant="link">Log out</april:button>
+            <april:button type="submit" variant="link">{{ __('Log out') }}</april:button>
         </form>
     </div>
 </x-guest-layout>

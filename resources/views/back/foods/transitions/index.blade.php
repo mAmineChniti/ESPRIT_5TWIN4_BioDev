@@ -1,14 +1,14 @@
 @extends('layouts.back')
 
-@section('title', 'Supply Chain')
+@section('title', __('Supply Chain'))
 
 @section('content')
 <div class="mb-6">
     <april:button-link href="{{ route('foods.show', $food) }}" variant="link" size="sm" class="text-muted-foreground">
         <x-lucide-arrow-left class="size-4" />
-        Back to {{ $food->name }}
+        {{ __('Back to :name', ['name' => $food->name]) }}
     </april:button-link>
-    <h1 class="text-2xl font-bold">Supply chain — {{ $food->name }}</h1>
+    <h1 class="text-2xl font-bold">{{ __('Supply chain — :name', ['name' => $food->name]) }}</h1>
 </div>
 
 <april:card class="max-w-3xl">
@@ -32,7 +32,7 @@
                     'label' => $stage->label(),
                     'state' => $food->transitions->contains('to_stage', $stage) ? 'completed' : 'upcoming',
                     'description' => (string) ($food->transitions
-                        ->firstWhere('to_stage', $stage)?->occurred_at?->format('j M Y H:i') ?? ''),
+                        ->firstWhere('to_stage', $stage)?->occurred_at?->translatedFormat('j M Y H:i') ?? ''),
                 ])->all()" />
         @endif
 
@@ -43,7 +43,7 @@
                         {{ $transition->to_stage?->label() }}
                         @if($transition->from_stage)
                             <span class="font-normal text-muted-foreground">
-                                from {{ $transition->from_stage->label() }}
+                                {{ __('from :label', ['label' => $transition->from_stage->label()]) }}
                             </span>
                         @endif
                     </p>
@@ -58,48 +58,45 @@
                     @endif
                 </li>
             @empty
-                <p class="text-sm text-muted-foreground">No supply chain steps recorded yet.</p>
+                <p class="text-sm text-muted-foreground">{{ __('No supply chain steps recorded yet.') }}</p>
             @endforelse
         </ol>
 
-        @can('recordTransition', [$food, $nextStage])
-            <form action="{{ route('foods.transitions.store', $food) }}" method="POST"
-                  class="mt-6 space-y-3 border-t border-border pt-6" novalidate>
-                @csrf
-                <p class="text-sm font-medium text-foreground">Record the next step</p>
-                <input type="hidden" name="to_stage" value="{{ $nextStage->value }}">
-                <p class="text-sm text-muted-foreground">
-                    This product will be marked as <strong>{{ $nextStage->label() }}</strong>.
-                </p>
-                <div class="space-y-2">
-                    <april:label for="notes">Notes</april:label>
-                    <x-textarea-field id="notes" name="notes" rows="2"
-                        :value="old('notes')" aria-describedby="notes-error to_stage-error" />
-                    <p id="notes-error" class="text-sm text-destructive" role="alert" aria-live="polite">
-                        @error('notes') {{ $message }} @enderror
+        {{-- The policy needs a real stage, so the completed chain is handled
+             before @can is ever evaluated with a null stage. --}}
+        @if($nextStage !== null)
+            @can('recordTransition', [$food, $nextStage])
+                <form action="{{ route('foods.transitions.store', $food) }}" method="POST"
+                      class="mt-6 space-y-3 border-t border-border pt-6" novalidate>
+                    @csrf
+                    <p class="text-sm font-medium text-foreground">{{ __('Record the next step') }}</p>
+                    <input type="hidden" name="to_stage" value="{{ $nextStage->value }}">
+                    <p class="text-sm text-muted-foreground">
+                        {!! __('This product will be marked as :label.', ['label' => '<strong>'.e($nextStage->label()).'</strong>']) !!}
                     </p>
-                    <p id="to_stage-error" class="text-sm text-destructive" role="alert" aria-live="polite">
-                        @error('to_stage') {{ $message }} @enderror
-                    </p>
-                </div>
-                <april:button type="submit">Record {{ $nextStage->label() }}</april:button>
-            </form>
-        @else
-            {{-- @can compiled to a plain "if" is what let this pair with
-                 @elseif/@endif, but @endcan is the explicit form and does not
-                 depend on that. --}}
-            @if($nextStage === null)
-                <p class="mt-6 border-t border-border pt-6 text-sm text-muted-foreground">
-                    This product has completed every supply chain stage.
-                </p>
+                    <div class="space-y-2">
+                        <april:label for="notes">{{ __('Notes') }}</april:label>
+                        <x-textarea-field id="notes" name="notes" rows="2"
+                            :value="old('notes')" aria-describedby="notes-error to_stage-error" />
+                        <p id="notes-error" class="text-sm text-destructive" role="alert" aria-live="polite">
+                            @error('notes') {{ $message }} @enderror
+                        </p>
+                        <p id="to_stage-error" class="text-sm text-destructive" role="alert" aria-live="polite">
+                            @error('to_stage') {{ $message }} @enderror
+                        </p>
+                    </div>
+                    <april:button type="submit">{{ __('Record :label', ['label' => $nextStage->label()]) }}</april:button>
+                </form>
             @else
                 <p class="mt-6 border-t border-border pt-6 text-sm text-muted-foreground">
-                    The next step is <strong>{{ $nextStage->label() }}</strong>. Only an account with the
-                    <strong>{{ $nextStage->requiredRole() }}</strong> role can record it, and you are
-                    signed in as a {{ auth()->user()->role }}.
+                    {!! __('The next step is :label. Only an account with the :role role can record it, and you are signed in as a :userRole.', ['label' => '<strong>'.e($nextStage->label()).'</strong>', 'role' => '<strong>'.e($nextStage->requiredRole()).'</strong>', 'userRole' => e(auth()->user()->role)]) !!}
                 </p>
-            @endif
-        @endcan
+            @endcan
+        @else
+            <p class="mt-6 border-t border-border pt-6 text-sm text-muted-foreground">
+                {{ __('This product has completed every supply chain stage.') }}
+            </p>
+        @endif
     </x-slot:content>
 </april:card>
 @endsection

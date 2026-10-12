@@ -4,7 +4,7 @@ namespace Tests\Unit;
 
 use App\Enums\ReportStatus;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class ReportStatusTest extends TestCase
 {

@@ -13,7 +13,7 @@
             </div>
 
             <p class="mt-1 text-xs text-muted-foreground">
-                {{ $food->category->name ?? 'Uncategorised' }}
+                {{ $food->category->name ?? __('Uncategorised') }}
                 @if($food->origin) · {{ $food->origin }} @endif
             </p>
 
@@ -42,7 +42,7 @@
                 </april:tooltip>
 
                 <april:button-link href="{{ route('products.show', $food) }}" variant="link" size="sm">
-                    See the evidence
+                    {{ __('See the evidence') }}
                 </april:button-link>
             </div>
         </div>

@@ -1,18 +1,18 @@
 @extends('layouts.front')
 
-@section('title', 'Agricultural Regions & Farms')
+@section('title', __('Agricultural Regions & Farms'))
 
 @section('content')
 <div class="space-y-8">
     <div class="text-center max-w-2xl mx-auto space-y-3">
         <span class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-            Farm-to-table traceability
+            {{ __('Farm-to-table traceability') }}
         </span>
         <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl">
-            Explore our agricultural regions
+            {{ __('Explore our agricultural regions') }}
         </h1>
         <p class="text-muted-foreground text-sm sm:text-base">
-            Explore production areas and the farms behind your food for complete transparency.
+            {{ __('Explore production areas and the farms behind your food for complete transparency.') }}
         </p>
     </div>
 
@@ -20,7 +20,7 @@
         <april:card>
             <x-slot:content>
                 <p class="py-10 text-center text-sm text-muted-foreground">
-                    No agricultural regions are published yet.
+                    {{ __('No agricultural regions are published yet.') }}
                 </p>
             </x-slot:content>
         </april:card>
@@ -34,7 +34,7 @@
                             {{ $region->code }}
                         </span>
                         <span class="text-xs font-semibold text-primary">
-                            {{ $region->approved_farms_count }} farm(s)
+                            {{ trans_choice('{0} :count farm|{1} :count farm|[2,*] :count farms', $region->approved_farms_count) }}
                         </span>
                     </div>
 
@@ -44,7 +44,7 @@
 
                     @if($region->climate)
                         <p class="text-xs text-muted-foreground">
-                            <strong>Climate:</strong> {{ $region->climate }}
+                            <strong>{{ __('Climate:') }}</strong> {{ $region->climate }}
                         </p>
                     @endif
 
@@ -57,7 +57,7 @@
 
                 <div class="pt-4 border-t border-border">
                     <april:button-link href="{{ route('agricultural-regions.show', $region) }}" variant="outline" class="w-full justify-between">
-                        <span>View region and farms</span>
+                        <span>{{ __('View region and farms') }}</span>
                         <x-lucide-arrow-right class="size-4" />
                     </april:button-link>
                 </div>

@@ -8,11 +8,23 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
+/**
+ * Warehouses are shared infrastructure with no owner: any distributor may
+ * create one and edit its details (operational), but deleting one cascades to
+ * every shipment stored in it, so deletion is structural and admin-only.
+ */
 class WarehouseController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $warehouses = Warehouse::withCount('shipments')->orderBy('name')->paginate(10);
+        $user = $request->user();
+
+        // Counted like show() lists them: a distributor's totals must not
+        // include another distributor's freight.
+        $warehouses = Warehouse::withCount(['shipments' => fn ($query) => $query
+            ->when(! $user->isAdmin(), fn ($inner) => $inner->where('user_id', $user->id))])
+            ->orderBy('name')
+            ->paginate(10);
 
         return view('back.logistics.warehouses.index', compact('warehouses'));
     }
@@ -27,7 +39,7 @@ class WarehouseController extends Controller
         Warehouse::create($request->validated());
 
         return redirect()->route('logistics.warehouses.index')
-            ->with('success', 'Warehouse added successfully.');
+            ->with('success', __('Warehouse added successfully.'));
     }
 
     public function show(Request $request, Warehouse $warehouse): View
@@ -54,7 +66,7 @@ class WarehouseController extends Controller
         $warehouse->update($request->validated());
 
         return redirect()->route('logistics.warehouses.index')
-            ->with('success', 'Warehouse updated successfully.');
+            ->with('success', __('Warehouse updated successfully.'));
     }
 
     public function destroy(Request $request, Warehouse $warehouse): RedirectResponse
@@ -65,7 +77,7 @@ class WarehouseController extends Controller
         $warehouse->delete();
 
         return redirect()->route('logistics.warehouses.index')
-            ->with('success', 'Warehouse deleted.');
+            ->with('success', __('Warehouse deleted.'));
     }
 
     /**
@@ -76,6 +88,6 @@ class WarehouseController extends Controller
      */
     private function ensureAdmin(Request $request): void
     {
-        abort_unless($request->user()?->isAdmin(), 403, 'Only an administrator can delete a warehouse.');
+        abort_unless($request->user()?->isAdmin(), 403, __('Only an administrator can delete a warehouse.'));
     }
 }

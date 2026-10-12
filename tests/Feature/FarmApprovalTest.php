@@ -111,10 +111,11 @@ class FarmApprovalTest extends TestCase
         // All three farms sit in one region and exactly one is publishable, so
         // the single badge on the page must read 1. Counting the badges too
         // keeps the number from being read off a neighbouring region, and
-        // pins it to this region rather than to the page in general.
-        $this->assertSame(1, substr_count($html, 'farm(s)'));
-        $this->assertStringContainsString('1 farm(s)', $html);
-        $this->assertStringNotContainsString('3 farm(s)', $html);
+        // pins it to this region rather than to the page in general. The badge
+        // uses proper pluralization ("1 farm", not "1 farm(s)").
+        $this->assertSame(1, preg_match_all('/>\s*\d+ farms?\s*</', $html, $matches));
+        $this->assertStringContainsString('1 farm', $matches[0][0]);
+        $this->assertStringNotContainsString('3 farms', $html);
     }
 
     public function test_the_public_region_page_reports_an_empty_region_rather_than_leaking(): void
@@ -255,6 +256,30 @@ class FarmApprovalTest extends TestCase
             'surface_hectares' => 12,
             'farming_type' => 'Hydroponic',
         ])->assertSessionHasErrors('farming_type');
+    }
+
+    public function test_a_decided_farm_cannot_be_rejected_again(): void
+    {
+        $admin = $this->user('admin');
+        $region = AgriculturalRegion::factory()->create();
+        $rejected = $this->farm(FarmStatus::Rejected, $this->user('producer'), $region);
+        $rejected->update(['rejection_reason' => 'Original reason.']);
+        $approved = $this->farm(FarmStatus::Approved, $this->user('producer'), $region);
+
+        // Rejecting an approved farm would silently unpublish it; rejecting a
+        // rejected farm would silently rewrite the verdict. Approving stays
+        // open: reconsidering a rejection is a pinned flow.
+        $this->actingAs($admin)
+            ->patch(route('farms.reject', $approved), ['rejection_reason' => 'Changed mind.'])
+            ->assertStatus(422);
+
+        $this->actingAs($admin)
+            ->patch(route('farms.reject', $rejected), ['rejection_reason' => 'Another reason.'])
+            ->assertStatus(422);
+
+        $this->assertTrue($approved->fresh()->isApproved());
+        $this->assertNull($approved->fresh()->rejection_reason);
+        $this->assertSame('Original reason.', $rejected->fresh()->rejection_reason);
     }
 
     // ---------- Workflow ----------
@@ -408,6 +433,17 @@ class FarmApprovalTest extends TestCase
         $this->actingAs($this->user('admin'))->patch(route('farms.approve', $farm));
 
         $this->assertNull($farm->fresh()->rejection_reason);
+    }
+
+    public function test_approving_an_approved_farm_is_refused(): void
+    {
+        $farm = $this->farm(FarmStatus::Approved, $this->user('producer'));
+
+        $this->actingAs($this->user('admin'))
+            ->patch(route('farms.approve', $farm))
+            ->assertStatus(422);
+
+        $this->assertTrue($farm->fresh()->isApproved());
     }
 
     public function test_the_status_filter_only_accepts_a_known_status(): void

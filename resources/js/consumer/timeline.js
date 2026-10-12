@@ -25,11 +25,31 @@ function readJson(id) {
 }
 
 function formatDate(value) {
-    return new Date(value).toLocaleDateString(undefined, {
+    return new Date(value).toLocaleDateString(document.documentElement.lang || undefined, {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
     });
+}
+
+// Chart chrome comes from the server-rendered JSON blob so it follows the
+// page locale; the English defaults keep the chart working if the blob
+// predates them.
+function chartLabels(data) {
+    return {
+        daysInStage: 'Days in stage',
+        daysSince: 'Days since the product was registered',
+        recorded: 'Recorded',
+        by: 'By',
+        unknown: 'unknown',
+        note: 'Note:',
+        noNote: 'No note recorded',
+        ...(data.labels ?? {}),
+    };
+}
+
+function stageKey(step) {
+    return step.stageKey ?? step.stage;
 }
 
 export function renderTimeline() {
@@ -58,6 +78,8 @@ export function renderTimeline() {
         return { ...step, start, end: start + Math.max(step.daysInStage, 1) };
     });
 
+    const labels = chartLabels(data);
+
     // Read the tokens once per render. Each readTheme() walks the whole custom
     // property set through getComputedStyle, so calling it per option built a
     // surprising amount of layout work on every paint.
@@ -71,11 +93,11 @@ export function renderTimeline() {
                 labels: windows.map((step) => step.stage),
                 datasets: [
                     {
-                        label: 'Days in stage',
+                        label: labels.daysInStage,
                         data: windows.map((step) => [step.start, step.end]),
                         // Painted up front rather than left empty for the
                         // recolour callback to fill in.
-                        backgroundColor: windows.map((step) => stageColour(step.stage, theme)),
+                        backgroundColor: windows.map((step) => stageColour(stageKey(step), theme)),
                         borderRadius: 6,
                         borderSkipped: false,
                         barPercentage: 0.6,
@@ -90,7 +112,7 @@ export function renderTimeline() {
                     x: {
                         title: {
                             display: true,
-                            text: 'Days since the product was registered',
+                            text: labels.daysSince,
                             color: theme.mutedForeground,
                         },
                         ...axisTheme(theme),
@@ -108,9 +130,9 @@ export function renderTimeline() {
                                 const step = windows[context.dataIndex];
 
                                 return [
-                                    `Recorded ${formatDate(step.date)}`,
-                                    `By ${step.actor ?? 'unknown'}`,
-                                    step.notes ? `Note: ${step.notes}` : 'No note recorded',
+                                    `${labels.recorded} ${formatDate(step.date)}`,
+                                    `${labels.by} ${step.actor ?? labels.unknown}`,
+                                    step.notes ? `${labels.note} ${step.notes}` : labels.noNote,
                                 ];
                             },
                         },
@@ -130,7 +152,7 @@ export function renderTimeline() {
             },
         },
         (next) => {
-            chart.data.datasets[0].backgroundColor = windows.map((step) => stageColour(step.stage, next));
+            chart.data.datasets[0].backgroundColor = windows.map((step) => stageColour(stageKey(step), next));
             chart.options.scales.x.ticks.color = next.mutedForeground;
             chart.options.scales.x.grid.color = axisTheme(next).grid.color;
             chart.options.scales.x.title.color = next.mutedForeground;

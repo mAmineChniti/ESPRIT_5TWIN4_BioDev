@@ -1,6 +1,6 @@
 @extends('layouts.back')
 
-@section('title', 'Farm Management')
+@section('title', __('Farm Management'))
 
 @section('content')
     @php
@@ -12,16 +12,16 @@
     <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
             <div class="flex items-center gap-2">
-                <h1 class="text-2xl font-bold tracking-tight">Farms</h1>
+                <h1 class="text-2xl font-bold tracking-tight">{{ __('Farms') }}</h1>
                 <april:badge variant="{{ $isAdmin ? 'default' : 'secondary' }}">
-                    {{ $isAdmin ? 'Admin oversight' : 'Producer area' }}
+                    {{ $isAdmin ? __('Admin oversight') : __('Producer area') }}
                 </april:badge>
             </div>
             <p class="mt-1 text-sm text-muted-foreground">
                 @if($isAdmin)
-                    Oversee all agricultural farms in the country.
+                    {{ __('Oversee all agricultural farms in the country.') }}
                 @else
-                    Manage your production farms and track approval requests.
+                    {{ __('Manage your production farms and track approval requests.') }}
                 @endif
             </p>
         </div>
@@ -30,72 +30,72 @@
             @if($isAdmin && $pendingCount > 0)
                 <april:button-link href="{{ route('farms.requests') }}">
                     <x-lucide-clipboard-check class="mr-2 size-4" />
-                    Pending requests ({{ $pendingCount }})
+                    {{ __('Pending requests (:count)', ['count' => $pendingCount]) }}
                 </april:button-link>
             @endif
 
             <april:button-link href="{{ route('farms.create') }}">
                 <x-lucide-plus class="mr-2 size-4" />
-                Add a farm
+                {{ __('Add a farm') }}
             </april:button-link>
         </div>
     </div>
 
-    {{-- ===== STATISTIQUES KPIs ===== --}}
+    {{-- ===== KPI statistics ===== --}}
     <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-5">
         <april:card>
             <x-slot:content>
-                <span class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Total farms</span>
+                <span class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ __('Total farms') }}</span>
                 <span class="text-3xl font-bold text-foreground">{{ $stats['total'] }}</span>
-                <span class="text-xs text-muted-foreground">registered farms</span>
+                <span class="text-xs text-muted-foreground">{{ __('registered farms') }}</span>
             </x-slot:content>
         </april:card>
 
         <april:card>
             <x-slot:content>
-                <span class="text-xs font-semibold uppercase tracking-wide text-primary">Approved</span>
+                <span class="text-xs font-semibold uppercase tracking-wide text-primary">{{ __('Approved') }}</span>
                 <span class="text-3xl font-bold text-primary">{{ $stats['approved'] }}</span>
                 <span class="text-xs text-primary/70">
-                    {{ $stats['total'] > 0 ? round($stats['approved'] / $stats['total'] * 100) : 0 }}% of total
+                    {{ __(':percent% of total', ['percent' => $stats['total'] > 0 ? round($stats['approved'] / $stats['total'] * 100) : 0]) }}
                 </span>
             </x-slot:content>
         </april:card>
 
         <april:card>
             <x-slot:content>
-                <span class="text-xs font-semibold uppercase tracking-wide text-secondary-foreground">Pending</span>
+                <span class="text-xs font-semibold uppercase tracking-wide text-secondary-foreground">{{ __('Pending') }}</span>
                 <span class="text-3xl font-bold text-foreground">{{ $stats['pending'] }}</span>
-                <span class="text-xs text-muted-foreground">requests to review</span>
+                <span class="text-xs text-muted-foreground">{{ __('requests to review') }}</span>
             </x-slot:content>
         </april:card>
 
         <april:card>
             <x-slot:content>
-                <span class="text-xs font-semibold uppercase tracking-wide text-destructive">Rejected</span>
+                <span class="text-xs font-semibold uppercase tracking-wide text-destructive">{{ __('Rejected') }}</span>
                 <span class="text-3xl font-bold text-destructive">{{ $stats['rejected'] }}</span>
-                <span class="text-xs text-muted-foreground">rejected requests</span>
+                <span class="text-xs text-muted-foreground">{{ __('rejected requests') }}</span>
             </x-slot:content>
         </april:card>
 
         <april:card>
             <x-slot:content>
-                <span class="text-xs font-semibold uppercase tracking-wide text-primary">Approved area</span>
-                <span class="text-3xl font-bold text-primary">{{ number_format((float) $stats['surface'], 1) }}</span>
-                <span class="text-xs text-muted-foreground">hectares</span>
+                <span class="text-xs font-semibold uppercase tracking-wide text-primary">{{ __('Approved area') }}</span>
+                <span class="text-3xl font-bold text-primary">{{ \App\LocalizedNumber::format($stats['surface'], 1) }}</span>
+                <span class="text-xs text-muted-foreground">{{ __('hectares') }}</span>
             </x-slot:content>
         </april:card>
     </div>
 
     {{-- ===== Filter by status ===== --}}
     <div class="mb-4 flex items-center gap-2 overflow-x-auto border-b border-border pb-3">
-        <span class="mr-2 shrink-0 text-xs font-semibold uppercase text-muted-foreground">Filter by status:</span>
+        <span class="mr-2 shrink-0 text-xs font-semibold uppercase text-muted-foreground">{{ __('Filter by status:') }}</span>
 
         <april:button-link
             href="{{ route('farms.index') }}"
             size="sm"
             variant="{{ $statusFilter === null ? 'default' : 'ghost' }}"
         >
-            All farms
+            {{ __('All farms') }}
         </april:button-link>
 
         @foreach(FarmStatus::cases() as $status)
@@ -116,16 +116,16 @@
         <x-slot:content>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
-                    <caption class="sr-only">Farms and their validation status</caption>
+                    <caption class="sr-only">{{ __('Farms and their validation status') }}</caption>
                     <thead class="border-b border-border bg-muted/50 text-xs font-semibold uppercase text-muted-foreground">
                         <tr>
-                            <th scope="col" class="px-6 py-3">Farm name</th>
-                            <th scope="col" class="px-6 py-3">Agricultural region</th>
-                            <th scope="col" class="px-6 py-3">Producer</th>
-                            <th scope="col" class="px-6 py-3">Soil type</th>
-                            <th scope="col" class="px-6 py-3">Area</th>
-                            <th scope="col" class="px-6 py-3">Status</th>
-                            <th scope="col" class="px-6 py-3 text-right">Actions</th>
+                            <th scope="col" class="px-6 py-3">{{ __('Farm name') }}</th>
+                            <th scope="col" class="px-6 py-3">{{ __('Agricultural region') }}</th>
+                            <th scope="col" class="px-6 py-3">{{ __('Producer') }}</th>
+                            <th scope="col" class="px-6 py-3">{{ __('Soil type') }}</th>
+                            <th scope="col" class="px-6 py-3">{{ __('Area') }}</th>
+                            <th scope="col" class="px-6 py-3">{{ __('Status') }}</th>
+                            <th scope="col" class="px-6 py-3 text-right">{{ __('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-border">
@@ -141,14 +141,14 @@
                                             {{ $farm->region->name }}
                                         </a>
                                     @else
-                                        <span class="text-xs text-muted-foreground">None</span>
+                                        <span class="text-xs text-muted-foreground">{{ __('None') }}</span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 text-muted-foreground">{{ $farm->producer_name ?? ($farm->user?->name ?? 'Not specified') }}</td>
+                                <td class="px-6 py-4 text-muted-foreground">{{ $farm->producer_name ?? ($farm->user?->name ?? __('Not specified')) }}</td>
                                 <td class="px-6 py-4 text-muted-foreground">
-                                    {{ $farm->soil_type ?? ($farm->region?->soil_type ?? 'Not specified') }}
+                                    {{ $farm->soil_type ?? ($farm->region?->soil_type ?? __('Not specified')) }}
                                 </td>
-                                <td class="px-6 py-4 font-mono text-xs">{{ number_format((float) $farm->surface_hectares, 1) }} ha</td>
+                                <td class="px-6 py-4 font-mono text-xs">{{ \App\LocalizedNumber::format($farm->surface_hectares, 1) }} ha</td>
                                 <td class="px-6 py-4">
                                     <x-farm-status :status="$farm->status" />
                                 </td>
@@ -162,7 +162,7 @@
                                                 @method('PATCH')
                                                 <april:button type="submit" size="sm">
                                                     <x-lucide-check class="mr-1 size-3.5" />
-                                                    Approve
+                                                    {{ __('Approve') }}
                                                 </april:button>
                                             </form>
 
@@ -177,7 +177,7 @@
                                             href="{{ route('farms.show', $farm) }}"
                                             variant="ghost"
                                             size="sm"
-                                            aria-label="View details for {{ $farm->name }}"
+                                            aria-label="{{ __('View details for :name', ['name' => $farm->name]) }}"
                                         >
                                             <x-lucide-eye class="size-4" />
                                         </april:button-link>
@@ -187,7 +187,7 @@
                                                 href="{{ route('farms.edit', $farm) }}"
                                                 variant="ghost"
                                                 size="sm"
-                                                aria-label="Edit {{ $farm->name }}"
+                                                aria-label="{{ __('Edit :name', ['name' => $farm->name]) }}"
                                             >
                                                 <x-lucide-pencil class="size-4" />
                                             </april:button-link>
@@ -196,12 +196,12 @@
                                         @if($farm->canBeEdited())
                                             <x-confirm-action
                                                 :action="route('farms.destroy', $farm)"
-                                                label="Delete farm"
-                                                title="Delete this farm?"
-                                                description="{{ $farm->name }} will be permanently deleted. This action cannot be undone."
+                                                :label="__('Delete farm')"
+                                                :title="__('Delete this farm?')"
+                                                :description="__(':name will be permanently deleted. This action cannot be undone.', ['name' => $farm->name])"
                                             >
                                                 <x-lucide-trash-2 class="size-4" />
-                                                <span class="sr-only">Delete {{ $farm->name }}</span>
+                                                <span class="sr-only">{{ __('Delete :name', ['name' => $farm->name]) }}</span>
                                             </x-confirm-action>
                                         @else
                                             {{-- A rejected request is closed; say why
@@ -210,12 +210,12 @@
                                                 <x-slot:trigger>
                                                     <span class="cursor-not-allowed opacity-50"
                                                           aria-disabled="true"
-                                                          title="This request was rejected and cannot be deleted.">
+                                                          title="{{ __('This request was rejected and cannot be deleted.') }}">
                                                         <x-lucide-trash-2 class="size-4" />
-                                                        <span class="sr-only">Delete {{ $farm->name }}: this request was rejected and cannot be deleted.</span>
+                                                        <span class="sr-only">{{ __('Delete :name: this request was rejected and cannot be deleted.', ['name' => $farm->name]) }}</span>
                                                     </span>
                                                 </x-slot:trigger>
-                                                <x-slot:content>This request was rejected and cannot be deleted.</x-slot:content>
+                                                <x-slot:content>{{ __('This request was rejected and cannot be deleted.') }}</x-slot:content>
                                             </april:tooltip>
                                         @endif
                                     </div>
@@ -225,18 +225,18 @@
                             <tr>
                                 <td colspan="7" class="px-6 py-12 text-center text-muted-foreground">
                                     @unless($isAdmin)
-                                        <p class="text-base font-semibold text-foreground">You do not have any farms yet.</p>
+                                        <p class="text-base font-semibold text-foreground">{{ __('You do not have any farms yet.') }}</p>
                                         <p class="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
-                                            You have not created a farm yet. Use the button below to add your first farm.
+                                            {{ __('You have not created a farm yet. Use the button below to add your first farm.') }}
                                         </p>
                                         <div class="mt-4">
                                             <april:button-link href="{{ route('farms.create') }}">
                                                 <x-lucide-plus class="mr-2 size-4" />
-                                                Add a farm
+                                                {{ __('Add a farm') }}
                                             </april:button-link>
                                         </div>
                                     @else
-                                        <p class="font-medium text-foreground">No farms recorded yet.</p>
+                                        <p class="font-medium text-foreground">{{ __('No farms recorded yet.') }}</p>
                                     @endunless
                                 </td>
                             </tr>

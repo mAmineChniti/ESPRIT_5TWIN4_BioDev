@@ -23,6 +23,15 @@ class JourneyStep extends Model
      */
     public const FLOW = ['origin', 'transport', 'storage', 'sale'];
 
+    /**
+     * Optional links to the farm or shipment behind a step.
+     *
+     * Deliberately without foreign keys: the suite runs on SQLite, which
+     * cannot add FKs to existing tables, so integrity is enforced by `exists`
+     * validation on write instead. No code reads these columns yet; whoever
+     * adds the first reader must also add the scoping (approved farm,
+     * reachable shipment) that reader depends on.
+     */
     protected $fillable = [
         'journey_id',
         'step_order',
@@ -55,10 +64,10 @@ class JourneyStep extends Model
     public static function labels(): array
     {
         return [
-            'origin' => 'Origin',
-            'transport' => 'Transport',
-            'storage' => 'Storage',
-            'sale' => 'Sale',
+            'origin' => __('Origin'),
+            'transport' => __('Transport'),
+            'storage' => __('Storage'),
+            'sale' => __('Sale'),
         ];
     }
 

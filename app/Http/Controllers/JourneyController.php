@@ -19,6 +19,8 @@ class JourneyController extends Controller
 {
     public function index(Request $request): View
     {
+        $this->ensureProcessor();
+
         $journeys = Journey::query()
             ->with('product')
             ->withCount('steps')
@@ -30,6 +32,8 @@ class JourneyController extends Controller
 
     public function show(Journey $journey): View
     {
+        $this->ensureProcessor();
+
         $journey->load(['product', 'steps']);
 
         return view('back.processor.journeys.show', compact('journey'));
@@ -37,14 +41,29 @@ class JourneyController extends Controller
 
     public function qrCode(Journey $journey): View
     {
-        abort_unless($journey->qr_code, 404, 'This journey does not have a QR code yet.');
+        $this->ensureProcessor();
+
+        abort_unless($journey->qr_code, 404, __('This journey does not have a QR code yet.'));
 
         $publicUrl = route('journeys.public', $journey->qr_code);
+        // The quiet zone lives in the image itself: the generator paints a
+        // white background with a 4-module margin, so the code stays
+        // scannable in either theme and the panel can use theme tokens.
         $qrSvg = QrCode::format('svg')
             ->size(320)
-            ->margin(1)
+            ->margin(4)
             ->generate($publicUrl);
 
         return view('back.processor.journeys.qr', compact('journey', 'publicUrl', 'qrSvg'));
+    }
+
+    /**
+     * Second layer over the route's processor gate, so an action moved out
+     * of the group still fails closed. Journeys are a shared pool, so the
+     * check is the role, not ownership.
+     */
+    private function ensureProcessor(): void
+    {
+        abort_unless(auth()->user()?->role === 'processor', 403, __('Only processor accounts can manage traceability journeys.'));
     }
 }

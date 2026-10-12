@@ -22,12 +22,12 @@ enum AnalysisDisputeReason: string
     public function label(): string
     {
         return match ($this) {
-            self::WrongVerdict => 'The verdict is wrong',
-            self::FalsePositive => 'A flagged issue is not real',
-            self::MissedIssue => 'Something is wrong but was not flagged',
-            self::WrongEvidence => 'The finding cites the wrong evidence',
-            self::IncompleteRecord => 'The record itself is wrong',
-            self::Other => 'Something else',
+            self::WrongVerdict => __('The verdict is wrong'),
+            self::FalsePositive => __('A flagged issue is not real'),
+            self::MissedIssue => __('Something is wrong but was not flagged'),
+            self::WrongEvidence => __('The finding cites the wrong evidence'),
+            self::IncompleteRecord => __('The record itself is wrong'),
+            self::Other => __('Something else'),
         };
     }
 
@@ -38,12 +38,12 @@ enum AnalysisDisputeReason: string
     public function hint(): string
     {
         return match ($this) {
-            self::WrongVerdict => 'Which part of the verdict is unsupported, and by what?',
-            self::FalsePositive => 'Which finding should not have been raised, and why not?',
-            self::MissedIssue => 'What did the analysis miss?',
-            self::WrongEvidence => 'Which field was cited, and what should it have been?',
-            self::IncompleteRecord => 'Which recorded value is inaccurate?',
-            self::Other => 'Tell us what the analysis got wrong.',
+            self::WrongVerdict => __('Which part of the verdict is unsupported, and by what?'),
+            self::FalsePositive => __('Which finding should not have been raised, and why not?'),
+            self::MissedIssue => __('What did the analysis miss?'),
+            self::WrongEvidence => __('Which field was cited, and what should it have been?'),
+            self::IncompleteRecord => __('Which recorded value is inaccurate?'),
+            self::Other => __('Tell us what the analysis got wrong.'),
         };
     }
 

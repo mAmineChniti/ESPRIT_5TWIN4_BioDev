@@ -16,5 +16,5 @@
         <span class="font-normal opacity-80">{{ $raw->label() }}</span>
     </april:badge>
 @else
-    <april:badge variant="none" class="bg-muted text-muted-foreground">Not scored</april:badge>
+    <april:badge variant="none" class="bg-muted text-muted-foreground">{{ __('Not scored') }}</april:badge>
 @endif

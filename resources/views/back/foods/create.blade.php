@@ -1,6 +1,6 @@
 @extends('layouts.back')
 
-@section('title', 'Add Food')
+@section('title', __('Add Food'))
 
 @section('content')
 <x-food-form />

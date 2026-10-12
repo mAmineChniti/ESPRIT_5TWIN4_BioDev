@@ -14,9 +14,9 @@ enum Stage: string
     public function label(): string
     {
         return match ($this) {
-            self::Produced => 'Produced',
-            self::Processed => 'Processed',
-            self::Distributed => 'Distributed',
+            self::Produced => __('Produced'),
+            self::Processed => __('Processed'),
+            self::Distributed => __('Distributed'),
         };
     }
 

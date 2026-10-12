@@ -16,11 +16,11 @@ enum EnvironmentalScore: string
     public function label(): string
     {
         return match ($this) {
-            self::A => 'Very low impact',
-            self::B => 'Low impact',
-            self::C => 'Medium impact',
-            self::D => 'High impact',
-            self::E => 'Very high impact',
+            self::A => __('Very low impact'),
+            self::B => __('Low impact'),
+            self::C => __('Medium impact'),
+            self::D => __('High impact'),
+            self::E => __('Very high impact'),
         };
     }
 

@@ -1,18 +1,18 @@
-<x-guest-layout title="Login" description="Log in to manage the catalog.">
+<x-guest-layout title="{{ __('Login') }}" description="{{ __('Log in to manage the catalog.') }}">
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
     <form method="POST" action="{{ route('login') }}" class="space-y-4" novalidate>
         @csrf
 
         <div class="space-y-2">
-            <april:label for="email">Email</april:label>
+            <april:label for="email">{{ __('Email') }}</april:label>
             <april:input id="email" type="email" name="email" :value="old('email')" placeholder="you@example.com" required autofocus autocomplete="username"  aria-describedby="email-error"
                  :aria-invalid="$errors->has('email') ? 'true' : 'false'"/>
             <x-input-error id="email-error" :messages="$errors->get('email')" />
         </div>
 
         <div class="space-y-2">
-            <april:label for="password">Password</april:label>
+            <april:label for="password">{{ __('Password') }}</april:label>
             <april:input id="password" type="password" name="password" placeholder="••••••••" required autocomplete="current-password"  aria-describedby="password-error"
                  :aria-invalid="$errors->has('password') ? 'true' : 'false'"/>
             <x-input-error id="password-error" :messages="$errors->get('password')" />
@@ -20,20 +20,20 @@
 
         <div class="flex items-center gap-2">
             <april:checkbox id="remember_me" name="remember" value="1" />
-            <april:label for="remember_me" class="font-normal text-muted-foreground">Remember me</april:label>
+            <april:label for="remember_me" class="font-normal text-muted-foreground">{{ __('Remember me') }}</april:label>
         </div>
 
         <div class="flex items-center justify-between gap-3 pt-1">
             @if (Route::has('password.request'))
-                <april:button-link href="{{ route('password.request') }}" variant="link" size="sm">Forgot your password?</april:button-link>
+                <april:button-link href="{{ route('password.request') }}" variant="link" size="sm">{{ __('Forgot your password?') }}</april:button-link>
             @endif
 
-            <april:button type="submit" class="ms-auto">Log in</april:button>
+            <april:button type="submit" class="ms-auto">{{ __('Log in') }}</april:button>
         </div>
     </form>
 
     <p class="mt-6 text-center text-sm text-muted-foreground">
-        No account yet?
-        <april:button-link href="{{ route('register') }}" variant="link" size="sm" class="px-1">Create one</april:button-link>
+        {{ __('No account yet?') }}
+        <april:button-link href="{{ route('register') }}" variant="link" size="sm" class="px-1">{{ __('Create one') }}</april:button-link>
     </p>
 </x-guest-layout>

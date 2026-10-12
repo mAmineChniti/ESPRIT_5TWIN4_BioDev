@@ -1,6 +1,6 @@
 @extends('layouts.back')
 
-@section('title', $farm->name)
+@section('title', __('Details for :name', ['name' => $farm->name]))
 
 @section('content')
     @php($isAdmin = auth()->user()->isAdmin())
@@ -9,12 +9,12 @@
         {{-- The rejection reason the admin recorded, so the producer knows
              what to fix. The back layout already renders session('success'). --}}
         @if($farm->isRejected())
-            <april:alert title="Request rejected">
+            <april:alert title="{{ __('Request rejected') }}">
                 <x-slot:description>
                     @if($farm->rejection_reason)
-        Reason provided by the administrator: “{{ $farm->rejection_reason }}”
+                        {{ __('Reason provided by the administrator: “:reason”', ['reason' => $farm->rejection_reason]) }}
                     @else
-        No reason was provided. Contact an administrator for more information.
+                        {{ __('No reason was provided. Contact an administrator for more information.') }}
                     @endif
                 </x-slot:description>
             </april:alert>
@@ -25,7 +25,7 @@
                 <div class="flex flex-wrap items-center gap-2">
                     <h1 class="text-2xl font-bold tracking-tight">{{ $farm->name }}</h1>
 
-                    <april:badge variant="secondary">{{ $farm->farming_type }}</april:badge>
+                    <april:badge variant="secondary">{{ \App\Models\Farm::farmingTypeLabel($farm->farming_type) }}</april:badge>
 
                     <x-farm-status :status="$farm->status" />
                 </div>
@@ -41,7 +41,7 @@
                         @method('PATCH')
                         <april:button type="submit" size="sm">
                             <x-lucide-check class="mr-1 size-4" />
-                            Approve
+                            {{ __('Approve') }}
                         </april:button>
                     </form>
 
@@ -55,7 +55,7 @@
                 @if($farm->canBeEdited())
                     <april:button-link href="{{ route('farms.edit', $farm) }}" variant="outline">
                         <x-lucide-pencil class="mr-2 size-4" />
-                        Edit
+                        {{ __('Edit') }}
                     </april:button-link>
                 @else
                     {{-- State why the action is unavailable instead of hiding it. --}}
@@ -64,16 +64,16 @@
                         variant="outline"
                         disabled
                         aria-disabled="true"
-                        title="This request was rejected and cannot be edited."
+                        :title="__('This request was rejected and cannot be edited.')"
                     >
                         <x-lucide-pencil class="mr-2 size-4" />
-                        Edit
-                        <span class="sr-only">: this request was rejected and cannot be edited.</span>
+                        {{ __('Edit') }}
+                        <span class="sr-only">{{ __(': this request was rejected and cannot be edited.') }}</span>
                     </april:button>
                 @endif
 
                 <april:button-link href="{{ route('farms.index') }}" variant="ghost">
-                    Back
+                    {{ __('Back') }}
                 </april:button-link>
             </div>
         </div>
@@ -81,7 +81,7 @@
         <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
             <april:card>
                 <x-slot:content>
-                    <span class="text-xs font-semibold uppercase text-muted-foreground">Agricultural region</span>
+                    <span class="text-xs font-semibold uppercase text-muted-foreground">{{ __('Agricultural region') }}</span>
                     @if($farm->region)
                         <p class="mt-1 text-lg font-bold text-primary">
                             <a href="{{ route('regions.show', $farm->region) }}" class="hover:underline">
@@ -90,47 +90,47 @@
                         </p>
                         <span class="font-mono text-xs text-muted-foreground">({{ $farm->region->code }})</span>
                     @else
-                        <p class="mt-1 text-lg font-medium text-muted-foreground">Not assigned</p>
+                        <p class="mt-1 text-lg font-medium text-muted-foreground">{{ __('Not assigned') }}</p>
                     @endif
                 </x-slot:content>
             </april:card>
 
             <april:card>
                 <x-slot:content>
-                    <span class="text-xs font-semibold uppercase text-muted-foreground">Producer</span>
-                    <p class="mt-1 text-lg font-medium text-foreground">{{ $farm->producer_name ?? ($farm->user?->name ?? 'Not provided') }}</p>
+                    <span class="text-xs font-semibold uppercase text-muted-foreground">{{ __('Producer') }}</span>
+                    <p class="mt-1 text-lg font-medium text-foreground">{{ $farm->producer_name ?? ($farm->user?->name ?? __('Not provided')) }}</p>
                 </x-slot:content>
             </april:card>
 
             <april:card>
                 <x-slot:content>
-                    <span class="text-xs font-semibold uppercase text-muted-foreground">Soil type</span>
-                    <p class="mt-1 text-lg font-medium text-foreground">{{ $farm->soil_type ?? ($farm->region?->soil_type ?? 'Not provided') }}</p>
+                    <span class="text-xs font-semibold uppercase text-muted-foreground">{{ __('Soil type') }}</span>
+                    <p class="mt-1 text-lg font-medium text-foreground">{{ $farm->soil_type ?? ($farm->region?->soil_type ?? __('Not provided')) }}</p>
                 </x-slot:content>
             </april:card>
 
             <april:card>
                 <x-slot:content>
-                    <span class="text-xs font-semibold uppercase text-muted-foreground">Surface</span>
-                    <p class="mt-1 font-mono text-lg font-bold text-foreground">{{ number_format((float) $farm->surface_hectares, 2) }} ha</p>
+                    <span class="text-xs font-semibold uppercase text-muted-foreground">{{ __('Surface') }}</span>
+                    <p class="mt-1 font-mono text-lg font-bold text-foreground">{{ \App\LocalizedNumber::format($farm->surface_hectares, 2) }} ha</p>
                 </x-slot:content>
             </april:card>
         </div>
 
         <april:card>
-            <x-slot:title>Contact and creation information</x-slot:title>
+            <x-slot:title>{{ __('Contact and creation information') }}</x-slot:title>
             <x-slot:content>
                 <div class="grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
                     <div>
-                        <span class="block text-xs text-muted-foreground">Phone:</span>
-                        <span class="font-medium">{{ $farm->phone ?? 'Not provided' }}</span>
+                        <span class="block text-xs text-muted-foreground">{{ __('Phone:') }}</span>
+                        <span class="font-medium">{{ $farm->phone ?? __('Not provided') }}</span>
                     </div>
                     <div>
-                        <span class="block text-xs text-muted-foreground">Full address:</span>
+                        <span class="block text-xs text-muted-foreground">{{ __('Full address:') }}</span>
                         <span class="font-medium">{{ $farm->address }}</span>
                     </div>
                     <div>
-                        <span class="block text-xs text-muted-foreground">Created:</span>
+                        <span class="block text-xs text-muted-foreground">{{ __('Created:') }}</span>
                         <span class="font-mono text-xs font-medium">{{ $farm->created_at?->format('d/m/Y H:i') ?? '-' }}</span>
                     </div>
                 </div>
@@ -139,7 +139,7 @@
 
         @if($farm->description)
             <april:card>
-                <x-slot:title>Description and features</x-slot:title>
+                <x-slot:title>{{ __('Description and features') }}</x-slot:title>
                 <x-slot:content>
                     <p class="text-sm leading-relaxed text-foreground">{{ $farm->description }}</p>
                 </x-slot:content>

@@ -14,6 +14,7 @@ class JourneyStepController extends Controller
 {
     public function index(Journey $journey): View
     {
+        $this->ensureProcessor();
         $journey->load(['product', 'steps']);
 
         return view('back.processor.journeys.steps.index', compact('journey'));
@@ -21,6 +22,7 @@ class JourneyStepController extends Controller
 
     public function create(Request $request, Journey $journey): View
     {
+        $this->ensureProcessor();
         $journey->load(['product', 'steps']);
 
         // The form opens on the next free position with the next unrecorded
@@ -51,11 +53,12 @@ class JourneyStepController extends Controller
 
         return redirect()
             ->route('processor.journeys.steps.index', $journey)
-            ->with('success', 'Step added successfully.');
+            ->with('success', __('Step added successfully.'));
     }
 
     public function show(Journey $journey, JourneyStep $step): View
     {
+        $this->ensureProcessor();
         $this->ensureBelongsToJourney($journey, $step);
 
         return view('back.processor.journeys.steps.show', compact('journey', 'step'));
@@ -63,6 +66,7 @@ class JourneyStepController extends Controller
 
     public function edit(Journey $journey, JourneyStep $step): View
     {
+        $this->ensureProcessor();
         $this->ensureBelongsToJourney($journey, $step);
 
         return view('back.processor.journeys.steps.edit', compact('journey', 'step'));
@@ -78,21 +82,32 @@ class JourneyStepController extends Controller
 
         return redirect()
             ->route('processor.journeys.steps.show', [$journey, $step])
-            ->with('success', 'Step updated successfully.');
+            ->with('success', __('Step updated successfully.'));
     }
 
     public function destroy(Journey $journey, JourneyStep $step): RedirectResponse
     {
+        $this->ensureProcessor();
         $this->ensureBelongsToJourney($journey, $step);
         $step->delete();
 
         return redirect()
             ->route('processor.journeys.steps.index', $journey)
-            ->with('success', 'Step deleted successfully.');
+            ->with('success', __('Step deleted successfully.'));
     }
 
     private function ensureBelongsToJourney(Journey $journey, JourneyStep $step): void
     {
         abort_unless($step->journey_id === $journey->id, 404);
+    }
+
+    /**
+     * Second layer over the route's processor gate (store/update repeat it
+     * in their FormRequests), so an action moved out of the group still
+     * fails closed.
+     */
+    private function ensureProcessor(): void
+    {
+        abort_unless(auth()->user()?->role === 'processor', 403, __('Only processor accounts can manage journey steps.'));
     }
 }

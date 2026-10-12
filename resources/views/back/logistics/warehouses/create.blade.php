@@ -1,11 +1,11 @@
 @extends('layouts.back')
 
-@section('title', 'Add Warehouse')
+@section('title', __('Add Warehouse'))
 
 @section('content')
 <div class="mb-6 flex items-center gap-4">
-    <a href="{{ route('logistics.warehouses.index') }}" class="text-muted-foreground hover:text-foreground">← Back</a>
-    <h1 class="text-2xl font-bold">Add a warehouse</h1>
+    <a href="{{ route('logistics.warehouses.index') }}" class="text-muted-foreground hover:text-foreground">← {{ __('Back') }}</a>
+    <h1 class="text-2xl font-bold">{{ __('Add a warehouse') }}</h1>
 </div>
 
 <april:card class="max-w-2xl">
@@ -15,7 +15,7 @@
             @include('back.logistics.warehouses.form')
 
             <div class="pt-4 flex justify-end">
-                <april:button type="submit">Save</april:button>
+                <april:button type="submit">{{ __('Save') }}</april:button>
             </div>
         </form>
     </x-slot:content>

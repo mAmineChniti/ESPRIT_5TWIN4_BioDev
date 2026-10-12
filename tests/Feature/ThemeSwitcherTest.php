@@ -17,11 +17,11 @@ class ThemeSwitcherTest extends TestCase
     public static function publicPageProvider(): array
     {
         return [
-            'home' => ['/'],
-            'login' => ['/login'],
-            'register' => ['/register'],
-            'catalog' => ['/products'],
-            'greenwashing guide' => ['/greenwashing'],
+            'home' => ['/en'],
+            'login' => ['/en/login'],
+            'register' => ['/en/register'],
+            'catalog' => ['/en/products'],
+            'greenwashing guide' => ['/en/greenwashing'],
         ];
     }
 
@@ -69,7 +69,7 @@ class ThemeSwitcherTest extends TestCase
 
     public function test_the_dropdown_is_anchored_in_the_header_not_teleported_to_the_footer(): void
     {
-        $html = $this->get('/')->assertOk()->getContent();
+        $html = $this->get(route('home'))->assertOk()->getContent();
 
         // April positions its panel with x-anchor, which needs the Alpine
         // Floating UI plugin. That plugin is not bundled, so teleporting the
@@ -87,7 +87,7 @@ class ThemeSwitcherTest extends TestCase
 
     public function test_the_dropdown_panel_is_positioned_by_css(): void
     {
-        $html = $this->get('/')->assertOk()->getContent();
+        $html = $this->get(route('home'))->assertOk()->getContent();
 
         preg_match('/<div[^>]*data-slot="dropdown-menu-content"[^>]*>/', $html, $match);
 
@@ -103,7 +103,7 @@ class ThemeSwitcherTest extends TestCase
 
     public function test_the_dropdown_root_never_declares_two_x_data_attributes(): void
     {
-        $html = $this->get('/')->assertOk()->getContent();
+        $html = $this->get(route('home'))->assertOk()->getContent();
 
         preg_match('/<div[^>]*data-slot="dropdown-menu"[^>]*>/', $html, $match);
 
@@ -120,7 +120,7 @@ class ThemeSwitcherTest extends TestCase
 
     public function test_the_toggle_offers_light_dark_and_system(): void
     {
-        $html = $this->get('/')->assertOk()->getContent();
+        $html = $this->get(route('home'))->assertOk()->getContent();
 
         foreach (['light', 'dark', 'system'] as $mode) {
             $this->assertStringContainsString("NutriTraceTheme.set('{$mode}')", $html);

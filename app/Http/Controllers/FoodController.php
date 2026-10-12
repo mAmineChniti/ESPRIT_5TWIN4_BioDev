@@ -76,7 +76,7 @@ class FoodController extends Controller
         });
 
         return redirect()->route('foods.index')
-            ->with('success', 'Product added successfully.');
+            ->with('success', __('Product added successfully.'));
     }
 
     public function show(Food $food): View
@@ -114,7 +114,7 @@ class FoodController extends Controller
         });
 
         return redirect()->route('foods.index')
-            ->with('success', 'Product updated successfully.');
+            ->with('success', __('Product updated successfully.'));
     }
 
     public function destroy(Food $food): RedirectResponse
@@ -124,7 +124,7 @@ class FoodController extends Controller
         $food->delete();
 
         return redirect()->route('foods.index')
-            ->with('success', 'Product deleted.');
+            ->with('success', __('Product deleted.'));
     }
 
     /**
