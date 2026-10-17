@@ -19,6 +19,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicJourneyController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\StageTransitionController;
+use App\Http\Controllers\VisitorLocationController;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\ProAccess;
 use Illuminate\Support\Facades\Auth;
@@ -79,6 +80,16 @@ Route::prefix('{locale}')->whereIn('locale', Locale::values())->group(function (
     })->name('greenwashing');
     Route::get('/agricultural-regions', [FrontRegionController::class, 'index'])->name('agricultural-regions.index');
     Route::get('/agricultural-regions/{agriculturalRegion}', [FrontRegionController::class, 'show'])->name('agricultural-regions.show');
+
+    // ---------- Locating the visitor ----------
+    // The origin map already drew itself from the request address. This is the
+    // last resort for the origin map's "where are you" end: the browser's own
+    // timezone, when there is no usable address and the visitor declined the
+    // location prompt. Open to guests because the product page asks before
+    // sign-in, and throttled because it is on a public page.
+    Route::post('/location', [VisitorLocationController::class, 'store'])
+        ->middleware('throttle:60,1')
+        ->name('location.store');
 
     // ---------- AI greenwashing detection & product assistant (public reads) ----------
     // These are the JSON endpoints behind the product page, so they stay open.
