@@ -7,6 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "alamellama/geographer": "^1.2",
         "laravel/framework": "^12.56",
         "laravel/tinker": "^3.0",
         "mallardduck/blade-lucide-icons": "^2.0",

@@ -4,8 +4,105 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5378db9538f58d8898c62d096db8cea3",
+    "content-hash": "cd360e42aea2c245da9bd1cca1d11f51",
     "packages": [
+        {
+            "name": "alamellama/geographer",
+            "version": "v1.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ALameLlama/geographer.git",
+                "reference": "81abb7e53095e4b649088b47f381f1cf515efba1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ALameLlama/geographer/zipball/81abb7e53095e4b649088b47f381f1cf515efba1",
+                "reference": "81abb7e53095e4b649088b47f381f1cf515efba1",
+                "shasum": ""
+            },
+            "require": {
+                "alamellama/geographer-data": "^0.1.0",
+                "php": ">=8.0"
+            },
+            "require-dev": {
+                "illuminate/support": "5.*|6.*|7.*|8.*|9.*|10.*|11.*|12.*",
+                "menarasolutions/geographer-da": "0.*",
+                "menarasolutions/geographer-de": "0.*",
+                "menarasolutions/geographer-nl": "0.*",
+                "menarasolutions/geographer-ru": "0.*",
+                "phpunit/phpunit": "^9.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "ALameLlama\\Geographer\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nicholas Ciechanowski",
+                    "email": "nicholas@ciech.anow.ski"
+                }
+            ],
+            "description": "A PHP library that knows how any country, state or city is called in any language",
+            "homepage": "https://github.com/ALameLlama/geographer",
+            "keywords": [
+                "geo",
+                "geolocation",
+                "geonames",
+                "localization"
+            ],
+            "support": {
+                "source": "https://github.com/ALameLlama/geographer/tree/v1.2.0"
+            },
+            "time": "2025-09-29T23:44:33+00:00"
+        },
+        {
+            "name": "alamellama/geographer-data",
+            "version": "v0.1.20",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ALameLlama/geographer-data.git",
+                "reference": "15ead899b055ff094d9c34c11c4ceaf75f724ac0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ALameLlama/geographer-data/zipball/15ead899b055ff094d9c34c11c4ceaf75f724ac0",
+                "reference": "15ead899b055ff094d9c34c11c4ceaf75f724ac0",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "ALameLlama\\Geographer\\Helpers\\": "helpers/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nicholas Ciechanowski",
+                    "email": "nicholas@ciech.anow.ski"
+                }
+            ],
+            "description": "Basic data package for Geographer - countries and their subdivisions",
+            "homepage": "https://github.com/ALameLlama/geographer",
+            "keywords": [
+                "geographer",
+                "geolocation",
+                "localization"
+            ],
+            "support": {
+                "source": "https://github.com/ALameLlama/geographer-data/tree/v0.1.20"
+            },
+            "time": "2025-07-14T00:33:09+00:00"
+        },
         {
             "name": "bacon/bacon-qr-code",
             "version": "2.0.8",
