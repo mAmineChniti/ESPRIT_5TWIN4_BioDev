@@ -223,7 +223,7 @@ class FarmApprovalTest extends TestCase
         $this->assertDatabaseHas('farms', ['id' => $theirs->id]);
     }
 
-    public function test_a_rejected_farm_can_no_longer_be_edited_or_deleted(): void
+    public function test_a_rejected_farm_can_no_longer_be_edited_but_can_be_deleted(): void
     {
         $owner = $this->user('producer');
         $region = AgriculturalRegion::factory()->create();
@@ -239,9 +239,9 @@ class FarmApprovalTest extends TestCase
             'farming_type' => 'Organic',
         ])->assertStatus(422);
 
-        $this->actingAs($owner)->delete(route('farms.destroy', $farm))->assertStatus(422);
+        $this->actingAs($owner)->delete(route('farms.destroy', $farm))->assertRedirect(route('farms.index'));
 
-        $this->assertDatabaseHas('farms', ['id' => $farm->id, 'name' => $farm->name]);
+        $this->assertDatabaseMissing('farms', ['id' => $farm->id]);
     }
 
     public function test_farming_type_rejects_unknown_values(): void
@@ -466,5 +466,80 @@ class FarmApprovalTest extends TestCase
 
         $this->assertFalse($farm->canBeEdited());
         $this->assertTrue($this->farm(FarmStatus::Pending, $this->user('producer'))->canBeEdited());
+    }
+
+    public function test_admin_receives_notification_when_producer_creates_farm(): void
+    {
+        $admin = $this->user('admin');
+        $producer = $this->user('producer');
+        $region = AgriculturalRegion::factory()->create();
+
+        $this->actingAs($producer)->post(route('farms.store'), [
+            'agricultural_region_id' => $region->id,
+            'name' => 'Notify Farm',
+            'address' => '1 Green Lane',
+            'surface_hectares' => 5,
+            'farming_type' => 'Organic',
+        ])->assertRedirect(route('farms.index'));
+
+        $this->assertCount(1, $admin->notifications);
+        $this->assertSame('farm_pending', $admin->notifications->first()->data['type']);
+    }
+
+    public function test_producer_receives_notification_when_farm_is_approved(): void
+    {
+        $admin = $this->user('admin');
+        $producer = $this->user('producer');
+        $farm = $this->farm(FarmStatus::Pending, $producer);
+
+        $this->actingAs($admin)->patch(route('farms.approve', $farm))->assertSessionHasNoErrors();
+
+        $this->assertCount(1, $producer->notifications);
+        $notif = $producer->notifications->first();
+        $this->assertSame('farm_approved', $notif->data['type']);
+    }
+
+    public function test_producer_receives_notification_when_farm_is_rejected_with_reason(): void
+    {
+        $admin = $this->user('admin');
+        $producer = $this->user('producer');
+        $farm = $this->farm(FarmStatus::Pending, $producer);
+
+        $this->actingAs($admin)->patch(route('farms.reject', $farm), [
+            'rejection_reason' => 'Parcelle non localisée',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertCount(1, $producer->notifications);
+        $notif = $producer->notifications->first();
+        $this->assertSame('farm_rejected', $notif->data['type']);
+        $this->assertSame('Parcelle non localisée', $notif->data['rejection_reason']);
+    }
+
+    public function test_user_can_mark_notification_as_read(): void
+    {
+        $admin = $this->user('admin');
+        $producer = $this->user('producer');
+        $farm = $this->farm(FarmStatus::Pending, $producer);
+
+        $this->actingAs($admin)->patch(route('farms.approve', $farm));
+
+        $notif = $producer->unreadNotifications->first();
+        $this->assertNotNull($notif);
+
+        $this->actingAs($producer)->patch(route('notifications.read', $notif->id))
+            ->assertRedirect(route('farms.certificate', $farm));
+
+        $this->assertSame(0, $producer->fresh()->unreadNotifications->count());
+    }
+
+    public function test_admin_and_producer_can_export_farms_report_pdf(): void
+    {
+        $admin = $this->user('admin');
+        $farm = $this->farm(FarmStatus::Approved, $admin);
+
+        $response = $this->actingAs($admin)->get(route('farms.export.pdf'));
+        $response->assertOk();
+        $response->assertSeeText($farm->name);
+        $response->assertSeeText('National Agricultural Farms Inventory');
     }
 }

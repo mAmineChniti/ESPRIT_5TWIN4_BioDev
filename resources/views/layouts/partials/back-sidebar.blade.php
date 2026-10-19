@@ -188,6 +188,7 @@
                 <p class="truncate text-xs text-muted-foreground">{{ $user->email }}</p>
                 <p class="mt-1 truncate text-xs font-bold uppercase text-primary">{{ \App\Models\User::roleLabel($role) }}</p>
             </div>
+            <x-notification-dropdown drop="up" />
             <form method="POST" action="{{ route('logout') }}" novalidate>
                 @csrf
                 <april:button type="submit" variant="ghost" size="icon" title="{{ __('Log out') }}" aria-label="{{ __('Log out') }}">

@@ -26,7 +26,17 @@
             </p>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-3">
+            <april:button-link href="{{ route('farms.export.csv', request()->query()) }}" variant="outline">
+                <x-lucide-file-spreadsheet class="mr-2 size-4" />
+                {{ __('Export Excel') }}
+            </april:button-link>
+
+            <april:button-link href="{{ route('farms.export.pdf', request()->query()) }}" variant="outline">
+                <x-lucide-file-text class="mr-2 size-4" />
+                {{ __('Export PDF') }}
+            </april:button-link>
+
             @if($isAdmin && $pendingCount > 0)
                 <april:button-link href="{{ route('farms.requests') }}">
                     <x-lucide-clipboard-check class="mr-2 size-4" />
@@ -182,6 +192,18 @@
                                             <x-lucide-eye class="size-4" />
                                         </april:button-link>
 
+                                        @if($farm->isApproved())
+                                            <april:button-link
+                                                href="{{ route('farms.certificate', $farm) }}"
+                                                variant="ghost"
+                                                size="sm"
+                                                aria-label="{{ __('Certificate for :name', ['name' => $farm->name]) }}"
+                                                title="{{ __('Official Certificate (PDF)') }}"
+                                            >
+                                                <x-lucide-file-text class="size-4" />
+                                            </april:button-link>
+                                        @endif
+
                                         @if($farm->canBeEdited())
                                             <april:button-link
                                                 href="{{ route('farms.edit', $farm) }}"
@@ -193,31 +215,15 @@
                                             </april:button-link>
                                         @endif
 
-                                        @if($farm->canBeEdited())
-                                            <x-confirm-action
-                                                :action="route('farms.destroy', $farm)"
-                                                :label="__('Delete farm')"
-                                                :title="__('Delete this farm?')"
-                                                :description="__(':name will be permanently deleted. This action cannot be undone.', ['name' => $farm->name])"
-                                            >
-                                                <x-lucide-trash-2 class="size-4" />
-                                                <span class="sr-only">{{ __('Delete :name', ['name' => $farm->name]) }}</span>
-                                            </x-confirm-action>
-                                        @else
-                                            {{-- A rejected request is closed; say why
-                                                 instead of offering a dead control. --}}
-                                            <april:tooltip>
-                                                <x-slot:trigger>
-                                                    <span class="cursor-not-allowed opacity-50"
-                                                          aria-disabled="true"
-                                                          title="{{ __('This request was rejected and cannot be deleted.') }}">
-                                                        <x-lucide-trash-2 class="size-4" />
-                                                        <span class="sr-only">{{ __('Delete :name: this request was rejected and cannot be deleted.', ['name' => $farm->name]) }}</span>
-                                                    </span>
-                                                </x-slot:trigger>
-                                                <x-slot:content>{{ __('This request was rejected and cannot be deleted.') }}</x-slot:content>
-                                            </april:tooltip>
-                                        @endif
+                                        <x-confirm-action
+                                            :action="route('farms.destroy', $farm)"
+                                            :label="__('Delete farm')"
+                                            :title="__('Delete this farm?')"
+                                            :description="__(':name will be permanently deleted. This action cannot be undone.', ['name' => $farm->name])"
+                                        >
+                                            <x-lucide-trash-2 class="size-4" />
+                                            <span class="sr-only">{{ __('Delete :name', ['name' => $farm->name]) }}</span>
+                                        </x-confirm-action>
                                     </div>
                                 </td>
                             </tr>

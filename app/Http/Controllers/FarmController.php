@@ -6,11 +6,18 @@ use App\Enums\FarmStatus;
 use App\Models\AgriculturalRegion;
 use App\Models\Farm;
 use App\Models\User;
+use App\Notifications\FarmApprovedNotification;
+use App\Notifications\FarmPendingValidationNotification;
+use App\Notifications\FarmRejectedNotification;
+use App\Services\Agriculture\FarmAiDiagnosticService;
+use App\Services\Agriculture\FarmStoryService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FarmController extends Controller
 {
@@ -66,10 +73,18 @@ class FarmController extends Controller
             ->paginate(self::PER_PAGE)
             ->withQueryString();
 
+        $notifications = Farm::query()
+            ->when(! $user->isAdmin(), fn ($query) => $query->where('user_id', $user->id))
+            ->whereIn('status', [FarmStatus::Approved, FarmStatus::Rejected])
+            ->latest('updated_at')
+            ->limit(10)
+            ->get();
+
         return view('back.farms.index', [
             'farms' => $farms,
             'statusFilter' => $statusFilter,
             'pendingCount' => $user->isAdmin() ? Farm::query()->pending()->count() : 0,
+            'notifications' => $notifications,
             'stats' => $this->statisticsFor($user),
         ]);
     }
@@ -130,6 +145,10 @@ class FarmController extends Controller
         // test_approving_clears_a_previous_rejection_reason).
         $farm->update(['status' => FarmStatus::Approved, 'rejection_reason' => null]);
 
+        if ($farm->user) {
+            $farm->user->notify(new FarmApprovedNotification($farm));
+        }
+
         return back()->with('success', __('Farm ":name" was approved.', ['name' => $farm->name]));
     }
 
@@ -149,6 +168,10 @@ class FarmController extends Controller
             'status' => FarmStatus::Rejected,
             'rejection_reason' => $validated['rejection_reason'],
         ]);
+
+        if ($farm->user) {
+            $farm->user->notify(new FarmRejectedNotification($farm));
+        }
 
         return back()->with('success', __('Farm ":name" was rejected.', ['name' => $farm->name]));
     }
@@ -182,11 +205,17 @@ class FarmController extends Controller
         // immediately in force.
         $validated['status'] = $user->isAdmin() ? FarmStatus::Approved : FarmStatus::Pending;
 
-        Farm::create($validated);
+        $farm = Farm::create($validated);
 
         if ($user->isAdmin()) {
             return redirect()->route('farms.index')
                 ->with('success', __('Farm created and approved successfully.'));
+        }
+
+        // Notify admins of new pending farm validation request
+        $admins = User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new FarmPendingValidationNotification($farm));
         }
 
         return redirect()->route('farms.index')
@@ -196,12 +225,205 @@ class FarmController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, Farm $farm): View
+    public function show(Request $request, Farm $farm, FarmAiDiagnosticService $diagnosticService, FarmStoryService $storyService): View
     {
         $this->ensureOwnership($request, $farm);
+        $farm->load(['region', 'user']);
+        $diagnostic = $diagnosticService->analyze($farm);
+        $story = $storyService->generate($farm);
 
         return view('back.farms.show', [
-            'farm' => $farm->load(['region', 'user']),
+            'farm' => $farm,
+            'diagnostic' => $diagnostic,
+            'story' => $story,
+        ]);
+    }
+
+    /**
+     * Regenerate the AI agro-ecological diagnostic for a farm.
+     */
+    public function diagnostic(Request $request, Farm $farm, FarmAiDiagnosticService $diagnosticService): RedirectResponse
+    {
+        $this->ensureOwnership($request, $farm);
+        $farm->load(['region', 'user']);
+        $diagnosticService->analyze($farm, fresh: true);
+
+        return back()->with('success', __('AI agro-ecological diagnostic regenerated successfully.'));
+    }
+
+    /**
+     * Regenerate the AI consumer storytelling narrative for a farm.
+     */
+    public function story(Request $request, Farm $farm, FarmStoryService $storyService): RedirectResponse
+    {
+        $this->ensureOwnership($request, $farm);
+        $farm->load(['region', 'user']);
+        $storyService->generate($farm, fresh: true);
+
+        return back()->with('success', __('Farm consumer storytelling regenerated successfully.'));
+    }
+
+    /**
+     * Display the official certified registration certificate with QR code for PDF printing.
+     *
+     * A certificate is an accreditation document; it is only meaningful when the
+     * farm has cleared administrative review. Pending and rejected farms are
+     * blocked here so the document cannot be generated for a non-approved farm.
+     */
+    public function certificate(Request $request, Farm $farm): View
+    {
+        $this->ensureOwnership($request, $farm);
+        $this->ensureCertificatable($farm);
+
+        $farm->load(['region', 'user']);
+        $verificationUrl = route('farms.verify', $farm);
+
+        // When testing locally (localhost/127.0.0.1), use the LAN IP in the QR code
+        // so real mobile devices on the same Wi-Fi can scan and open it directly.
+        $host = $request->getHost();
+        if (in_array($host, ['localhost', '127.0.0.1'], true)) {
+            $lanIp = $this->resolveLanIp();
+            if ($lanIp) {
+                $port = $request->getPort() ? ':'.$request->getPort() : ':8000';
+                $scheme = $request->getScheme();
+                $verificationUrl = preg_replace('#^https?://[^/]+#', $scheme.'://'.$lanIp.$port, $verificationUrl);
+            }
+        }
+
+        $qrSvg = QrCode::format('svg')
+            ->size(170)
+            ->margin(2)
+            ->generate($verificationUrl);
+
+        return view('back.farms.certificate', [
+            'farm' => $farm,
+            'qrSvg' => $qrSvg,
+            'verificationUrl' => $verificationUrl,
+            'certificateRef' => $farm->certificateRef(),
+        ]);
+    }
+
+    /**
+     * Public verification page for checking a farm's certificate authenticity via QR code.
+     */
+    public function verify(Farm $farm, FarmStoryService $storyService): View
+    {
+        $farm->load(['region', 'user']);
+        $story = $storyService->generate($farm);
+
+        return view('front.farms.verify', [
+            'farm' => $farm,
+            'certificateRef' => $farm->certificateRef(),
+            'story' => $story,
+        ]);
+    }
+
+    /**
+     * Export farms list to CSV (Excel compatible with UTF-8 BOM).
+     */
+    public function exportCsv(Request $request): StreamedResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'status' => ['nullable', Rule::enum(FarmStatus::class)],
+            'region_id' => ['nullable', 'exists:agricultural_regions,id'],
+        ]);
+
+        $statusFilter = isset($validated['status'])
+            ? FarmStatus::from($validated['status'])
+            : null;
+
+        $farms = Farm::query()
+            ->when(! $user->isAdmin(), fn ($query) => $query->where('user_id', $user->id))
+            ->when($statusFilter, fn ($query, FarmStatus $status) => $query->where('status', $status))
+            ->when(! empty($validated['region_id']), fn ($query) => $query->where('agricultural_region_id', $validated['region_id']))
+            ->with(['region', 'user'])
+            ->latest()
+            ->get();
+
+        $filename = 'nutritrace-farms-'.now()->format('Y-m-d').'.csv';
+
+        return new StreamedResponse(function () use ($farms): void {
+            $handle = fopen('php://output', 'w');
+
+            // UTF-8 BOM so Excel opens accents properly without encoding issues
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            fputcsv($handle, [
+                'ID',
+                'Certificate Ref',
+                'Farm Name',
+                'Producer Name',
+                'Agricultural Region',
+                'Region Code',
+                'Farming Type',
+                'Soil Type',
+                'Surface (ha)',
+                'Status',
+                'Phone',
+                'Address',
+                'Created Date',
+            ]);
+
+            foreach ($farms as $farm) {
+                fputcsv($handle, [
+                    $farm->id,
+                    $farm->certificateRef(),
+                    $farm->name,
+                    $farm->producer_name ?? ($farm->user?->name ?? ''),
+                    $farm->region?->name ?? '',
+                    $farm->region?->code ?? '',
+                    $farm->farming_type,
+                    $farm->soil_type ?? ($farm->region?->soil_type ?? ''),
+                    $farm->surface_hectares,
+                    $farm->status->value,
+                    $farm->phone ?? '',
+                    $farm->address,
+                    $farm->created_at?->format('Y-m-d H:i:s') ?? '',
+                ]);
+            }
+
+            fclose($handle);
+        }, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ]);
+    }
+
+    /**
+     * Export farms list to official printable PDF report.
+     */
+    public function exportPdf(Request $request): View
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'status' => ['nullable', Rule::enum(FarmStatus::class)],
+            'region_id' => ['nullable', 'exists:agricultural_regions,id'],
+        ]);
+
+        $statusFilter = isset($validated['status'])
+            ? FarmStatus::from($validated['status'])
+            : null;
+
+        $farms = Farm::query()
+            ->when(! $user->isAdmin(), fn ($query) => $query->where('user_id', $user->id))
+            ->when($statusFilter, fn ($query, FarmStatus $status) => $query->where('status', $status))
+            ->when(! empty($validated['region_id']), fn ($query) => $query->where('agricultural_region_id', $validated['region_id']))
+            ->with(['region', 'user'])
+            ->latest()
+            ->get();
+
+        return view('back.farms.report-pdf', [
+            'farms' => $farms,
+            'statusFilter' => $statusFilter,
+            'stats' => $this->statisticsFor($user),
+            'generatedAt' => now(),
+            'user' => $user,
         ]);
     }
 
@@ -239,7 +461,6 @@ class FarmController extends Controller
     public function destroy(Request $request, Farm $farm): RedirectResponse
     {
         $this->ensureOwnership($request, $farm);
-        $this->ensureEditable($farm);
 
         $farm->delete();
 
@@ -288,7 +509,7 @@ class FarmController extends Controller
         abort_if(
             ! $farm->canBeEdited(),
             422,
-            __('This farm request was rejected and can no longer be edited or deleted.')
+            __('This farm request was rejected and can no longer be edited.')
         );
     }
 
@@ -308,6 +529,22 @@ class FarmController extends Controller
     }
 
     /**
+     * A certificate is an accreditation document and must only be issued for a
+     * farm that has cleared administrative review.
+     *
+     * Pending farms are still awaiting a decision; rejected farms have been
+     * refused — neither may produce an official certificate.
+     */
+    private function ensureCertificatable(Farm $farm): void
+    {
+        abort_unless(
+            $farm->isApproved(),
+            422,
+            __('A certificate can only be generated for an approved farm.')
+        );
+    }
+
+    /**
      * Approving an approved farm would silently re-decide a verdict the
      * producer has already been shown. A rejected farm stays approvable:
      * that is reconsideration, pinned by
@@ -320,5 +557,32 @@ class FarmController extends Controller
             422,
             __('This farm is already approved.')
         );
+    }
+
+    /**
+     * Resolves the primary local network IPv4 address for real mobile device testing over Wi-Fi.
+     */
+    private function resolveLanIp(): string
+    {
+        if (config('app.lan_ip')) {
+            return (string) config('app.lan_ip');
+        }
+
+        try {
+            if (PHP_OS_FAMILY === 'Windows') {
+                $output = shell_exec('ipconfig');
+                if ($output && preg_match_all('/Carte[^\n]+:(?:(?!Carte).)*?Adresse IPv4[.\s]*:\s*([0-9.]+)/s', $output, $blocks)) {
+                    foreach ($blocks[0] as $block) {
+                        if (! preg_match('/VMware|Virtual|Loopback/i', $block) && preg_match('/Adresse IPv4[.\s]*:\s*([0-9.]+)/', $block, $match)) {
+                            return $match[1];
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable) {
+            // fallback below
+        }
+
+        return '192.168.1.179';
     }
 }

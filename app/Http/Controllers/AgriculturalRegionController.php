@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AgriculturalRegionController extends Controller
 {
@@ -92,6 +93,73 @@ class AgriculturalRegionController extends Controller
         ]);
 
         return view('back.regions.show', compact('region'));
+    }
+
+    /**
+     * Export farms in a specific agricultural region to CSV (Excel compatible).
+     */
+    public function exportFarmsCsv(Request $request, AgriculturalRegion $region): StreamedResponse
+    {
+        $user = $request->user();
+
+        $farms = $region->farms()
+            ->when(! $user->isAdmin(), fn ($query) => $query->where('user_id', $user->id))
+            ->with('user')
+            ->latest()
+            ->get();
+
+        $filename = 'nutritrace-region-'.$region->code.'-farms-'.now()->format('Y-m-d').'.csv';
+
+        return new StreamedResponse(function () use ($region, $farms): void {
+            $handle = fopen('php://output', 'w');
+
+            // UTF-8 BOM so Excel opens accents properly without encoding issues
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            fputcsv($handle, [
+                'ID',
+                'Certificate Ref',
+                'Farm Name',
+                'Producer Name',
+                'Region Name',
+                'Region Code',
+                'Regional Climate',
+                'Farming Type',
+                'Soil Type',
+                'Surface (ha)',
+                'Status',
+                'Phone',
+                'Address',
+                'Created Date',
+            ]);
+
+            foreach ($farms as $farm) {
+                fputcsv($handle, [
+                    $farm->id,
+                    $farm->certificateRef(),
+                    $farm->name,
+                    $farm->producer_name ?? ($farm->user?->name ?? ''),
+                    $region->name,
+                    $region->code,
+                    $region->climate ?? '',
+                    $farm->farming_type,
+                    $farm->soil_type ?? ($region->soil_type ?? ''),
+                    $farm->surface_hectares,
+                    $farm->status->value,
+                    $farm->phone ?? '',
+                    $farm->address,
+                    $farm->created_at?->format('Y-m-d H:i:s') ?? '',
+                ]);
+            }
+
+            fclose($handle);
+        }, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ]);
     }
 
     /**

@@ -3,6 +3,7 @@
     <h1 class="text-base font-semibold tracking-tight">@yield('title', __('Dashboard'))</h1>
     <div class="ms-auto flex items-center gap-3">
         <april:badge variant="secondary" class="hidden sm:inline-flex">{{ __('Back Office') }}</april:badge>
+        <x-notification-dropdown />
         <x-language-switcher />
         <x-theme-toggle />
         @auth

@@ -124,4 +124,14 @@ class Farm extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * Unique certified reference code for official registration and QR tracking.
+     */
+    public function certificateRef(): string
+    {
+        $hash = strtoupper(substr(hash('sha256', "farm-{$this->id}-{$this->created_at}"), 0, 8));
+
+        return sprintf('NT-FRM-%04d-%s', $this->id, $hash);
+    }
 }

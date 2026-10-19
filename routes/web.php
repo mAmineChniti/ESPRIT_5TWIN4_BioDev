@@ -15,6 +15,7 @@ use App\Http\Controllers\GreenwashingReportController;
 use App\Http\Controllers\JourneyController;
 use App\Http\Controllers\JourneyStepController;
 use App\Http\Controllers\MealController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicJourneyController;
 use App\Http\Controllers\ReviewController;
@@ -80,6 +81,7 @@ Route::prefix('{locale}')->whereIn('locale', Locale::values())->group(function (
     })->name('greenwashing');
     Route::get('/agricultural-regions', [FrontRegionController::class, 'index'])->name('agricultural-regions.index');
     Route::get('/agricultural-regions/{agriculturalRegion}', [FrontRegionController::class, 'show'])->name('agricultural-regions.show');
+    Route::get('/farms/{farm}/verify', [FarmController::class, 'verify'])->name('farms.verify');
 
     // ---------- Locating the visitor ----------
     // The origin map already drew itself from the request address. This is the
@@ -193,6 +195,24 @@ Route::prefix('{locale}')->whereIn('locale', Locale::values())->group(function (
                     'show' => 'regions.show',
                 ]);
 
+            Route::get('/regions/{region}/farms/export/csv', [AgriculturalRegionController::class, 'exportFarmsCsv'])
+                ->name('regions.farms.export.csv');
+
+            Route::get('/farms/export/csv', [FarmController::class, 'exportCsv'])
+                ->name('farms.export.csv');
+
+            Route::get('/farms/export/pdf', [FarmController::class, 'exportPdf'])
+                ->name('farms.export.pdf');
+
+            Route::get('/farms/{farm}/certificate', [FarmController::class, 'certificate'])
+                ->name('farms.certificate');
+
+            Route::post('/farms/{farm}/diagnostic', [FarmController::class, 'diagnostic'])
+                ->name('farms.diagnostic');
+
+            Route::post('/farms/{farm}/story', [FarmController::class, 'story'])
+                ->name('farms.story');
+
             Route::resource('farms', FarmController::class)->names([
                 'index' => 'farms.index',
                 'create' => 'farms.create',
@@ -263,6 +283,10 @@ Route::prefix('{locale}')->whereIn('locale', Locale::values())->group(function (
         Route::get('/foods', [FoodController::class, 'index'])->name('foods.index');
         Route::get('/foods/{food}', [FoodController::class, 'show'])->name('foods.show');
         Route::get('/foods/{food}/trace', [StageTransitionController::class, 'index'])->name('foods.transitions.index');
+
+        // Database notifications
+        Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
     });
 
     Route::get('/journeys/{code}', [PublicJourneyController::class, 'show'])
