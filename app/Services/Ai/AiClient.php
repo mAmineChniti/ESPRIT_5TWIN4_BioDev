@@ -98,9 +98,29 @@ class AiClient
             ? rtrim((string) config('services.ai.gemini_base_url'), '/').'/models/'.$this->model().':generateContent'
             : rtrim((string) config('services.ai.base_url'), '/').'/chat/completions';
 
+        $options = [];
+
+        if (PHP_OS_FAMILY === 'Windows') {
+            $options['verify'] = false;
+            $options['curl'] = [
+                CURLOPT_RESOLVE => [
+                    'api.groq.com:443:104.18.38.236',
+                    'api.groq.com:443:172.64.149.20',
+                    'generativelanguage.googleapis.com:443:172.217.119.4',
+                    'generativelanguage.googleapis.com:443:142.250.201.202',
+                    'openrouter.ai:443:104.18.2.161',
+                    'openrouter.ai:443:104.18.3.161',
+                ],
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+            ];
+        }
+
         // Gemini rejects an OpenAI-style "Authorization: Bearer" outright; it
         // wants the key as x-goog-api-key. Sending both fails with a 401.
-        $request = Http::acceptJson()->timeout((int) config('services.ai.timeout', 25));
+        $request = Http::acceptJson()
+            ->timeout((int) config('services.ai.timeout', 25))
+            ->withOptions($options);
 
         $request = $isGemini
             ? $request->withHeaders(['x-goog-api-key' => $this->key()])
