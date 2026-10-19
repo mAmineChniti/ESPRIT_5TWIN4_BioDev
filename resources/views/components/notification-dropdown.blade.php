@@ -79,7 +79,7 @@
                 </div>
 
                 @if($unreadCount > 0)
-                    <form method="POST" action="{{ route('notifications.readAll') }}">
+                    <form method="POST" action="{{ route('notifications.read-all') }}">
                         @csrf
                         <button type="submit" class="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer">
                             {{ __('Mark all read') }}

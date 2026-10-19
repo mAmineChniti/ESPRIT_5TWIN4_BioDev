@@ -286,7 +286,7 @@ Route::prefix('{locale}')->whereIn('locale', Locale::values())->group(function (
 
         // Database notifications
         Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
-        Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
     });
 
     Route::get('/journeys/{code}', [PublicJourneyController::class, 'show'])
