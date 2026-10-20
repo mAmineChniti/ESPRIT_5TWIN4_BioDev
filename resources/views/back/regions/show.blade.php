@@ -15,6 +15,12 @@
                 <p class="mt-1 text-sm text-muted-foreground">{{ __('Agricultural region details and linked farms.') }}</p>
             </div>
             <div class="flex gap-2">
+                @if($region->farms->isNotEmpty())
+                    <april:button-link href="{{ route('regions.farms.export.csv', $region) }}" variant="outline">
+                        <x-lucide-download class="mr-2 size-4" />
+                        {{ __('Export Region Farms') }}
+                    </april:button-link>
+                @endif
                 @if($isAdmin)
                     <april:button-link href="{{ route('regions.edit', $region) }}" variant="outline">
                         <x-lucide-pencil class="mr-2 size-4" />

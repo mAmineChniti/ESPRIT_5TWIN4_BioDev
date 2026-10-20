@@ -56,6 +56,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Local Network Address
+    |--------------------------------------------------------------------------
+    |
+    | When the app is opened on localhost, a certificate QR code can point at
+    | this machine's LAN address instead so a phone on the same Wi-Fi can scan
+    | it. Unset means keep the request host; there is no guessed fallback.
+    |
+    */
+
+    'lan_ip' => env('LAN_IP'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |
