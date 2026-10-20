@@ -8,7 +8,7 @@
 @props(['food', 'enabled' => true])
 
 <div class="space-y-4"
-     x-data="nutritraceAssistant(@js($food->id), @js(route('products.ask', $food)), @js($enabled), @js(__('I answer questions about this product using only what NutriTrace has recorded for it. Ask me anything about its origin, its certifications, or its supply chain.')), @js(__('The assistant could not be reached. Please try again in a moment.')))">
+     x-data="nutritraceAssistant(@js($food->id), @js(route('products.ask', $food)), @js(route('products.ask.suggestions', $food)), @js($enabled), @js(__('I answer questions about this product using only what NutriTrace has recorded for it. Ask me anything about its origin, its certifications, or its supply chain.')), @js(__('The assistant could not be reached. Please try again in a moment.')))">
 
     <april:alert variant="none" class="border-primary/30 bg-primary/5" x-show="! enabled" x-cloak>
         <x-slot:icon><x-lucide-key-round class="size-4" /></x-slot:icon>

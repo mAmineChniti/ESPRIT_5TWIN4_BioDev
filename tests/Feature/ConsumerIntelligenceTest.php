@@ -278,6 +278,26 @@ class ConsumerIntelligenceTest extends TestCase
         $this->assertStringNotContainsString('test-key', $response->getContent());
     }
 
+    public function test_the_detector_prompt_uses_the_request_locale_and_caches_per_locale(): void
+    {
+        $this->fakeAi($this->findingPayload());
+
+        $food = Food::factory()->create();
+
+        app()->setLocale('fr');
+        app(GreenwashingDetector::class)->analyze($food);
+
+        $body = json_decode((string) $this->lastAiRequest()->body(), true);
+        $this->assertStringContainsString('French', $body['messages'][0]['content']);
+
+        app()->setLocale('en');
+        app(GreenwashingDetector::class)->analyze($food);
+
+        // The locale is part of the cache key, so the second locale cannot
+        // reuse the cached French analysis.
+        Http::assertSentCount(2);
+    }
+
     public function test_an_unreachable_model_reports_failure_rather_than_a_clean_verdict(): void
     {
         $this->fakeAiRaw('upstream exploded', 500);
@@ -298,7 +318,10 @@ class ConsumerIntelligenceTest extends TestCase
         $report = app(GreenwashingDetector::class)->analyze(Food::factory()->create());
 
         $this->assertTrue($report->hasFailed());
-        $this->assertStringContainsString('AI_KEY', (string) $report->failure);
+        // The key name is internal detail; a public-facing report must not
+        // name the variable an operator is expected to set.
+        $this->assertStringContainsString('not configured', (string) $report->failure);
+        $this->assertStringNotContainsString('AI_KEY', (string) $report->failure);
     }
 
     public function test_markdown_fenced_json_is_still_parsed(): void
@@ -398,6 +421,13 @@ class ConsumerIntelligenceTest extends TestCase
         $this->assertStringContainsString('AI greenwashing audit', $html);
         $this->assertStringContainsString('Eco claim with no certification', $html);
         $this->assertStringContainsString('Ask about this product', $html);
+
+        // The Alpine component must receive the suggestions route, not fall
+        // back to the hardcoded path that silently 404s under a locale prefix.
+        $this->assertStringContainsString(
+            str_replace('\\/', '/', route('products.ask.suggestions', $food)),
+            str_replace('\\/', '/', $html)
+        );
     }
 
     public function test_the_product_page_does_not_claim_a_clean_bill_when_the_model_fails(): void
@@ -464,12 +494,40 @@ class ConsumerIntelligenceTest extends TestCase
         $this->assertNotEmpty($response->json('failure'));
     }
 
+    public function test_a_provider_error_body_is_not_exposed_to_the_client(): void
+    {
+        $this->fakeAiRaw('secret-upstream-detail', 500);
+
+        $analysis = $this->get(route('products.analysis', Food::factory()->create()));
+        $analysis->assertOk();
+        $this->assertStringNotContainsString('secret-upstream-detail', $analysis->getContent());
+        $this->assertStringNotContainsString('AI_KEY', $analysis->getContent());
+
+        $assistant = $this->postJson(
+            route('products.ask', Food::factory()->create()),
+            ['question' => 'Where was this grown?']
+        );
+        $assistant->assertOk();
+        $this->assertStringNotContainsString('secret-upstream-detail', $assistant->getContent());
+    }
+
     public function test_the_suggestions_endpoint_answers_without_calling_the_model(): void
     {
         $response = $this->getJson(route('products.ask.suggestions', Food::factory()->create()));
 
         $response->assertOk();
         $this->assertContains('Where was this grown?', $response->json('suggestions'));
+    }
+
+    public function test_assistant_strings_are_translated(): void
+    {
+        app()->setLocale('fr');
+
+        $food = Food::factory()->create();
+        $assistant = app(ProductAssistant::class);
+
+        $this->assertSame('Où a-t-elle été cultivée ?', $assistant->suggestions($food)[0]);
+        $this->assertSame('Posez une question sur ce produit.', $assistant->ask($food, '')->body);
     }
 
     // ---------- Recommendations ----------
@@ -562,6 +620,51 @@ class ConsumerIntelligenceTest extends TestCase
         $ids = app(ProductRecommender::class)->recommendedFor($consumer)->pluck('food.id');
 
         $this->assertFalse($ids->contains($outside->id), 'recommended something outside the consumer’s categories');
+    }
+
+    public function test_recommendation_reasons_are_cached_per_candidate_set(): void
+    {
+        $this->fakeAi(['reasons' => []]);
+
+        $category = Category::factory()->create();
+        $weak = $this->withFullChain(Food::factory()->forCategory($category)->create([
+            'environmental_score' => EnvironmentalScore::E,
+        ]));
+        $strong = $this->withFullChain(Food::factory()->forCategory($category)->create([
+            'environmental_score' => EnvironmentalScore::A,
+        ]));
+
+        $recommender = app(ProductRecommender::class);
+        $recommender->alternativesTo($weak->fresh());
+        $recommender->alternativesTo($weak->fresh());
+
+        Http::assertSentCount(1);
+    }
+
+    public function test_recommendation_reasons_are_cached_per_locale(): void
+    {
+        $this->fakeAi(['reasons' => []]);
+
+        $category = Category::factory()->create();
+        $weak = $this->withFullChain(Food::factory()->forCategory($category)->create([
+            'environmental_score' => EnvironmentalScore::E,
+        ]));
+        $strong = $this->withFullChain(Food::factory()->forCategory($category)->create([
+            'environmental_score' => EnvironmentalScore::A,
+        ]));
+
+        $recommender = app(ProductRecommender::class);
+
+        app()->setLocale('en');
+        $recommender->alternativesTo($weak->fresh());
+
+        app()->setLocale('fr');
+        $recommender->alternativesTo($weak->fresh());
+
+        Http::assertSentCount(2);
+
+        $body = json_decode((string) $this->lastAiRequest()->body(), true);
+        $this->assertStringContainsString('French', $body['messages'][0]['content']);
     }
 
     public function test_the_recommendations_page_renders(): void
@@ -750,6 +853,34 @@ class ConsumerIntelligenceTest extends TestCase
 
         $body = json_decode((string) $request->body(), true);
         $this->assertArrayHasKey('response_format', $body);
+    }
+
+    public function test_the_provider_endpoint_is_used_when_no_base_url_is_configured(): void
+    {
+        config([
+            'services.ai.provider' => 'openrouter',
+            'services.ai.base_url' => null,
+            'services.ai.model' => 'meta-llama/llama-3.3-70b-instruct',
+        ]);
+
+        Http::fake([
+            'https://openrouter.ai/api/v1/chat/completions' => Http::response($this->chatBody($this->findingPayload())),
+        ]);
+
+        $report = app(GreenwashingDetector::class)->analyze(Food::factory()->create());
+
+        $this->assertFalse($report->hasFailed());
+        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://openrouter.ai/api/v1/chat/completions');
+    }
+
+    public function test_an_unknown_provider_reports_failure_instead_of_using_the_previous_endpoint(): void
+    {
+        config(['services.ai.provider' => 'not-a-provider', 'services.ai.base_url' => null]);
+
+        $report = app(GreenwashingDetector::class)->analyze(Food::factory()->create());
+
+        $this->assertTrue($report->hasFailed());
+        $this->assertStringContainsString('no configured endpoint', (string) $report->failure);
     }
 
     public function test_gemini_gets_the_schema_and_no_thinking_budget(): void

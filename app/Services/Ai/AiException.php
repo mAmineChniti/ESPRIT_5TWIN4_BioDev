@@ -14,15 +14,20 @@ class AiException extends RuntimeException
 {
     public static function notConfigured(): self
     {
+        return new self('AI is not configured.');
+    }
+
+    public static function providerError(string $provider, int $status): self
+    {
         return new self(
-            'AI is not configured. Set AI_KEY in your .env file.'
+            "The AI provider ({$provider}) returned HTTP {$status}."
         );
     }
 
-    public static function providerError(string $provider, int $status, string $body): self
+    public static function unknownProvider(string $provider): self
     {
         return new self(
-            "The AI provider ({$provider}) returned HTTP {$status}: ".mb_substr($body, 0, 400)
+            "The AI provider ({$provider}) has no configured endpoint."
         );
     }
 

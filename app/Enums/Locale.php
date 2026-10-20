@@ -41,6 +41,18 @@ enum Locale: string
         };
     }
 
+    /**
+     * The language name to give an AI model, which does not read locale codes.
+     */
+    public function promptLabel(): string
+    {
+        return match ($this) {
+            self::English => 'English',
+            self::French => 'French',
+            self::Arabic => 'Arabic',
+        };
+    }
+
     public static function resolve(?string $value): self
     {
         return self::tryFrom((string) $value) ?? self::English;

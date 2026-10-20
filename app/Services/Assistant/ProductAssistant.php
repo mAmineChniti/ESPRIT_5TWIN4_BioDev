@@ -2,6 +2,7 @@
 
 namespace App\Services\Assistant;
 
+use App\Enums\Locale;
 use App\Models\Food;
 use App\Services\Ai\AiClient;
 use App\Services\Ai\AiException;
@@ -31,7 +32,7 @@ class ProductAssistant
         $question = trim($question);
 
         if ($question === '') {
-            return new Answer(body: 'Ask a question about this product.', sources: []);
+            return new Answer(body: __('Ask a question about this product.'), sources: []);
         }
 
         try {
@@ -43,7 +44,7 @@ class ProductAssistant
         } catch (AiException $e) {
             Log::warning('Product assistant failed.', ['food_id' => $food->id, 'reason' => $e->getMessage()]);
 
-            return Answer::failed($e->getMessage());
+            return Answer::failed(__('The assistant could not be reached. Please try again in a moment.'));
         }
 
         return Answer::fromModelResponse($payload);
@@ -73,6 +74,7 @@ class ProductAssistant
                     '  bad for a person, and you must not give medical or dietary advice.',
                     '- List in "sources" the names of the record fields you actually used, so the consumer can',
                     '  check them. Use short field names like "certifications" or "supply_chain.steps".',
+                    'Write the answer in '.Locale::resolve(app()->getLocale())->promptLabel().'.',
                 ]),
             ],
             [
@@ -119,14 +121,14 @@ class ProductAssistant
      */
     public function suggestions(Food $food): array
     {
-        $suggestions = ['Where was this grown?'];
+        $suggestions = [__('Where was this grown?')];
 
         if ($food->certifications->isNotEmpty()) {
-            $suggestions[] = 'What certifications does it have?';
+            $suggestions[] = __('What certifications does it have?');
         }
 
-        $suggestions[] = 'Can I trace the whole supply chain?';
-        $suggestions[] = 'What is the nutrition per 100 g?';
+        $suggestions[] = __('Can I trace the whole supply chain?');
+        $suggestions[] = __('What is the nutrition per 100 g?');
 
         return $suggestions;
     }

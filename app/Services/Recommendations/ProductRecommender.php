@@ -2,12 +2,14 @@
 
 namespace App\Services\Recommendations;
 
+use App\Enums\Locale;
 use App\Enums\Stage;
 use App\Models\Food;
 use App\Models\User;
 use App\Services\Ai\AiClient;
 use App\Services\Ai\AiException;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -23,6 +25,13 @@ class ProductRecommender
 {
     /** Grade ordering, best first. */
     private const GRADE_RANK = ['A' => 0, 'B' => 1, 'C' => 2, 'D' => 3, 'E' => 4];
+
+    /**
+     * A product page only needs the best four matches. The cap keeps a very
+     * large category from being loaded into PHP just to discard it, while the
+     * final ordering still considers the evidence attached to each candidate.
+     */
+    private const CANDIDATE_LIMIT = 250;
 
     public function __construct(private readonly AiClient $ai) {}
 
@@ -41,6 +50,9 @@ class ProductRecommender
                 fn ($query) => $query->where('category_id', $food->category_id)
             )
             ->whereNotNull('environmental_score')
+            ->orderBy('environmental_score')
+            ->orderBy('id')
+            ->limit(self::CANDIDATE_LIMIT)
             ->get()
             ->filter(function (Food $candidate) use ($food, $gradeRank): bool {
                 $rank = self::GRADE_RANK[$candidate->environmental_score->value];
@@ -76,6 +88,9 @@ class ProductRecommender
             // Nothing logged yet: the whole catalog, best evidenced first.
             $candidates = Food::with(['category', 'certifications', 'transitions'])
                 ->whereNotNull('environmental_score')
+                ->orderBy('environmental_score')
+                ->orderBy('id')
+                ->limit(self::CANDIDATE_LIMIT)
                 ->get()
                 ->sortByDesc(fn (Food $c): array => [$c->transparencyScore(), -self::GRADE_RANK[$c->environmental_score->value]])
                 ->take($limit);
@@ -88,6 +103,9 @@ class ProductRecommender
             ->whereIn('category_id', $categoryIds)
             ->whereNotNull('environmental_score')
             ->whereNotIn('id', $eatenIds)
+            ->orderBy('environmental_score')
+            ->orderBy('id')
+            ->limit(self::CANDIDATE_LIMIT)
             ->get()
             ->sortByDesc(fn (Food $c): array => [$c->transparencyScore(), -self::GRADE_RANK[$c->environmental_score->value]])
             ->take($limit);
@@ -124,6 +142,14 @@ class ProductRecommender
      */
     private function modelReasons(Collection $candidates, ?Food $comparedTo): array
     {
+        $cacheKey = $this->reasonsCacheKey($candidates, $comparedTo);
+
+        $cached = Cache::get($cacheKey);
+
+        if (is_array($cached)) {
+            return $cached;
+        }
+
         try {
             $payload = $this->ai->json(
                 [
@@ -141,6 +167,7 @@ class ProductRecommender
                             '  environmental grade, how far it travelled.',
                             '- Never give health, dietary or medical advice.',
                             '- One sentence each, plain language, no marketing tone.',
+                            'Write every sentence in '.Locale::resolve(app()->getLocale())->promptLabel().'.',
                         ]),
                     ],
                     [
@@ -195,7 +222,36 @@ class ProductRecommender
             }
         }
 
+        Cache::put($cacheKey, $reasons, now()->addHours(12));
+
         return $reasons;
+    }
+
+    /**
+     * The model only phrases a comparison the database already decided, so the
+     * same four candidates produce the same sentences until their evidence (or
+     * the language) changes.
+     *
+     * @param  Collection<int, Food>  $candidates
+     */
+    private function reasonsCacheKey(Collection $candidates, ?Food $comparedTo): string
+    {
+        return 'recommendation-reasons:'.sha1(json_encode([
+            'locale' => app()->getLocale(),
+            'provider' => $this->ai->provider(),
+            'model' => $this->ai->model(),
+            'compared_to' => $comparedTo?->only(['id', 'name', 'origin']),
+            'products' => $candidates->map(fn (Food $food): array => [
+                'id' => $food->id,
+                'name' => $food->name,
+                'origin' => $food->origin,
+                'category' => $food->category?->name,
+                'grade' => $food->environmental_score?->value,
+                'transparency_score' => $food->transparencyScore(),
+                'supply_chain_complete' => $food->hasFullChain(),
+                'certifications' => $food->certifications->pluck('name')->all(),
+            ])->all(),
+        ], JSON_UNESCAPED_UNICODE));
     }
 
     /**
