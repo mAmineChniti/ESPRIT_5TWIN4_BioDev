@@ -1,12 +1,7 @@
-@props([
-    'food' => null,
-    'selectedCertifications' => [],
-])
-
 @php
-    // Shared markup for the add and edit product forms, so labels, ids and error
-    // wiring exist in exactly one place.
-    $editing = $food !== null;
+    $editing = isset($food) && $food->exists;
+    $food ??= null;
+    $selectedCertifications ??= [];
     $action = $editing ? route('foods.update', $food) : route('foods.store');
     $categories = \App\Models\Category::orderBy('name')->get();
     $certifications = \App\Models\Certification::orderBy('name')->get();
@@ -20,9 +15,65 @@
     <h1 class="text-2xl font-bold">{{ $editing ? __('Edit product') : __('Add a product') }}</h1>
 </div>
 
+{{-- ─── IA 1 : Smart AI Auto-fill banner ───────────────────────────────── --}}
+@if(!$editing)
+<div class="mb-4 rounded-lg border border-primary/30 bg-primary/5 p-4" x-data="aiFill()">
+    <div class="flex flex-wrap items-center gap-3">
+        <x-lucide-sparkles class="size-5 text-primary" />
+        <div class="flex-1">
+            <p class="text-sm font-semibold text-foreground">{{ __('AI Auto-fill') }}</p>
+            <p class="text-xs text-muted-foreground">{{ __('Type the product name above then click "Fill with AI" to auto-complete category, nutritional values and eco-score.') }}</p>
+        </div>
+        <april:button type="button" variant="outline" size="sm"
+                      x-on:click="fill()"
+                      x-bind:disabled="loading"
+                      id="ai-fill-btn">
+            <x-lucide-sparkles class="size-4" />
+            <span x-text="loading ? '{{ __('Filling…') }}' : '{{ __('Fill with AI') }}'">{{ __('Fill with AI') }}</span>
+        </april:button>
+    </div>
+    <p x-show="error" x-text="error" class="mt-2 text-xs text-destructive" role="alert" aria-live="polite"></p>
+    <p x-show="explanation" x-text="explanation" class="mt-2 text-xs text-muted-foreground italic" aria-live="polite"></p>
+</div>
+@endif
+
+{{-- ─── Option 3 : Live Nutri-Score panel ──────────────────────────────── --}}
+<div class="mb-4 rounded-lg border border-border bg-card p-4" x-data="nutriScore()">
+    <div class="flex flex-wrap items-center gap-4">
+        <div class="flex items-center gap-2">
+            <x-lucide-activity class="size-5 text-primary" />
+            <span class="text-sm font-semibold">{{ __('Live Nutri-Score') }}</span>
+        </div>
+        <div class="flex items-center gap-3 flex-1 flex-wrap">
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-muted-foreground">{{ __('Grade') }}:</span>
+                <span x-text="grade"
+                      x-bind:style="color ? ('background-color:' + color + '; color: #ffffff;') : ''"
+                      x-bind:class="{ 'bg-muted text-muted-foreground border border-border': !color || grade==='—' }"
+                      class="inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold shadow-sm transition-all duration-200">
+                    —
+                </span>
+            </div>
+            <div class="text-xs font-medium text-foreground" x-show="label">
+                <span x-text="label"></span>
+            </div>
+            <div class="flex items-center gap-1 text-xs text-muted-foreground" x-show="carbon_kg">
+                <x-lucide-leaf class="size-3 text-primary" />
+                <span>CO₂ ≈ <span x-text="carbon_kg" class="font-medium"></span> kg/kg</span>
+                <span x-text="'('+carbon_rating+')'"></span>
+            </div>
+            <april:button type="button" variant="ghost" size="sm" x-on:click="recalculate()" x-bind:disabled="loading">
+                <x-lucide-refresh-cw class="size-4" x-bind:class="{ 'animate-spin': loading }" />
+                <span x-text="loading ? '{{ __('Calculating…') }}' : '{{ __('Calculate') }}'">{{ __('Calculate') }}</span>
+            </april:button>
+        </div>
+    </div>
+</div>
+
 <april:card class="max-w-2xl">
     <x-slot:content>
-        <form action="{{ $action }}" method="POST" class="space-y-6" novalidate>
+        <form action="{{ $action }}" method="POST" class="space-y-6" novalidate
+              x-data x-ref="foodForm">
             @csrf
             @if($editing) @method('PUT') @endif
 
@@ -74,7 +125,7 @@
                         @foreach(\App\Enums\EnvironmentalScore::cases() as $score)
                             <option value="{{ $score->value }}"
                                 @selected(old('environmental_score', $food?->environmental_score?->value) === $score->value)>
-                                {{ $score->value }} — {{ $score->label() }}
+                                {{ $score->value }} – {{ $score->label() }}
                             </option>
                         @endforeach
                     </april:native-select>
@@ -119,9 +170,9 @@
             <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
                 @foreach([
                     'calories' => [__('Calories'), 1],
-                    'protein' => [__('Protein (g)'), '0.01'],
-                    'carbs' => [__('Carbs (g)'), '0.01'],
-                    'fat' => [__('Fat (g)'), '0.01'],
+                    'protein'  => [__('Protein (g)'), '0.01'],
+                    'carbs'    => [__('Carbs (g)'), '0.01'],
+                    'fat'      => [__('Fat (g)'), '0.01'],
                 ] as $field => [$label, $step])
                     <div class="space-y-2">
                         <april:label for="{{ $field }}">{{ $label }}</april:label>
@@ -144,3 +195,156 @@
         </form>
     </x-slot:content>
 </april:card>
+
+@push('scripts')
+<script>
+// ─── IA 1 : Smart AI Auto-fill ────────────────────────────────────────────
+function aiFill() {
+    return {
+        loading: false,
+        error: '',
+        explanation: '',
+
+        async fill() {
+            const name = document.getElementById('name')?.value?.trim();
+            if (!name) { this.error = '{{ __("Please enter a product name first.") }}'; return; }
+            this.loading = true; this.error = ''; this.explanation = '';
+            try {
+                const res = await fetch('{{ route('foods.aiSuggest') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ name, origin: document.getElementById('origin')?.value || null }),
+                });
+                if (!res.ok) throw new Error(await res.text());
+                const data = await res.json();
+
+                // Fill category
+                const catSelect = document.getElementById('category_id');
+                if (catSelect && data.category_id) {
+                    catSelect.value = data.category_id;
+                    // fallback: try matching by name
+                    if (!catSelect.value && data.category_name) {
+                        for (const opt of catSelect.options) {
+                            if (opt.text.toLowerCase() === data.category_name.toLowerCase()) {
+                                catSelect.value = opt.value; break;
+                            }
+                        }
+                    }
+                }
+
+                // Fill origin
+                if (data.origin) {
+                    const origInput = document.getElementById('origin');
+                    if (origInput && !origInput.value) origInput.value = data.origin;
+                }
+
+                // Fill eco score
+                if (data.environmental_score) {
+                    const ecoSelect = document.getElementById('environmental_score');
+                    if (ecoSelect) ecoSelect.value = data.environmental_score;
+                }
+
+                // Fill nutrition fields
+                ['calories', 'protein', 'carbs', 'fat'].forEach(f => {
+                    const el = document.getElementById(f);
+                    if (el && data[f] !== undefined) el.value = data[f];
+                });
+
+                this.explanation = data.explanation || '';
+
+                // Trigger Nutri-Score refresh
+                window.dispatchEvent(new Event('nutrition-updated'));
+
+            } catch (e) {
+                this.error = '{{ __("AI fill failed. Please fill manually.") }}';
+                console.error(e);
+            } finally {
+                this.loading = false;
+            }
+        }
+    };
+}
+
+// ─── Option 3 : Live Nutri-Score ─────────────────────────────────────────
+function nutriScore() {
+    return {
+        grade: '—', label: '', carbon_kg: '', carbon_rating: '', color: '',
+        loading: false,
+
+        init() {
+            // Recalculate whenever fields change or receive input
+            const fields = ['calories', 'protein', 'carbs', 'fat', 'category_id', 'origin', 'environmental_score'];
+            fields.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', () => this.recalculate());
+                    el.addEventListener('change', () => this.recalculate());
+                }
+            });
+
+            // Also recalculate when AI fills the form
+            window.addEventListener('nutrition-updated', () => this.recalculate());
+
+            // Initial calculation if values already present (edit mode or old input)
+            this.$nextTick(() => {
+                const cal = document.getElementById('calories')?.value;
+                if (cal !== undefined && cal !== '') {
+                    this.recalculate();
+                }
+            });
+        },
+
+        async recalculate() {
+            const get = id => {
+                const val = document.getElementById(id)?.value;
+                return (val === '' || isNaN(val)) ? 0 : parseFloat(val);
+            };
+            const catEl = document.getElementById('category_id');
+            const catName = catEl?.options[catEl.selectedIndex]?.text || '';
+            const origin = document.getElementById('origin')?.value || '';
+            const ecoEl = document.getElementById('environmental_score');
+            const ecoScore = ecoEl?.value || 'C';
+
+            this.loading = true;
+            try {
+                const res = await fetch('{{ route('foods.nutriScore') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        calories: get('calories'),
+                        protein: get('protein'),
+                        carbs: get('carbs'),
+                        fat: get('fat'),
+                        category: catName,
+                        origin: origin,
+                        environmental_score: ecoScore,
+                    }),
+                });
+                if (!res.ok) {
+                    console.error('Nutri-Score calculation error:', await res.text());
+                    return;
+                }
+                const d = await res.json();
+                this.grade = d.grade || '—';
+                this.label = d.label || '';
+                this.color = d.color || '';
+                this.carbon_kg = d.carbon_kg || '';
+                this.carbon_rating = d.carbon_rating || '';
+            } catch (err) {
+                console.error('NutriScore fetch error:', err);
+            } finally {
+                this.loading = false;
+            }
+        }
+    };
+}
+</script>
+@endpush
