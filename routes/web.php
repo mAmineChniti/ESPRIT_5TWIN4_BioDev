@@ -268,9 +268,7 @@ Route::prefix('{locale}')->whereIn('locale', Locale::values())->group(function (
 
         // Advanced features: declared BEFORE "/foods/{food}" so "compare" is not captured as a {food} parameter
         Route::get('/foods/compare', [FoodController::class, 'compare'])->name('foods.compare');
-        Route::post('/foods/compare-result', [FoodController::class, 'compareResult'])->name('foods.compareResult');
-        Route::post('/foods/ai-suggest', [FoodController::class, 'aiSuggest'])->name('foods.aiSuggest');
-        Route::post('/foods/nutri-score', [FoodController::class, 'nutriScore'])->name('foods.nutriScore');
+        Route::post('/foods/compare-result', [FoodController::class, 'compareResult'])->name('foods.compare-result');
 
         // The catalog is readable by any signed in user.
         Route::get('/foods', [FoodController::class, 'index'])->name('foods.index');

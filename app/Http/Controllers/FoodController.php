@@ -175,20 +175,31 @@ class FoodController extends Controller
                         'fat' => (float) ($data['fat'] ?? 0),
                         'producer_id' => $request->user()->id,
                     ]);
-                    if (isset($data['certifications'])) {
-                        $certNames = array_map('trim', explode(';', $data['certifications']));
-                        $certIds = Certification::whereIn('name', $certNames)->pluck('id')->toArray();
-                        $food->certifications()->sync($certIds);
-                    }
+                    StageTransition::create([
+                        'food_id' => $food->id,
+                        'actor_id' => $request->user()->id,
+                        'from_stage' => null,
+                        'to_stage' => Stage::Produced->value,
+                        'notes' => 'Imported via CSV',
+                        'occurred_at' => now(),
+                    ]);
                 });
+
                 $imported++;
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 $errors[] = "{$name}: {$e->getMessage()}";
             }
         }
+
         fclose($handle);
 
-        return back()->with(['success' => "Imported {$imported} products.", 'errors' => $errors]);
+        $message = "{$imported} product(s) imported successfully.";
+
+        if ($errors !== []) {
+            $message .= ' '.count($errors).' row(s) skipped: '.collect($errors)->implode(' ');
+        }
+
+        return redirect()->route('foods.index')->with('success', $message);
     }
 
     /** AI suggestion */
@@ -200,6 +211,11 @@ class FoodController extends Controller
         $suggestion = $service->suggest($validated['name'], $validated['origin'] ?? null);
 
         return response()->json($suggestion);
+    }
+
+    public function liveNutriScore(Request $request): JsonResponse
+    {
+        return $this->nutriScore($request);
     }
 
     /** Nutri‑Score live calculation */

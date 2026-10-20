@@ -60,7 +60,7 @@
 </div>
 
 {{-- ─── Option 1 : Advanced search & filters ────────────────────────────── --}}
-<form method="GET" action="{{ route('foods.index') }}" class="mb-6 flex flex-wrap items-end gap-3 rounded-lg border border-border bg-card p-4">
+<form method="GET" action="{{ route('foods.index') }}" class="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card p-4">
     <div class="flex-1 min-w-48 space-y-1">
         <label for="search" class="text-xs font-medium text-muted-foreground">{{ __('Search by name') }}</label>
         <div class="relative">

@@ -210,7 +210,7 @@ function aiFill() {
             if (!name) { this.error = '{{ __("Please enter a product name first.") }}'; return; }
             this.loading = true; this.error = ''; this.explanation = '';
             try {
-                const res = await fetch('{{ route('foods.aiSuggest') }}', {
+                const res = await fetch('{{ route('foods.ai-suggest') }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -311,7 +311,7 @@ function nutriScore() {
 
             this.loading = true;
             try {
-                const res = await fetch('{{ route('foods.nutriScore') }}', {
+                const res = await fetch('{{ route('foods.live-nutri-score') }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

@@ -23,7 +23,7 @@
 
 <april:card class="max-w-2xl">
     <x-slot:content>
-        <form method="POST" action="{{ route('foods.compareResult') }}" class="space-y-6">
+        <form method="POST" action="{{ route('foods.compare-result') }}" class="space-y-6">
             @csrf
 
             <div class="space-y-2">
