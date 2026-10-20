@@ -967,5 +967,14 @@
     "No reason was provided. Contact an administrator.": "Aucun motif fourni. Contactez un administrateur.",
     "Your farm request was approved! The official certificate with QR code is ready.": "Votre demande a été approuvée ! Le certificat officiel avec QR code est disponible.",
     "No approval or rejection notifications yet.": "Aucune notification d'approbation ou de refus pour le moment.",
-    "View Certificate": "Voir le certificat"
+    "View Certificate": "Voir le certificat",
+    "Ask a question about this product.": "Posez une question sur ce produit.",
+    "Where was this grown?": "Où a-t-elle été cultivée ?",
+    "What certifications does it have?": "Quelles certifications possède-t-elle ?",
+    "Can I trace the whole supply chain?": "Puis-je retracer toute la chaîne d'approvisionnement ?",
+    "What is the nutrition per 100 g?": "Quelle est la valeur nutritionnelle pour 100 g ?",
+    "The analysis could not be completed.": "L'analyse n'a pas pu être terminée.",
+    "Approved farms can only be removed by an administrator.": "Les fermes approuvées ne peuvent être supprimées que par un administrateur.",
+    ":name will be permanently deleted and any certificate QR code will stop verifying. This action cannot be undone.": ":name sera définitivement supprimé et tout QR code de certificat cessera de fonctionner. Cette action est irréversible.",
+    "AI is not configured.": "L'IA n'est pas configurée."
 }

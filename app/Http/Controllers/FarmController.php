@@ -11,10 +11,12 @@ use App\Notifications\FarmPendingValidationNotification;
 use App\Notifications\FarmRejectedNotification;
 use App\Services\Agriculture\FarmAiDiagnosticService;
 use App\Services\Agriculture\FarmStoryService;
+use App\Services\Export\CsvSanitizer;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -143,11 +145,10 @@ class FarmController extends Controller
         // Approving a rejected farm is reconsideration, not a re-decision:
         // the rejection_reason is cleared on purpose (pinned by
         // test_approving_clears_a_previous_rejection_reason).
-        $farm->update(['status' => FarmStatus::Approved, 'rejection_reason' => null]);
-
-        if ($farm->user) {
-            $farm->user->notify(new FarmApprovedNotification($farm));
-        }
+        DB::transaction(function () use ($farm): void {
+            $farm->update(['status' => FarmStatus::Approved, 'rejection_reason' => null]);
+            $farm->user?->notify(new FarmApprovedNotification($farm));
+        });
 
         return back()->with('success', __('Farm ":name" was approved.', ['name' => $farm->name]));
     }
@@ -164,14 +165,13 @@ class FarmController extends Controller
             'rejection_reason' => ['required', 'string', 'max:1000'],
         ]);
 
-        $farm->update([
-            'status' => FarmStatus::Rejected,
-            'rejection_reason' => $validated['rejection_reason'],
-        ]);
-
-        if ($farm->user) {
-            $farm->user->notify(new FarmRejectedNotification($farm));
-        }
+        DB::transaction(function () use ($farm, $validated): void {
+            $farm->update([
+                'status' => FarmStatus::Rejected,
+                'rejection_reason' => $validated['rejection_reason'],
+            ]);
+            $farm->user?->notify(new FarmRejectedNotification($farm));
+        });
 
         return back()->with('success', __('Farm ":name" was rejected.', ['name' => $farm->name]));
     }
@@ -205,17 +205,21 @@ class FarmController extends Controller
         // immediately in force.
         $validated['status'] = $user->isAdmin() ? FarmStatus::Approved : FarmStatus::Pending;
 
-        $farm = Farm::create($validated);
+        // The farm and the admins' notifications are one write: a failed
+        // notification must not leave a farm the producer believes was never
+        // submitted, or a second submission with no record of the first.
+        DB::transaction(function () use ($validated, $user): void {
+            $farm = Farm::create($validated);
+
+            if (! $user->isAdmin()) {
+                User::where('role', 'admin')->get()
+                    ->each(fn (User $admin) => $admin->notify(new FarmPendingValidationNotification($farm)));
+            }
+        });
 
         if ($user->isAdmin()) {
             return redirect()->route('farms.index')
                 ->with('success', __('Farm created and approved successfully.'));
-        }
-
-        // Notify admins of new pending farm validation request
-        $admins = User::where('role', 'admin')->get();
-        foreach ($admins as $admin) {
-            $admin->notify(new FarmPendingValidationNotification($farm));
         }
 
         return redirect()->route('farms.index')
@@ -308,6 +312,11 @@ class FarmController extends Controller
      */
     public function verify(Farm $farm, FarmStoryService $storyService): View
     {
+        // Only an approved farm has cleared review. Pending and rejected rows
+        // must not be discoverable through a QR link: the page carries an
+        // authenticity claim and the producer's address.
+        abort_unless($farm->isApproved(), 404);
+
         $farm->load(['region', 'user']);
         $story = $storyService->generate($farm);
 
@@ -367,7 +376,7 @@ class FarmController extends Controller
             ]);
 
             foreach ($farms as $farm) {
-                fputcsv($handle, [
+                fputcsv($handle, array_map([CsvSanitizer::class, 'cell'], [
                     $farm->id,
                     $farm->certificateRef(),
                     $farm->name,
@@ -381,7 +390,7 @@ class FarmController extends Controller
                     $farm->phone ?? '',
                     $farm->address,
                     $farm->created_at?->format('Y-m-d H:i:s') ?? '',
-                ]);
+                ]));
             }
 
             fclose($handle);
@@ -444,12 +453,22 @@ class FarmController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Farm $farm): RedirectResponse
-    {
+    public function update(
+        Request $request,
+        Farm $farm,
+        FarmStoryService $storyService,
+        FarmAiDiagnosticService $diagnosticService,
+    ): RedirectResponse {
         $this->ensureOwnership($request, $farm);
         $this->ensureEditable($farm);
 
         $farm->update($request->validate($this->farmRules()));
+
+        // Both reports are generated from the fields that were just edited, so
+        // keeping the old cache would show a narrative the current record no
+        // longer supports.
+        $storyService->clearCache($farm);
+        $diagnosticService->clearCache($farm);
 
         return redirect()->route('farms.index')
             ->with('success', __('Farm updated successfully.'));
@@ -461,6 +480,15 @@ class FarmController extends Controller
     public function destroy(Request $request, Farm $farm): RedirectResponse
     {
         $this->ensureOwnership($request, $farm);
+
+        // A certificate already in circulation points at the public verify
+        // page. A producer removing the farm would turn every printed QR code
+        // into a 404, so only an administrator may retire an approved holding.
+        abort_if(
+            $farm->isApproved() && ! $request->user()->isAdmin(),
+            403,
+            __('Approved farms can only be removed by an administrator.'),
+        );
 
         $farm->delete();
 
@@ -562,27 +590,45 @@ class FarmController extends Controller
     /**
      * Resolves the primary local network IPv4 address for real mobile device testing over Wi-Fi.
      */
-    private function resolveLanIp(): string
+    private function resolveLanIp(): ?string
     {
-        if (config('app.lan_ip')) {
-            return (string) config('app.lan_ip');
+        $configured = config('app.lan_ip');
+
+        if (is_string($configured) && $configured !== '') {
+            return $configured;
+        }
+
+        if (PHP_OS_FAMILY !== 'Windows') {
+            return null;
         }
 
         try {
-            if (PHP_OS_FAMILY === 'Windows') {
-                $output = shell_exec('ipconfig');
-                if ($output && preg_match_all('/Carte[^\n]+:(?:(?!Carte).)*?Adresse IPv4[.\s]*:\s*([0-9.]+)/s', $output, $blocks)) {
-                    foreach ($blocks[0] as $block) {
-                        if (! preg_match('/VMware|Virtual|Loopback/i', $block) && preg_match('/Adresse IPv4[.\s]*:\s*([0-9.]+)/', $block, $match)) {
-                            return $match[1];
-                        }
+            $output = shell_exec('ipconfig');
+
+            if (! is_string($output)) {
+                return null;
+            }
+
+            // ipconfig prints one adapter per blank-line-separated block, in
+            // both English and French Windows. Skip virtual adapters, which
+            // would otherwise hand out an address no phone can reach.
+            foreach (preg_split('/\R{2,}/', $output) ?: [] as $block) {
+                if (preg_match('/VMware|Virtual|Loopback|vEthernet/i', $block)) {
+                    continue;
+                }
+
+                if (preg_match('/(?:IPv4 Address|Adresse IPv4)[^0-9]*([0-9.]+)/i', $block, $match)) {
+                    $ip = $match[1];
+
+                    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false) {
+                        return $ip;
                     }
                 }
             }
         } catch (\Throwable) {
-            // fallback below
+            // No usable address: keep the request host rather than guessing.
         }
 
-        return '192.168.1.179';
+        return null;
     }
 }

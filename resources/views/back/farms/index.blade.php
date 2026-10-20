@@ -215,15 +215,28 @@
                                             </april:button-link>
                                         @endif
 
-                                        <x-confirm-action
-                                            :action="route('farms.destroy', $farm)"
-                                            :label="__('Delete farm')"
-                                            :title="__('Delete this farm?')"
-                                            :description="__(':name will be permanently deleted. This action cannot be undone.', ['name' => $farm->name])"
-                                        >
-                                            <x-lucide-trash-2 class="size-4" />
-                                            <span class="sr-only">{{ __('Delete :name', ['name' => $farm->name]) }}</span>
-                                        </x-confirm-action>
+                                        @if($isAdmin || ! $farm->isApproved())
+                                            <x-confirm-action
+                                                :action="route('farms.destroy', $farm)"
+                                                :label="__('Delete farm')"
+                                                :title="__('Delete this farm?')"
+                                                :description="__(':name will be permanently deleted and any certificate QR code will stop verifying. This action cannot be undone.', ['name' => $farm->name])"
+                                            >
+                                                <x-lucide-trash-2 class="size-4" />
+                                                <span class="sr-only">{{ __('Delete :name', ['name' => $farm->name]) }}</span>
+                                            </x-confirm-action>
+                                        @else
+                                            <april:button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                disabled
+                                                title="{{ __('Approved farms can only be removed by an administrator.') }}"
+                                                aria-label="{{ __('Approved farms can only be removed by an administrator.') }}"
+                                            >
+                                                <x-lucide-trash-2 class="size-4" />
+                                            </april:button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>

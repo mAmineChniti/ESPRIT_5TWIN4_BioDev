@@ -2,6 +2,7 @@
 
 namespace App\Services\Agriculture;
 
+use App\Enums\Locale;
 use App\Models\Farm;
 use App\Services\Ai\AiClient;
 use App\Services\Ai\AiException;
@@ -61,12 +62,19 @@ class FarmAiDiagnosticService
 
     public function clearCache(Farm $farm): void
     {
-        Cache::forget($this->cacheKey($farm));
+        // A farm is cached once per language, so an update made while the
+        // producer is working in English must not leave the French page
+        // showing the old diagnostic.
+        foreach (Locale::values() as $locale) {
+            Cache::forget($this->cacheKey($farm, $locale));
+        }
     }
 
-    private function cacheKey(Farm $farm): string
+    private function cacheKey(Farm $farm, ?string $locale = null): string
     {
-        return "farm_ai_diagnostic_{$farm->id}";
+        $variant = sha1($this->ai->provider().'|'.$this->ai->model());
+
+        return "farm_ai_diagnostic_{$farm->id}_".($locale ?? app()->getLocale()).'_'.substr($variant, 0, 12);
     }
 
     /**
@@ -110,6 +118,7 @@ class FarmAiDiagnosticService
                     'You evaluate agricultural farms based on their farming type (Organic, Sustainable, Biodynamic, Traditional),',
                     'soil characteristics, surface, and regional climate context.',
                     'Always provide realistic, actionable, and science-backed agricultural insights.',
+                    'Write every field in '.Locale::resolve(app()->getLocale())->promptLabel().'.',
                 ]),
             ],
             [

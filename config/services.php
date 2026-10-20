@@ -53,7 +53,10 @@ return [
         'key' => env('AI_KEY'),
         'provider' => env('AI_PROVIDER', 'groq'),
         'model' => env('AI_MODEL', 'openai/gpt-oss-120b'),
-        'base_url' => env('AI_BASE_URL', 'https://api.groq.com/openai/v1'),
+        // Optional override. When unset, the endpoint is resolved from the
+        // provider map below, so changing AI_PROVIDER cannot leave the request
+        // pointed at the previous provider.
+        'base_url' => env('AI_BASE_URL'),
         'timeout' => (int) env('AI_TIMEOUT', 25),
 
         // Free tiers, no payment method required.

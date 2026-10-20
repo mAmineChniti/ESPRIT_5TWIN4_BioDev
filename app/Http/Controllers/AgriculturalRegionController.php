@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AgriculturalRegion;
+use App\Services\Export\CsvSanitizer;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -134,7 +135,7 @@ class AgriculturalRegionController extends Controller
             ]);
 
             foreach ($farms as $farm) {
-                fputcsv($handle, [
+                fputcsv($handle, array_map([CsvSanitizer::class, 'cell'], [
                     $farm->id,
                     $farm->certificateRef(),
                     $farm->name,
@@ -149,7 +150,7 @@ class AgriculturalRegionController extends Controller
                     $farm->phone ?? '',
                     $farm->address,
                     $farm->created_at?->format('Y-m-d H:i:s') ?? '',
-                ]);
+                ]));
             }
 
             fclose($handle);

@@ -3,6 +3,7 @@
 namespace App\Services\Greenwashing;
 
 use App\Enums\FindingCategory;
+use App\Enums\Locale;
 use App\Models\Food;
 use App\Services\Ai\AiClient;
 use App\Services\Ai\AiException;
@@ -108,6 +109,8 @@ class GreenwashingDetector
                     '',
                     'Also write a "summary" of at most three sentences and a "verdict" of two or three words.',
                     '',
+                    'Write every field in '.Locale::resolve(app()->getLocale())->promptLabel().'.',
+                    '',
                     'Categories, each mapping to a reason a consumer can report it under:',
                     ...array_map(
                         static fn (FindingCategory $c): string => "- {$c->value} = {$c->reason()->label()}",
@@ -182,6 +185,9 @@ class GreenwashingDetector
         $food->loadMissing(['certifications', 'transitions', 'reports', 'producer', 'category']);
 
         return 'greenwashing:'.sha1(json_encode([
+            'locale' => app()->getLocale(),
+            'provider' => $this->ai->provider(),
+            'model' => $this->ai->model(),
             'food' => $food->only(['id', 'name', 'origin', 'environmental_score', 'calories', 'protein', 'carbs', 'fat']),
             'category' => $food->category?->name,
             'producer' => $food->producer?->only(['id', 'name', 'role']),

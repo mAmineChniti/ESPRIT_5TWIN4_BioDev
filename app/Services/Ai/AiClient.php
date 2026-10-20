@@ -96,31 +96,12 @@ class AiClient
 
         $url = $isGemini
             ? rtrim((string) config('services.ai.gemini_base_url'), '/').'/models/'.$this->model().':generateContent'
-            : rtrim((string) config('services.ai.base_url'), '/').'/chat/completions';
-
-        $options = [];
-
-        if (PHP_OS_FAMILY === 'Windows') {
-            $options['verify'] = false;
-            $options['curl'] = [
-                CURLOPT_RESOLVE => [
-                    'api.groq.com:443:104.18.38.236',
-                    'api.groq.com:443:172.64.149.20',
-                    'generativelanguage.googleapis.com:443:172.217.119.4',
-                    'generativelanguage.googleapis.com:443:142.250.201.202',
-                    'openrouter.ai:443:104.18.2.161',
-                    'openrouter.ai:443:104.18.3.161',
-                ],
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_SSL_VERIFYHOST => false,
-            ];
-        }
+            : $this->baseUrl().'/chat/completions';
 
         // Gemini rejects an OpenAI-style "Authorization: Bearer" outright; it
         // wants the key as x-goog-api-key. Sending both fails with a 401.
         $request = Http::acceptJson()
-            ->timeout((int) config('services.ai.timeout', 25))
-            ->withOptions($options);
+            ->timeout((int) config('services.ai.timeout', 25));
 
         $request = $isGemini
             ? $request->withHeaders(['x-goog-api-key' => $this->key()])
@@ -173,7 +154,7 @@ class AiClient
                     'body' => mb_substr($response->body(), 0, 500),
                 ]);
 
-                throw AiException::providerError($this->provider(), $response->status(), $response->body());
+                throw AiException::providerError($this->provider(), $response->status());
             }
 
             return $response;
@@ -354,6 +335,31 @@ class AiClient
         }
 
         return $decoded;
+    }
+
+    /**
+     * The OpenAI-compatible base URL for the selected provider.
+     *
+     * AI_BASE_URL wins when it is set (self-hosted gateways, proxies), but it
+     * is optional: the provider name resolves to a known public endpoint so
+     * switching AI_PROVIDER cannot silently keep sending the new key to the
+     * old provider.
+     */
+    private function baseUrl(): string
+    {
+        $configured = config('services.ai.base_url');
+
+        if (is_string($configured) && $configured !== '') {
+            return rtrim($configured, '/');
+        }
+
+        $endpoint = config('services.ai.endpoints.'.$this->provider());
+
+        if (! is_string($endpoint) || $endpoint === '') {
+            throw AiException::unknownProvider($this->provider());
+        }
+
+        return rtrim($endpoint, '/');
     }
 
     private function key(): ?string

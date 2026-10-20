@@ -87,7 +87,9 @@ class ConsumerIntelligenceController extends Controller
         return response()->json([
             'product' => ['id' => $food->id, 'name' => $food->name],
             'failed' => $report->hasFailed(),
-            'failure' => $report->failure,
+            // Provider and configuration details stay in the log; a public
+            // endpoint only needs to say that the check did not happen.
+            'failure' => $report->hasFailed() ? __('The analysis could not be completed.') : null,
             'verdict' => $report->verdict,
             'summary' => $report->summary,
             'risk_score' => $report->riskScore,

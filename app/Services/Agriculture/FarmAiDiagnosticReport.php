@@ -28,10 +28,10 @@ class FarmAiDiagnosticReport
     public static function fromModelResponse(array $data): self
     {
         return new self(
-            score: (int) ($data['score'] ?? 70),
+            score: self::score($data['score'] ?? 70),
             verdict: (string) ($data['verdict'] ?? __('Good agro-ecological practices')),
-            waterRiskLevel: (string) ($data['water_risk_level'] ?? 'Medium'),
-            soilHealthLevel: (string) ($data['soil_health_level'] ?? 'Good'),
+            waterRiskLevel: self::waterRiskLevel($data['water_risk_level'] ?? 'Medium'),
+            soilHealthLevel: self::soilHealthLevel($data['soil_health_level'] ?? 'Good'),
             strengths: array_values(array_filter((array) ($data['strengths'] ?? []), 'is_string')),
             vulnerabilities: array_values(array_filter((array) ($data['vulnerabilities'] ?? []), 'is_string')),
             recommendations: array_values(array_filter((array) ($data['recommendations'] ?? []), 'is_string')),
@@ -47,10 +47,10 @@ class FarmAiDiagnosticReport
     public static function fromArray(array $payload): self
     {
         return new self(
-            score: (int) ($payload['score'] ?? 0),
+            score: self::score($payload['score'] ?? 0),
             verdict: (string) ($payload['verdict'] ?? ''),
-            waterRiskLevel: (string) ($payload['water_risk_level'] ?? 'Medium'),
-            soilHealthLevel: (string) ($payload['soil_health_level'] ?? 'Good'),
+            waterRiskLevel: self::waterRiskLevel($payload['water_risk_level'] ?? 'Medium'),
+            soilHealthLevel: self::soilHealthLevel($payload['soil_health_level'] ?? 'Good'),
             strengths: (array) ($payload['strengths'] ?? []),
             vulnerabilities: (array) ($payload['vulnerabilities'] ?? []),
             recommendations: (array) ($payload['recommendations'] ?? []),
@@ -89,5 +89,20 @@ class FarmAiDiagnosticReport
             $this->score >= 60 => 'outline',
             default => 'destructive',
         };
+    }
+
+    private static function score(mixed $value): int
+    {
+        return max(0, min(100, (int) $value));
+    }
+
+    private static function waterRiskLevel(mixed $value): string
+    {
+        return in_array($value, ['Low', 'Medium', 'High'], true) ? (string) $value : 'Medium';
+    }
+
+    private static function soilHealthLevel(mixed $value): string
+    {
+        return in_array($value, ['Excellent', 'Good', 'Degraded'], true) ? (string) $value : 'Good';
     }
 }

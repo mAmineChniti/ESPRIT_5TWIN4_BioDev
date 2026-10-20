@@ -127,10 +127,10 @@
                 {!! nl2br(e($story->story)) !!}
             </div>
 
-            {{-- Quote / tagline --}}
-            @if(!empty($story->tagline))
+            {{-- Terroir highlight --}}
+            @if(filled($story->terroirHighlight))
                 <blockquote class="mt-4 rounded-lg border border-primary/20 bg-background/60 px-5 py-3 text-sm italic text-primary">
-                    "{{ $story->tagline }}"
+                    "{{ $story->terroirHighlight }}"
                 </blockquote>
             @endif
 

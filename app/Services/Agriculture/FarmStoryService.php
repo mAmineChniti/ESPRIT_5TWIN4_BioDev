@@ -2,6 +2,7 @@
 
 namespace App\Services\Agriculture;
 
+use App\Enums\Locale;
 use App\LocalizedNumber;
 use App\Models\Farm;
 use App\Services\Ai\AiClient;
@@ -60,12 +61,19 @@ class FarmStoryService
 
     public function clearCache(Farm $farm): void
     {
-        Cache::forget($this->cacheKey($farm));
+        // A farm is cached once per language, so an update made while the
+        // producer is working in English must not leave the French page
+        // showing the old narrative.
+        foreach (Locale::values() as $locale) {
+            Cache::forget($this->cacheKey($farm, $locale));
+        }
     }
 
-    private function cacheKey(Farm $farm): string
+    private function cacheKey(Farm $farm, ?string $locale = null): string
     {
-        return "farm_story_{$farm->id}";
+        $variant = sha1($this->ai->provider().'|'.$this->ai->model());
+
+        return "farm_story_{$farm->id}_".($locale ?? app()->getLocale()).'_'.substr($variant, 0, 12);
     }
 
     /**
@@ -105,6 +113,7 @@ class FarmStoryService
                     'You are the lead agricultural storyteller for NutriTrace.',
                     'You craft vivid, authentic, transparent, and evocative stories connecting consumers to real farmers and terroirs.',
                     'Never fabricate false claims; stay grounded in the farming type and regional climate provided.',
+                    'Write every field in '.Locale::resolve(app()->getLocale())->promptLabel().'.',
                 ]),
             ],
             [

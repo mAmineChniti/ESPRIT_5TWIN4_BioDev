@@ -81,7 +81,9 @@ Route::prefix('{locale}')->whereIn('locale', Locale::values())->group(function (
     })->name('greenwashing');
     Route::get('/agricultural-regions', [FrontRegionController::class, 'index'])->name('agricultural-regions.index');
     Route::get('/agricultural-regions/{agriculturalRegion}', [FrontRegionController::class, 'show'])->name('agricultural-regions.show');
-    Route::get('/farms/{farm}/verify', [FarmController::class, 'verify'])->name('farms.verify');
+    Route::get('/farms/{farm}/verify', [FarmController::class, 'verify'])
+        ->middleware('throttle:30,1')
+        ->name('farms.verify');
 
     // ---------- Locating the visitor ----------
     // The origin map already drew itself from the request address. This is the
@@ -96,8 +98,10 @@ Route::prefix('{locale}')->whereIn('locale', Locale::values())->group(function (
     // ---------- AI greenwashing detection & product assistant (public reads) ----------
     // These are the JSON endpoints behind the product page, so they stay open.
     Route::get('/products/{food}/analysis', [ConsumerIntelligenceController::class, 'analyze'])
+        ->middleware('throttle:30,1')
         ->name('products.analysis');
     Route::get('/products/{food}/alternatives', [ConsumerIntelligenceController::class, 'alternatives'])
+        ->middleware('throttle:30,1')
         ->name('products.alternatives');
     // The assistant calls a paid provider, and this route is deliberately open to
     // guests because the product page shows it before sign-in. Throttling bounds
@@ -208,9 +212,11 @@ Route::prefix('{locale}')->whereIn('locale', Locale::values())->group(function (
                 ->name('farms.certificate');
 
             Route::post('/farms/{farm}/diagnostic', [FarmController::class, 'diagnostic'])
+                ->middleware('throttle:10,1')
                 ->name('farms.diagnostic');
 
             Route::post('/farms/{farm}/story', [FarmController::class, 'story'])
+                ->middleware('throttle:10,1')
                 ->name('farms.story');
 
             Route::resource('farms', FarmController::class)->names([

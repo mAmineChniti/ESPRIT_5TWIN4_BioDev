@@ -7,9 +7,10 @@
  * grounding cannot be bypassed from the browser.
  */
 document.addEventListener('alpine:init', () => {
-    Alpine.data('nutritraceAssistant', (foodId, endpoint, enabled, intro, unreachable) => ({
+    Alpine.data('nutritraceAssistant', (foodId, endpoint, suggestionsEndpoint, enabled, intro, unreachable) => ({
         foodId,
         endpoint,
+        suggestionsEndpoint,
         enabled,
         intro: intro || 'I answer questions about this product using only what NutriTrace has recorded for it. Ask me anything about its origin, its certifications, or its supply chain.',
         unreachable: unreachable || 'The assistant could not be reached. Please try again in a moment.',
@@ -42,7 +43,7 @@ document.addEventListener('alpine:init', () => {
         async loadSuggestions() {
             try {
                 const response = await fetch(
-                    `/products/${this.foodId}/ask/suggestions`,
+                    this.suggestionsEndpoint,
                     { headers: { Accept: 'application/json' } }
                 );
 

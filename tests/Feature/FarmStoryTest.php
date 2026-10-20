@@ -113,6 +113,111 @@ class FarmStoryTest extends TestCase
         $response->assertSee('The Gold of the Medjerda: Living Earth and Ancient Grains');
         $response->assertSee('Ancient Biodiversity');
         $response->assertSee('Chemical-Free Purity');
+
+        // The banner reads the report's terroir highlight; the old tagline
+        // property never existed, so this block silently disappeared.
+        $response->assertSee('Sun-kissed grains nurtured by deep alluvial silt along the flowing river.');
+    }
+
+    public function test_updating_a_farm_invalidates_the_cached_narrative_and_diagnostic(): void
+    {
+        Config::set('services.ai.key', 'fake-test-key');
+        Config::set('services.ai.provider', 'groq');
+        Config::set('services.ai.base_url', 'https://api.groq.com/openai/v1');
+        Config::set('services.ai.model', 'llama-3.3-70b-versatile');
+
+        Http::preventStrayRequests();
+
+        $calls = 0;
+
+        Http::fake([
+            'https://api.groq.com/openai/v1/chat/completions' => function () use (&$calls) {
+                $calls++;
+                $generation = $calls <= 2 ? 'First' : 'Second';
+
+                return Http::response([
+                    'choices' => [[
+                        'message' => [
+                            'content' => json_encode($this->aiPayload($generation)),
+                        ],
+                    ]],
+                ]);
+            },
+        ]);
+
+        $this->actingAs($this->producer)
+            ->get(route('farms.show', $this->farm))
+            ->assertOk()
+            ->assertSee('Headline First')
+            ->assertSee('Verdict First');
+
+        $this->actingAs($this->producer)
+            ->put(route('farms.update', $this->farm), [
+                'agricultural_region_id' => $this->region->id,
+                'name' => 'Ferme Renamed',
+                'soil_type' => $this->farm->soil_type,
+                'producer_name' => $this->farm->producer_name,
+                'address' => $this->farm->address,
+                'surface_hectares' => $this->farm->surface_hectares,
+                'farming_type' => $this->farm->farming_type,
+                'phone' => $this->farm->phone,
+                'description' => $this->farm->description,
+            ])
+            ->assertRedirect(route('farms.index'));
+
+        $this->actingAs($this->producer)
+            ->get(route('farms.show', $this->farm))
+            ->assertOk()
+            ->assertSee('Headline Second')
+            ->assertSee('Verdict Second');
+    }
+
+    public function test_the_story_prompt_asks_for_the_request_locale(): void
+    {
+        Config::set('services.ai.key', 'fake-test-key');
+        Config::set('services.ai.provider', 'groq');
+        Config::set('services.ai.base_url', 'https://api.groq.com/openai/v1');
+        Config::set('services.ai.model', 'llama-3.3-70b-versatile');
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://api.groq.com/openai/v1/chat/completions' => Http::response([
+                'choices' => [[
+                    'message' => [
+                        'content' => json_encode($this->aiPayload('French')),
+                    ],
+                ]],
+            ]),
+        ]);
+
+        $this->get(route('farms.verify', ['farm' => $this->farm, 'locale' => 'fr']))
+            ->assertOk();
+
+        $request = Http::recorded()->last()[0];
+        $body = json_decode((string) $request->body(), true);
+
+        $this->assertStringContainsString('French', $body['messages'][0]['content']);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function aiPayload(string $generation): array
+    {
+        return [
+            'score' => 80,
+            'verdict' => "Verdict {$generation}",
+            'water_risk_level' => 'Low',
+            'soil_health_level' => 'Good',
+            'strengths' => [],
+            'vulnerabilities' => [],
+            'recommendations' => [],
+            'summary' => "Summary {$generation}",
+            'headline' => "Headline {$generation}",
+            'story' => "Story {$generation}",
+            'terroir_highlight' => "Terroir {$generation}",
+            'commitments' => [],
+        ];
     }
 
     public function test_producer_can_regenerate_storytelling(): void

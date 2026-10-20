@@ -87,6 +87,31 @@ class FarmApprovalTest extends TestCase
             ->assertDontSee($farm->name);
     }
 
+    public function test_pending_and_rejected_farms_are_not_served_on_the_public_verify_page(): void
+    {
+        config(['services.ai.key' => null]);
+
+        $producer = $this->user('producer');
+
+        $this->get(route('farms.verify', $this->farm(FarmStatus::Pending, $producer)))
+            ->assertNotFound();
+
+        $this->get(route('farms.verify', $this->farm(FarmStatus::Rejected, $producer)))
+            ->assertNotFound();
+    }
+
+    public function test_an_approved_farm_is_served_on_the_public_verify_page(): void
+    {
+        config(['services.ai.key' => null]);
+
+        $farm = $this->farm(FarmStatus::Approved, $this->user('producer'));
+
+        $this->get(route('farms.verify', $farm))
+            ->assertOk()
+            ->assertSee(__('Authentic Registered Agricultural Holding'))
+            ->assertSee($farm->name);
+    }
+
     public function test_an_approved_farm_is_published_on_the_public_region_page(): void
     {
         $region = AgriculturalRegion::factory()->create();
@@ -221,6 +246,30 @@ class FarmApprovalTest extends TestCase
         $this->actingAs($this->user('producer'))->delete(route('farms.destroy', $theirs))->assertForbidden();
 
         $this->assertDatabaseHas('farms', ['id' => $theirs->id]);
+    }
+
+    public function test_a_producer_cannot_delete_an_approved_farm(): void
+    {
+        $producer = $this->user('producer');
+        $farm = $this->farm(FarmStatus::Approved, $producer);
+
+        $this->actingAs($producer)
+            ->delete(route('farms.destroy', $farm))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('farms', ['id' => $farm->id]);
+    }
+
+    public function test_an_admin_can_delete_an_approved_farm(): void
+    {
+        $admin = $this->user('admin');
+        $farm = $this->farm(FarmStatus::Approved, $this->user('producer'));
+
+        $this->actingAs($admin)
+            ->delete(route('farms.destroy', $farm))
+            ->assertRedirect(route('farms.index'));
+
+        $this->assertDatabaseMissing('farms', ['id' => $farm->id]);
     }
 
     public function test_a_rejected_farm_can_no_longer_be_edited_but_can_be_deleted(): void
@@ -541,5 +590,21 @@ class FarmApprovalTest extends TestCase
         $response->assertOk();
         $response->assertSeeText($farm->name);
         $response->assertSeeText('National Agricultural Farms Inventory');
+    }
+
+    public function test_the_farm_csv_export_neutralises_formula_cells(): void
+    {
+        $admin = $this->user('admin');
+        $farm = $this->farm(FarmStatus::Approved, $this->user('producer'));
+        $farm->update(['name' => '=HYPERLINK("http://evil.test")']);
+
+        $response = $this->actingAs($admin)->get(route('farms.export.csv'));
+
+        $response->assertOk();
+
+        $csv = $response->streamedContent();
+
+        $this->assertStringContainsString("'=HYPERLINK", $csv);
+        $this->assertStringNotContainsString(',=HYPERLINK', $csv);
     }
 }

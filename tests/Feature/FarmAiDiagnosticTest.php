@@ -122,6 +122,40 @@ class FarmAiDiagnosticTest extends TestCase
         $response->assertSee(__('NutriTrace AI Model'));
     }
 
+    public function test_an_out_of_range_score_and_unknown_levels_are_normalised(): void
+    {
+        Config::set('services.ai.key', 'fake-test-key');
+        Config::set('services.ai.provider', 'groq');
+        Config::set('services.ai.base_url', 'https://api.groq.com/openai/v1');
+        Config::set('services.ai.model', 'llama-3.3-70b-versatile');
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://api.groq.com/openai/v1/chat/completions' => Http::response([
+                'choices' => [[
+                    'message' => [
+                        'content' => json_encode([
+                            'score' => 150,
+                            'verdict' => 'Impossible score',
+                            'water_risk_level' => 'Catastrophic',
+                            'soil_health_level' => 'Unknown',
+                            'strengths' => [],
+                            'vulnerabilities' => [],
+                            'recommendations' => [],
+                            'summary' => 'The model returned values outside the documented schema.',
+                        ]),
+                    ],
+                ]],
+            ]),
+        ]);
+
+        $report = app(FarmAiDiagnosticService::class)->analyze($this->farm, fresh: true);
+
+        $this->assertSame(100, $report->score);
+        $this->assertSame('Medium', $report->waterRiskLevel);
+        $this->assertSame('Good', $report->soilHealthLevel);
+    }
+
     public function test_post_diagnostic_route_refreshes_analysis(): void
     {
         $response = $this->actingAs($this->producer)
