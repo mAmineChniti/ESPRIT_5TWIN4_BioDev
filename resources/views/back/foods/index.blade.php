@@ -24,19 +24,18 @@
     </april:alert>
 @endif
 
-<div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+{{-- ─── Header row ──────────────────────────────────────────────────────── --}}
+<div class="mb-4 flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-2xl font-bold">{{ __('Products') }}</h1>
-    @can('create', App\Models\Food::class)
-        {{-- One row, one baseline. The file input, the import button and the add
-             button are all h-10 (the button's default size, so it was left off),
-             and the hint sits inline rather than stacked under the input, which
-             is what used to push the import button below the others. --}}
-        <div class="flex flex-wrap items-center gap-3">
-            {{-- The file input stays visible rather than hidden or sr-only:
-                 a hidden input is out of the tab order, and sr-only competes
-                 with the component's own w-full for the cascade. An explicit
-                 submit also means a bulk import is never triggered by merely
-                 picking a file. --}}
+    <div class="flex flex-wrap items-center gap-2">
+        {{-- Compare button (Option 4) --}}
+        <april:button-link href="{{ route('foods.compare') }}" variant="outline">
+            <x-lucide-git-compare class="size-4" />
+            {{ __('Compare products') }}
+        </april:button-link>
+
+        @can('create', App\Models\Food::class)
+            {{-- CSV import --}}
             <form action="{{ route('foods.import') }}" method="POST" enctype="multipart/form-data"
                   class="flex flex-wrap items-center gap-2" novalidate>
                 @csrf
@@ -51,14 +50,58 @@
                 <span id="csv_file-hint" class="text-xs text-muted-foreground">{{ __('CSV or TXT, up to 2 MB') }}</span>
                 @error('csv_file') <span id="csv_file-error" role="alert" class="text-xs text-destructive">{{ $message }}</span> @enderror
             </form>
+
             <april:button-link href="{{ route('foods.create') }}">
                 <x-lucide-plus class="size-4" />
                 {{ __('Add a product') }}
             </april:button-link>
-        </div>
-    @endcan
+        @endcan
+    </div>
 </div>
 
+{{-- ─── Option 1 : Advanced search & filters ────────────────────────────── --}}
+<form method="GET" action="{{ route('foods.index') }}" class="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card p-4">
+    <div class="flex-1 min-w-48 space-y-1">
+        <label for="search" class="text-xs font-medium text-muted-foreground">{{ __('Search by name') }}</label>
+        <div class="relative">
+            <x-lucide-search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <april:input id="search" name="search" :value="request('search')"
+                         placeholder="{{ __('Tomate, Harissa…') }}"
+                         class="pl-9" />
+        </div>
+    </div>
+
+    <div class="min-w-36 space-y-1">
+        <label for="filter_category" class="text-xs font-medium text-muted-foreground">{{ __('Category') }}</label>
+        <april:native-select id="filter_category" name="category">
+            <option value="">{{ __('All categories') }}</option>
+            @foreach(\App\Models\Category::orderBy('name')->get() as $cat)
+                <option value="{{ $cat->id }}" @selected(request('category') == $cat->id)>{{ $cat->name }}</option>
+            @endforeach
+        </april:native-select>
+    </div>
+
+    <div class="min-w-36 space-y-1">
+        <label for="filter_origin" class="text-xs font-medium text-muted-foreground">{{ __('Origin') }}</label>
+        <april:input id="filter_origin" name="origin" :value="request('origin')"
+                     placeholder="{{ __('Tunisie, France…') }}" />
+    </div>
+
+    <div class="flex gap-2">
+        <april:button type="submit">
+            <x-lucide-filter class="size-4" />
+            {{ __('Filter') }}
+        </april:button>
+        @if(request()->hasAny(['search','category','origin']))
+            <april:button-link href="{{ route('foods.index') }}" variant="outline">
+                <x-lucide-x class="size-4" />
+                {{ __('Clear') }}
+            </april:button-link>
+        @endif
+    </div>
+</form>
+
+{{-- ─── Product table ────────────────────────────────────────────────────── --}}
 <april:data-table>
     <x-slot:header>
         <tr>

@@ -35,28 +35,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('journey_steps', function ($table): void {
-            $table->renameColumn('journey_id', 'parcours_id');
-            $table->renameColumn('step_order', 'ordre');
-            $table->renameColumn('location', 'lieu');
-            $table->renameColumn('step_date', 'date_etape');
-            $table->renameColumn('farm_id', 'ferme_id');
-            $table->renameColumn('shipment_id', 'expedition_id');
-        });
-
-        Schema::table('journeys', function ($table): void {
-            $table->renameColumn('product_id', 'produit_id');
-            $table->renameColumn('qr_code', 'code_qr');
-            $table->renameColumn('environmental_score', 'score_environnemental');
-            $table->renameColumn('total_distance_km', 'distance_totale_km');
-            $table->renameColumn('ai_summary', 'resume_ia');
-        });
-
-        DB::table('journey_steps')->where('type', 'origin')->update(['type' => 'origine']);
-        DB::table('journey_steps')->where('type', 'storage')->update(['type' => 'stockage']);
-        DB::table('journey_steps')->where('type', 'sale')->update(['type' => 'vente']);
-
-        Schema::rename('journey_steps', 'etapes_parcours');
-        Schema::rename('journeys', 'parcours');
+        // Intentionally a no-op: rolling back would resurrect the forbidden
+        // French identifiers (parcours, etapes_parcours, …) that this
+        // migration removed. Reverting to them is no longer supported.
     }
 };

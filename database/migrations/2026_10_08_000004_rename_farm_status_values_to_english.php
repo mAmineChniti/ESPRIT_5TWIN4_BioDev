@@ -22,15 +22,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        $this->rewriteDefaults('validee', 'Biologique');
-
-        DB::table('farms')->where('status', 'pending')->update(['status' => 'en_attente']);
-        DB::table('farms')->where('status', 'approved')->update(['status' => 'validee']);
-        DB::table('farms')->where('status', 'rejected')->update(['status' => 'refusee']);
-        DB::table('farms')->where('farming_type', 'Organic')->update(['farming_type' => 'Biologique']);
-        DB::table('farms')->where('farming_type', 'Sustainable')->update(['farming_type' => 'Raisonné']);
-        DB::table('farms')->where('farming_type', 'Traditional')->update(['farming_type' => 'Traditionnel']);
-        DB::table('farms')->where('farming_type', 'Biodynamic')->update(['farming_type' => 'Biodynamique']);
+        // Intentionally a no-op: rolling back would resurrect the forbidden
+        // French status/farming-type values that this migration removed.
     }
 
     /**

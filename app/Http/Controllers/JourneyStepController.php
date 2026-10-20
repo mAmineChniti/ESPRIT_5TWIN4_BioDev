@@ -49,6 +49,8 @@ class JourneyStepController extends Controller
 
     public function store(StoreJourneyStepRequest $request, Journey $journey): RedirectResponse
     {
+        $this->ensureProcessor();
+
         $journey->steps()->create($request->validated());
 
         return redirect()
@@ -77,6 +79,7 @@ class JourneyStepController extends Controller
         Journey $journey,
         JourneyStep $step
     ): RedirectResponse {
+        $this->ensureProcessor();
         $this->ensureBelongsToJourney($journey, $step);
         $step->update($request->validated());
 

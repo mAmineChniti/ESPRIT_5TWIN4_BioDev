@@ -16,6 +16,7 @@ use App\Http\Controllers\JourneyController;
 use App\Http\Controllers\JourneyStepController;
 use App\Http\Controllers\MealController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProductComparisonController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicJourneyController;
 use App\Http\Controllers\ReviewController;
@@ -75,6 +76,7 @@ Route::prefix('{locale}')->whereIn('locale', Locale::values())->group(function (
 
     Route::get('/products', [ConsumerSearchController::class, 'index'])->name('products.index');
     Route::get('/products/scan', [ConsumerSearchController::class, 'scan'])->name('products.scan');
+    Route::get('/products/compare', [ProductComparisonController::class, 'index'])->name('products.compare');
     Route::get('/products/{food}', [ConsumerSearchController::class, 'show'])->name('products.show');
     Route::get('/greenwashing', function () {
         return view('front.greenwashing.index');
@@ -278,12 +280,21 @@ Route::prefix('{locale}')->whereIn('locale', Locale::values())->group(function (
         Route::middleware(ProAccess::class)->group(function () {
             Route::get('/foods/create', [FoodController::class, 'create'])->name('foods.create');
             Route::post('/foods', [FoodController::class, 'store'])->name('foods.store');
+            Route::post('/foods/ai-suggest', [FoodController::class, 'aiSuggest'])
+                ->middleware('throttle:30,1')
+                ->name('foods.ai-suggest');
+            Route::post('/foods/live-nutri-score', [FoodController::class, 'liveNutriScore'])
+                ->name('foods.live-nutri-score');
             Route::post('/foods/import', [FoodController::class, 'importCsv'])->name('foods.import');
             Route::get('/foods/{food}/edit', [FoodController::class, 'edit'])->name('foods.edit');
             Route::match(['put', 'patch'], '/foods/{food}', [FoodController::class, 'update'])->name('foods.update');
             Route::delete('/foods/{food}', [FoodController::class, 'destroy'])->name('foods.destroy');
             Route::post('/foods/{food}/transitions', [StageTransitionController::class, 'store'])->name('foods.transitions.store');
         });
+
+        // Advanced features: declared BEFORE "/foods/{food}" so "compare" is not captured as a {food} parameter
+        Route::get('/foods/compare', [FoodController::class, 'compare'])->name('foods.compare');
+        Route::post('/foods/compare-result', [FoodController::class, 'compareResult'])->name('foods.compare-result');
 
         // The catalog is readable by any signed in user.
         Route::get('/foods', [FoodController::class, 'index'])->name('foods.index');
