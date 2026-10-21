@@ -13,6 +13,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->redirectGuestsTo(
+            fn (Request $request): string => route('login', [
+                'locale' => $request->route('locale') ?? app()->getLocale(),
+            ]),
+        );
         $middleware->redirectUsersTo(fn () => route('dashboard'));
         // Inside the web group (after SubstituteBindings): the route is matched
         // here, so the locale segment is readable, and forgetting it restores

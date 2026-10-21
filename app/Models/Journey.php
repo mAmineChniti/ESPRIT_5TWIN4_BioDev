@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Services\DistanceCalculator;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Log;
 
 class Journey extends Model
 {
@@ -48,5 +50,43 @@ class Journey extends Model
     public function nextStepOrder(): int
     {
         return (int) ($this->steps->max('step_order') ?? 0) + 1;
+    }
+
+    /**
+     * Recalculate route distance from consecutive step locations.
+     */
+    public function recalculateDistance(): int
+    {
+        $stepsWithLocations = $this->steps()->get()->filter(function (JourneyStep $step): bool {
+            if (trim((string) $step->location) === '') {
+                Log::warning('Journey step without a location was ignored during distance calculation.', [
+                    'journey_id' => $this->id,
+                    'journey_step_id' => $step->id,
+                ]);
+
+                return false;
+            }
+
+            return true;
+        })->values();
+
+        $distanceCalculator = app(DistanceCalculator::class);
+        $distanceInKilometers = 0;
+
+        for ($index = 1; $index < $stepsWithLocations->count(); $index++) {
+            $previousStep = $stepsWithLocations[$index - 1];
+            $currentStep = $stepsWithLocations[$index];
+
+            $distanceInKilometers += $distanceCalculator->distanceBetween(
+                $previousStep->location,
+                $currentStep->location,
+                $previousStep->country_code,
+                $currentStep->country_code,
+            );
+        }
+
+        $this->forceFill(['total_distance_km' => $distanceInKilometers])->save();
+
+        return $distanceInKilometers;
     }
 }

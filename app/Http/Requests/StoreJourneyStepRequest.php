@@ -30,6 +30,7 @@ class StoreJourneyStepRequest extends FormRequest
             ],
             'type' => ['required', Rule::in(JourneyStep::FLOW)],
             'location' => ['required', 'string', 'max:120'],
+            'country_code' => ['nullable', 'string', 'size:2', Rule::exists('cities', 'country_code')],
             'step_date' => ['required', 'date'],
             'description' => ['nullable', 'string', 'max:255'],
             // A step may only cite a farm the platform actually publishes
@@ -53,6 +54,8 @@ class StoreJourneyStepRequest extends FormRequest
             'location.required' => __('The location is required.'),
             'location.string' => __('The location must be a string.'),
             'location.max' => __('The location cannot exceed 120 characters.'),
+            'country_code.size' => __('Select a country from the list.'),
+            'country_code.exists' => __('Select a country from the list.'),
             'step_date.required' => __('The step date is required.'),
             'step_date.date' => __('The step date is invalid.'),
             'description.string' => __('The description must be a string.'),

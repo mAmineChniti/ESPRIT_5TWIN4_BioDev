@@ -1,4 +1,4 @@
-@props(['journey', 'manage' => false])
+@props(['journey', 'manage' => false, 'displaySteps' => null, 'hasFilters' => false])
 
 {{--
     One journey as a workflow, not a spreadsheet.
@@ -17,6 +17,7 @@
     use App\Models\JourneyStep;
 
     $recorded = $journey->steps;
+    $displayedSteps = $displaySteps ?? $recorded;
     $firstOfType = $recorded->groupBy('type')->map->first();
     $suggested = JourneyStep::suggestedType($recorded->pluck('type'));
     $nextOrder = $journey->nextStepOrder();
@@ -61,9 +62,9 @@
 
 <april:steps orientation="vertical" :items="$items" :current="array_search($suggested, JourneyStep::FLOW, true) + 1" />
 
-@if ($recorded->isNotEmpty())
+@if ($displayedSteps->isNotEmpty())
     <ol class="mt-6 space-y-3">
-        @foreach ($recorded as $step)
+        @foreach ($displayedSteps as $step)
             <li class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-4">
                 <div class="min-w-0">
                     <p class="flex flex-wrap items-center gap-2 text-sm">
@@ -107,9 +108,13 @@
             </li>
         @endforeach
     </ol>
-@elseif ($manage)
+@elseif ($manage && $recorded->isEmpty())
     <p class="mt-6 rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
         {{ __('No steps recorded yet. Start with the origin, where the product was grown.') }}
+    </p>
+@elseif ($manage && $hasFilters)
+    <p class="mt-6 rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+        {{ __('No steps match your filters.') }}
     </p>
 @endif
 

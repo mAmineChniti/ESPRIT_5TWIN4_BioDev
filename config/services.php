@@ -51,6 +51,7 @@ return [
 
     'ai' => [
         'key' => env('AI_KEY'),
+        'gemini_key' => env('GEMINI_API_KEY'),
         'provider' => env('AI_PROVIDER', 'groq'),
         'model' => env('AI_MODEL', 'openai/gpt-oss-120b'),
         // Optional override. When unset, the endpoint is resolved from the
@@ -73,7 +74,7 @@ return [
         // contain a "/"), so switching providers without changing models
         // cannot send a Groq name to the Gemini endpoint.
         'gemini_base_url' => 'https://generativelanguage.googleapis.com/v1beta',
-        'gemini_model' => env('AI_GEMINI_MODEL', str_contains((string) env('AI_MODEL', ''), '/') ? 'gemini-2.5-flash' : env('AI_MODEL', 'gemini-2.5-flash')),
+        'gemini_model' => env('AI_GEMINI_MODEL', str_contains((string) env('AI_MODEL', ''), '/') ? 'gemini-3.8-flash' : env('AI_MODEL', 'gemini-3.8-flash')),
     ],
 
 ];

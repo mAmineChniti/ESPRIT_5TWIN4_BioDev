@@ -18,9 +18,43 @@
     </div>
 
     <div>
-        <april:label for="location">{{ __('Location') }}</april:label>
-        <april:input id="location" name="location" type="text" maxlength="120" value="{{ old('location', $step->location ?? '') }}" required aria-invalid="{{ $errors->has('location') ? 'true' : 'false' }}" aria-describedby="location-error" />
+        <april:label for="location">{{ __('City') }}</april:label>
+        <april:input id="location" name="location" type="text" list="city-options" maxlength="120" value="{{ old('location', $step->location ?? '') }}" required aria-invalid="{{ $errors->has('location') ? 'true' : 'false' }}" aria-describedby="location-error" />
         <p id="location-error" role="alert" class="mt-1 text-sm text-destructive">@error('location'){{ $message }}@enderror</p>
+        <datalist id="city-options">
+            @foreach ($cities as $city)
+                <option value="{{ $city->name }}" label="{{ $city->country_code }}"></option>
+            @endforeach
+        </datalist>
+    </div>
+
+    <div>
+        <april:label for="country_code">{{ __('Country') }}</april:label>
+        <april:native-select id="country_code" name="country_code" aria-invalid="{{ $errors->has('country_code') ? 'true' : 'false' }}" aria-describedby="country-code-error">
+            <option value="">{{ __('Select a country (optional)') }}</option>
+            @foreach ($countryCodes as $countryCode)
+                <option value="{{ $countryCode }}" @selected(old('country_code', $step->country_code ?? '') === $countryCode)>
+                    {{ $countryCode }}
+                </option>
+            @endforeach
+        </april:native-select>
+        <p id="country-code-error" role="alert" class="mt-1 text-sm text-destructive">@error('country_code'){{ $message }}@enderror</p>
+    </div>
+
+    <div>
+        <april:label for="farm_id">{{ __('Farm') }}</april:label>
+        <april:native-select id="farm_id" name="farm_id" aria-invalid="{{ $errors->has('farm_id') ? 'true' : 'false' }}" aria-describedby="farm-error">
+            <option value="">{{ __('No farm selected') }}</option>
+            @foreach ($farms as $farm)
+                <option
+                    value="{{ $farm->id }}"
+                    @selected((string) old('farm_id', $step->farm_id ?? '') === (string) $farm->id)
+                >
+                    {{ $farm->name }} — {{ $farm->address }}
+                </option>
+            @endforeach
+        </april:native-select>
+        <p id="farm-error" role="alert" class="mt-1 text-sm text-destructive">@error('farm_id'){{ $message }}@enderror</p>
     </div>
 
     <div>

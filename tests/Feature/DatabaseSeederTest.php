@@ -11,12 +11,14 @@ use App\Models\AgriculturalRegion;
 use App\Models\AnalysisDispute;
 use App\Models\Category;
 use App\Models\Certification;
+use App\Models\City;
 use App\Models\Farm;
 use App\Models\Food;
 use App\Models\GreenwashingReport;
 use App\Models\Meal;
 use App\Models\Review;
 use App\Models\User;
+use Database\Seeders\CitySeeder;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -314,6 +316,29 @@ class DatabaseSeederTest extends TestCase
         foreach (Farm::all() as $farm) {
             $this->assertNotNull($farm->region, "[{$farm->name}] is not attached to a region.");
         }
+    }
+
+    public function test_database_seeder_populates_the_international_city_reference(): void
+    {
+        $this->seed();
+
+        $this->assertGreaterThanOrEqual(60, City::count());
+        $this->assertDatabaseHas('cities', [
+            'name' => 'Tunis',
+            'name_normalized' => 'tunis',
+            'country_code' => 'TN',
+            'latitude' => 36.8065,
+            'longitude' => 10.1815,
+        ]);
+        $this->assertDatabaseHas('cities', [
+            'name' => 'Paris',
+            'name_normalized' => 'paris',
+            'country_code' => 'FR',
+        ]);
+
+        $this->seed(CitySeeder::class);
+
+        $this->assertSame(69, City::count());
     }
 
     public function test_a_rejected_farm_records_why_it_was_rejected(): void

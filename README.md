@@ -267,7 +267,7 @@ AI_KEY=your_key_here
 AI_MODEL=openai/gpt-oss-120b
 # Gemini uses its own model setting; AI_MODEL is ignored for gemini unless it
 # looks like a Gemini name. Prefer setting this when AI_PROVIDER=gemini.
-AI_GEMINI_MODEL=gemini-2.5-flash
+AI_GEMINI_MODEL=gemini-3.8-flash
 ```
 
 Free tiers, no payment card required:
@@ -276,7 +276,7 @@ Free tiers, no payment card required:
 | --- | --- | --- | --- |
 | Groq | <https://console.groq.com/keys> | `groq` | `llama-3.3-70b-versatile` |
 | OpenRouter | <https://openrouter.ai/keys> | `openrouter` | `meta-llama/llama-3.3-70b-instruct` |
-| Google AI Studio | <https://aistudio.google.com/apikey> | `gemini` | `gemini-2.5-flash` |
+| Google AI Studio | <https://aistudio.google.com/apikey> | `gemini` | `gemini-3.8-flash` |
 
 Everything but Gemini speaks the OpenAI chat-completions shape; Gemini uses its own
 request shape and is handled by one branch in `app/Services/Ai/AiClient.php`.

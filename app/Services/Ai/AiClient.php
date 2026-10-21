@@ -61,9 +61,9 @@ class AiClient
      *
      * @param  list<array{role: string, content: string}>  $messages
      */
-    public function text(array $messages, int $maxTokens = 400): string
+    public function text(array $messages, int $maxTokens = 400, ?int $timeout = null): string
     {
-        return trim($this->call($messages, [], $maxTokens));
+        return trim($this->call($messages, [], $maxTokens, null, $timeout));
     }
 
     /**
@@ -82,8 +82,13 @@ class AiClient
      * @param  array<string, mixed>|null  $schema  Required shape, when the
      *                                             caller expects JSON back
      */
-    private function call(array $messages, array $options, int $maxTokens, ?array $schema = null): string
-    {
+    private function call(
+        array $messages,
+        array $options,
+        int $maxTokens,
+        ?array $schema = null,
+        ?int $timeout = null,
+    ): string {
         if (! $this->isConfigured()) {
             throw AiException::notConfigured();
         }
@@ -101,7 +106,7 @@ class AiClient
         // Gemini rejects an OpenAI-style "Authorization: Bearer" outright; it
         // wants the key as x-goog-api-key. Sending both fails with a 401.
         $request = Http::acceptJson()
-            ->timeout((int) config('services.ai.timeout', 25));
+            ->timeout($timeout ?? (int) config('services.ai.timeout', 25));
 
         $request = $isGemini
             ? $request->withHeaders(['x-goog-api-key' => $this->key()])
@@ -207,13 +212,15 @@ class AiClient
                 // Headroom: Gemini counts reasoning against the same budget, so
                 // a limit tuned for the reply alone truncates the answer.
                 'maxOutputTokens' => $maxTokens * 2,
-                'responseMimeType' => 'application/json',
                 // The thinking models spend most of the budget reasoning, which
                 // buys nothing here and routinely cuts the reply short.
                 'thinkingConfig' => ['thinkingBudget' => 0],
                 // Without this Gemini invents its own field names, and every
                 // field the caller reads back comes back empty.
-                ...($schema ? ['responseSchema' => $this->geminiSchema($schema)] : []),
+                ...($schema ? [
+                    'responseMimeType' => 'application/json',
+                    'responseSchema' => $this->geminiSchema($schema),
+                ] : []),
             ],
         ];
     }
@@ -364,7 +371,9 @@ class AiClient
 
     private function key(): ?string
     {
-        $key = config('services.ai.key');
+        $key = $this->provider() === 'gemini'
+            ? (config('services.ai.gemini_key') ?: config('services.ai.key'))
+            : config('services.ai.key');
 
         return is_string($key) && $key !== '' ? $key : null;
     }

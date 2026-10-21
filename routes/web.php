@@ -18,6 +18,7 @@ use App\Http\Controllers\MealController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProductComparisonController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicJourneyChatController;
 use App\Http\Controllers\PublicJourneyController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\StageTransitionController;
@@ -308,6 +309,10 @@ Route::prefix('{locale}')->whereIn('locale', Locale::values())->group(function (
 
     Route::get('/journeys/{code}', [PublicJourneyController::class, 'show'])
         ->name('journeys.public');
+
+    Route::post('/public/journeys/{journey}/chat', [PublicJourneyChatController::class, 'ask'])
+        ->middleware('throttle:20,1')
+        ->name('public.journeys.chat');
 
     require __DIR__.'/auth.php';
     require __DIR__.'/logistics.php';
