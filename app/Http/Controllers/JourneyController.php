@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Journey;
+use App\Models\JourneyStep;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
@@ -21,13 +24,45 @@ class JourneyController extends Controller
     {
         $this->ensureProcessor();
 
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:120'],
+            'type' => ['nullable', Rule::in(JourneyStep::FLOW)],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+        ]);
+
+        $stepFilters = static function (Builder $query) use ($filters): void {
+            $query
+                ->when($filters['type'] ?? null, fn (Builder $steps, string $type) => $steps->where('type', $type))
+                ->when($filters['date_from'] ?? null, fn (Builder $steps, string $date) => $steps->whereDate('step_date', '>=', $date))
+                ->when($filters['date_to'] ?? null, fn (Builder $steps, string $date) => $steps->whereDate('step_date', '<=', $date));
+        };
+
+        $hasStepFilters = filled($filters['type'] ?? null)
+            || filled($filters['date_from'] ?? null)
+            || filled($filters['date_to'] ?? null);
+
         $journeys = Journey::query()
             ->with('product')
             ->withCount('steps')
+            ->when($filters['search'] ?? null, function (Builder $query, string $search) use ($stepFilters): void {
+                $query->where(function (Builder $matches) use ($search, $stepFilters): void {
+                    $matches
+                        ->whereHas('product', fn (Builder $product) => $product->where('name', 'like', "%{$search}%"))
+                        ->orWhereHas('steps', function (Builder $steps) use ($search, $stepFilters): void {
+                            $steps->where('location', 'like', "%{$search}%");
+                            $stepFilters($steps);
+                        });
+                });
+            })
+            ->when($hasStepFilters, fn (Builder $query) => $query->whereHas('steps', $stepFilters))
             ->latest()
-            ->paginate(10);
+            ->paginate(10)
+            ->withQueryString();
 
-        return view('back.processor.journeys.index', compact('journeys'));
+        $hasFilters = collect($filters)->contains(fn (?string $value): bool => filled($value));
+
+        return view('back.processor.journeys.index', compact('journeys', 'filters', 'hasFilters'));
     }
 
     public function show(Journey $journey): View

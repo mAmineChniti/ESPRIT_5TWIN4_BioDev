@@ -46,4 +46,6 @@
         <p class="text-muted-foreground">{{ $journey->ai_summary }}</p>
     </section>
 @endif
+
+@include('front.journeys._chat-widget', ['journey' => $journey])
 @endsection

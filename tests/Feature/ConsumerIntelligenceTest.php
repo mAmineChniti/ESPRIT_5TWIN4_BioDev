@@ -821,27 +821,7 @@ class ConsumerIntelligenceTest extends TestCase
 
     // ---------- The AI surface itself ----------
 
-    public function test_gemini_is_called_with_the_key_as_a_header_not_a_bearer_token(): void
-    {
-        config([
-            'services.ai.provider' => 'gemini',
-            'services.ai.gemini_model' => 'gemini-test',
-            'services.ai.gemini_base_url' => 'https://gemini.test/v1beta',
-        ]);
-
-        $this->fakeAi($this->findingPayload());
-
-        app(GreenwashingDetector::class)->analyze(Food::factory()->create());
-
-        $request = $this->lastAiRequest();
-
-        // Gemini rejects "Authorization: Bearer" outright with a 401.
-        $this->assertArrayNotHasKey('Authorization', $request->headers());
-        $this->assertSame('test-key', $request->header('x-goog-api-key')[0] ?? null);
-        $this->assertStringNotContainsString('key=test-key', $request->url());
-    }
-
-    public function test_the_openai_shape_is_used_for_other_providers(): void
+    public function test_groq_uses_openai_shape_and_bearer_token(): void
     {
         $this->fakeAi($this->findingPayload());
 
@@ -855,55 +835,20 @@ class ConsumerIntelligenceTest extends TestCase
         $this->assertArrayHasKey('response_format', $body);
     }
 
-    public function test_the_provider_endpoint_is_used_when_no_base_url_is_configured(): void
+    public function test_the_configured_base_url_is_used_when_set(): void
     {
         config([
-            'services.ai.provider' => 'openrouter',
-            'services.ai.base_url' => null,
-            'services.ai.model' => 'meta-llama/llama-3.3-70b-instruct',
+            'services.ai.base_url' => 'https://custom.groq.proxy/v1',
         ]);
 
         Http::fake([
-            'https://openrouter.ai/api/v1/chat/completions' => Http::response($this->chatBody($this->findingPayload())),
+            'https://custom.groq.proxy/v1/chat/completions' => Http::response($this->chatBody($this->findingPayload())),
         ]);
 
         $report = app(GreenwashingDetector::class)->analyze(Food::factory()->create());
 
         $this->assertFalse($report->hasFailed());
-        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://openrouter.ai/api/v1/chat/completions');
-    }
-
-    public function test_an_unknown_provider_reports_failure_instead_of_using_the_previous_endpoint(): void
-    {
-        config(['services.ai.provider' => 'not-a-provider', 'services.ai.base_url' => null]);
-
-        $report = app(GreenwashingDetector::class)->analyze(Food::factory()->create());
-
-        $this->assertTrue($report->hasFailed());
-        $this->assertStringContainsString('no configured endpoint', (string) $report->failure);
-    }
-
-    public function test_gemini_gets_the_schema_and_no_thinking_budget(): void
-    {
-        config([
-            'services.ai.provider' => 'gemini',
-            'services.ai.gemini_model' => 'gemini-test',
-            'services.ai.gemini_base_url' => 'https://gemini.test/v1beta',
-        ]);
-
-        $this->fakeAi($this->findingPayload());
-
-        app(GreenwashingDetector::class)->analyze(Food::factory()->create());
-
-        $body = json_decode((string) $this->lastAiRequest()->body(), true);
-        $config = $body['generationConfig'];
-
-        // Without the schema the model invents field names and every field the
-        // caller reads back comes back empty.
-        $this->assertArrayHasKey('responseSchema', $config);
-        $this->assertArrayNotHasKey('additionalProperties', $config['responseSchema']);
-        $this->assertSame(0, $config['thinkingConfig']['thinkingBudget']);
-        $this->assertSame('application/json', $config['responseMimeType']);
+        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://custom.groq.proxy/v1/chat/completions');
     }
 
     public function test_a_transient_throttle_is_retried(): void
@@ -912,7 +857,7 @@ class ConsumerIntelligenceTest extends TestCase
             ->push('busy', 503)
             ->push($this->chatBody($this->findingPayload()));
 
-        Http::fake(['ai.test/*' => $sequence, 'gemini.test/*' => $sequence]);
+        Http::fake(['ai.test/*' => $sequence]);
 
         $report = app(GreenwashingDetector::class)->analyze(Food::factory()->create());
 

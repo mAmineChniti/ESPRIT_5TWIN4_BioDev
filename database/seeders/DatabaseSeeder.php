@@ -186,6 +186,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call(LogisticsSeeder::class);
         $this->call(AgriculturalRegionSeeder::class);
+        $this->call(CitySeeder::class);
         // Runs last: a journey is attached to a seeded product.
         $this->call(JourneySeeder::class);
     }

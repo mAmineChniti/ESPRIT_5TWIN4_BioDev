@@ -10,6 +10,7 @@ use App\Models\Journey;
 use App\Models\JourneyStep;
 use App\Models\Shipment;
 use App\Models\User;
+use Database\Seeders\CitySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -42,17 +43,23 @@ class JourneyStepTest extends TestCase
 
     public function test_a_processor_can_record_a_step_with_an_english_type(): void
     {
+        $this->seed(CitySeeder::class);
         $processor = User::factory()->create(['role' => 'processor']);
         $journey = Journey::factory()->create();
 
         $this->actingAs($processor)
-            ->post(route('processor.journeys.steps.store', $journey), $this->validStep(['type' => 'storage']))
+            ->post(route('processor.journeys.steps.store', $journey), $this->validStep([
+                'type' => 'storage',
+                'location' => 'Nabeul',
+                'country_code' => 'TN',
+            ]))
             ->assertRedirect(route('processor.journeys.steps.index', $journey));
 
         $this->assertDatabaseHas('journey_steps', [
             'journey_id' => $journey->id,
             'type' => 'storage',
-            'location' => 'Nabeul, Tunisia',
+            'location' => 'Nabeul',
+            'country_code' => 'TN',
         ]);
     }
 
@@ -70,6 +77,7 @@ class JourneyStepTest extends TestCase
 
     public function test_a_processor_can_update_and_delete_a_step(): void
     {
+        $this->seed(CitySeeder::class);
         $processor = User::factory()->create(['role' => 'processor']);
         $step = JourneyStep::factory()->create();
         $journey = $step->journey;
@@ -77,11 +85,15 @@ class JourneyStepTest extends TestCase
         $this->actingAs($processor)
             ->patch(
                 route('processor.journeys.steps.update', [$journey, $step]),
-                $this->validStep(['type' => 'sale', 'location' => 'Tunis, Tunisia'])
+                $this->validStep([
+                    'type' => 'sale',
+                    'location' => 'Tunis',
+                    'country_code' => 'TN',
+                ])
             )
             ->assertRedirect(route('processor.journeys.steps.show', [$journey, $step]));
-
         $this->assertSame('sale', $step->fresh()->type);
+        $this->assertSame('TN', $step->fresh()->country_code);
 
         $this->actingAs($processor)
             ->delete(route('processor.journeys.steps.destroy', [$journey, $step]))
@@ -122,6 +134,17 @@ class JourneyStepTest extends TestCase
             ->assertForbidden();
 
         $this->assertDatabaseCount('journey_steps', 0);
+    }
+
+    public function test_guests_are_redirected_to_the_localized_login_page_for_journeys(): void
+    {
+        $journey = Journey::factory()->create();
+
+        $this->get(route('processor.journeys.steps.create', [
+            'locale' => 'fr',
+            'journey' => $journey,
+        ]))
+            ->assertRedirect(route('login', ['locale' => 'fr']));
     }
 
     public function test_a_step_cannot_cite_an_unapproved_farm(): void
@@ -174,6 +197,7 @@ class JourneyStepTest extends TestCase
 
     public function test_the_create_form_prefills_the_next_free_order_and_suggested_type(): void
     {
+        $this->seed(CitySeeder::class);
         $processor = User::factory()->create(['role' => 'processor']);
         $journey = Journey::factory()->create();
         JourneyStep::factory()->create([
@@ -191,6 +215,235 @@ class JourneyStepTest extends TestCase
         $this->assertStringContainsString('value="2"', $html);
         $this->assertStringContainsString('value="transport" selected', $html);
         $this->assertStringContainsString('Step 2', $html);
+    }
+
+    public function test_all_journey_and_step_crud_pages_render_for_a_processor(): void
+    {
+        $this->seed(CitySeeder::class);
+        $processor = User::factory()->create(['role' => 'processor']);
+        $journey = Journey::factory()->create();
+        $step = JourneyStep::factory()->create([
+            'journey_id' => $journey->id,
+            'location' => 'Tunis',
+            'country_code' => 'TN',
+        ]);
+
+        $this->actingAs($processor)
+            ->get(route('processor.journeys.index'))
+            ->assertOk()
+            ->assertSee($journey->product->name);
+
+        $this->get(route('processor.journeys.show', $journey))->assertOk();
+        $this->get(route('processor.journeys.steps.index', $journey))->assertOk();
+        $this->get(route('processor.journeys.steps.create', $journey))->assertOk();
+        $this->get(route('processor.journeys.steps.show', [$journey, $step]))->assertOk();
+        $this->get(route('processor.journeys.steps.edit', [$journey, $step]))->assertOk();
+    }
+
+    public function test_the_journey_list_filters_by_product_step_type_and_date_range(): void
+    {
+        $processor = User::factory()->create(['role' => 'processor']);
+        $matchingJourney = Journey::factory()->create();
+        $matchingJourney->product->update(['name' => 'Searchable olive oil']);
+        JourneyStep::factory()->create([
+            'journey_id' => $matchingJourney->id,
+            'type' => 'origin',
+            'location' => 'Tunis',
+            'step_date' => '2026-09-12',
+        ]);
+
+        $otherJourney = Journey::factory()->create();
+        $otherJourney->product->update(['name' => 'Searchable apple juice']);
+        JourneyStep::factory()->create([
+            'journey_id' => $otherJourney->id,
+            'type' => 'sale',
+            'location' => 'Sousse',
+            'step_date' => '2026-10-12',
+        ]);
+
+        $this->actingAs($processor)
+            ->get(route('processor.journeys.index', [
+                'search' => 'olive',
+                'type' => 'origin',
+                'date_from' => '2026-09-01',
+                'date_to' => '2026-09-30',
+            ]))
+            ->assertOk()
+            ->assertSee('Searchable olive oil')
+            ->assertDontSee('Searchable apple juice');
+    }
+
+    public function test_the_journey_list_can_search_by_step_location(): void
+    {
+        $processor = User::factory()->create(['role' => 'processor']);
+        $matchingJourney = Journey::factory()->create();
+        $matchingJourney->product->update(['name' => 'Journey at Sfax']);
+        JourneyStep::factory()->create([
+            'journey_id' => $matchingJourney->id,
+            'location' => 'Sfax',
+        ]);
+
+        $otherJourney = Journey::factory()->create();
+        $otherJourney->product->update(['name' => 'Journey at Tunis']);
+        JourneyStep::factory()->create([
+            'journey_id' => $otherJourney->id,
+            'location' => 'Tunis',
+        ]);
+
+        $this->actingAs($processor)
+            ->get(route('processor.journeys.index', ['search' => 'Sfax']))
+            ->assertOk()
+            ->assertSee('Journey at Sfax')
+            ->assertDontSee('Journey at Tunis');
+    }
+
+    public function test_the_step_list_filters_rows_without_changing_the_workflow_tracker(): void
+    {
+        $processor = User::factory()->create(['role' => 'processor']);
+        $journey = Journey::factory()->create();
+        $steps = collect([
+            ['type' => 'origin', 'location' => 'Tunis', 'step_date' => '2026-09-01'],
+            ['type' => 'transport', 'location' => 'Sousse', 'step_date' => '2026-09-12'],
+            ['type' => 'sale', 'location' => 'Sfax', 'step_date' => '2026-10-12'],
+        ])->map(fn (array $attributes, int $index): JourneyStep => JourneyStep::factory()->create([
+            'journey_id' => $journey->id,
+            'step_order' => $index + 1,
+            ...$attributes,
+        ]));
+
+        $this->actingAs($processor)
+            ->get(route('processor.journeys.steps.index', [
+                'journey' => $journey,
+                'search' => 'Sousse',
+                'type' => 'transport',
+                'date_from' => '2026-09-01',
+                'date_to' => '2026-09-30',
+            ]))
+            ->assertOk()
+            ->assertSee('aria-label="Edit step '.$steps[1]->step_order.'"', false)
+            ->assertDontSee('aria-label="Edit step '.$steps[0]->step_order.'"', false)
+            ->assertDontSee('aria-label="Edit step '.$steps[2]->step_order.'"', false)
+            ->assertSee('3 of 4 stages recorded');
+
+        $this->get(route('processor.journeys.steps.index', [
+            'journey' => $journey,
+            'search' => 'No matching city',
+        ]))
+            ->assertOk()
+            ->assertSee('No steps match your filters.')
+            ->assertSee('3 of 4 stages recorded');
+    }
+
+    public function test_journey_filters_render_in_french_and_arabic(): void
+    {
+        $processor = User::factory()->create(['role' => 'processor']);
+        $journey = Journey::factory()->create();
+        $this->actingAs($processor);
+
+        $this->get(route('processor.journeys.index', ['locale' => 'fr']))
+            ->assertOk()
+            ->assertSee('Rechercher un produit ou un lieu')
+            ->assertSee('À partir du');
+
+        $this->get(route('processor.journeys.steps.index', [
+            'locale' => 'ar',
+            'journey' => $journey,
+        ]))
+            ->assertOk()
+            ->assertSee('البحث حسب الموقع')
+            ->assertSee('من تاريخ')
+            ->assertSee('dir="rtl"', false);
+    }
+
+    public function test_the_step_form_lists_approved_farms_and_city_reference_options(): void
+    {
+        $this->seed(CitySeeder::class);
+        $processor = User::factory()->create(['role' => 'processor']);
+        $journey = Journey::factory()->create();
+        $approvedFarm = Farm::factory()->create([
+            'name' => 'Approved Farm',
+            'address' => 'Nabeul',
+            'status' => FarmStatus::Approved,
+        ]);
+        $pendingFarm = Farm::factory()->create([
+            'name' => 'Pending Farm',
+            'status' => FarmStatus::Pending,
+        ]);
+
+        $html = $this->actingAs($processor)
+            ->get(route('processor.journeys.steps.create', $journey))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('name="farm_id"', $html);
+        $this->assertStringContainsString($approvedFarm->name.' — '.$approvedFarm->address, $html);
+        $this->assertStringNotContainsString($pendingFarm->name, $html);
+        $this->assertStringContainsString('name="country_code"', $html);
+        $this->assertStringContainsString('list="city-options"', $html);
+        $this->assertStringContainsString('<option value="Tunis" label="TN">', $html);
+    }
+
+    public function test_journey_step_observer_recalculates_distance_when_steps_change_or_are_deleted(): void
+    {
+        $this->seed(CitySeeder::class);
+        $journey = Journey::factory()->create(['total_distance_km' => 0]);
+        $firstStep = JourneyStep::factory()->create([
+            'journey_id' => $journey->id,
+            'step_order' => 1,
+            'location' => 'Tunis',
+            'country_code' => 'TN',
+        ]);
+        $secondStep = JourneyStep::factory()->create([
+            'journey_id' => $journey->id,
+            'step_order' => 2,
+            'location' => 'Sousse',
+            'country_code' => 'TN',
+        ]);
+
+        $this->assertSame('116.0', $journey->fresh()->total_distance_km);
+
+        $secondStep->update(['location' => 'Sfax']);
+
+        $this->assertSame('236.0', $journey->fresh()->total_distance_km);
+
+        $secondStep->delete();
+
+        $this->assertSame('0.0', $journey->fresh()->total_distance_km);
+        $this->assertModelExists($firstStep);
+    }
+
+    public function test_farm_and_city_fields_render_in_french_and_arabic(): void
+    {
+        $this->seed(CitySeeder::class);
+        $processor = User::factory()->create(['role' => 'processor']);
+        $journey = Journey::factory()->create();
+        $this->actingAs($processor);
+
+        $frenchHtml = $this->get(route('processor.journeys.steps.create', [
+            'locale' => 'fr',
+            'journey' => $journey,
+        ]))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('Ferme', $frenchHtml);
+        $this->assertStringNotContainsString('facultative', $frenchHtml);
+        $this->assertStringContainsString('Aucune ferme sélectionnée', $frenchHtml);
+        $this->assertStringContainsString('Pays', $frenchHtml);
+        $this->assertStringContainsString('Ville', $frenchHtml);
+
+        $arabicHtml = $this->get(route('processor.journeys.steps.create', [
+            'locale' => 'ar',
+            'journey' => $journey,
+        ]))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('dir="rtl"', $arabicHtml);
+        $this->assertStringContainsString('مزرعة', $arabicHtml);
+        $this->assertStringContainsString('اختر بلدًا (اختياري)', $arabicHtml);
+        $this->assertStringContainsString('البلد', $arabicHtml);
+        $this->assertStringContainsString('المدينة', $arabicHtml);
     }
 
     public function test_journey_pages_fail_closed_without_the_role_middleware(): void
@@ -229,5 +482,24 @@ class JourneyStepTest extends TestCase
         $this->assertStringContainsString('data-state="completed"', $html);
         $this->assertStringContainsString('1 of 4 stages recorded', $html);
         $this->assertStringContainsString('Record Transport — step 2', $html);
+    }
+
+    public function test_the_steps_page_renders_when_every_workflow_stage_is_recorded(): void
+    {
+        $processor = User::factory()->create(['role' => 'processor']);
+        $journey = Journey::factory()->create();
+
+        foreach (JourneyStep::FLOW as $index => $type) {
+            JourneyStep::factory()->create([
+                'journey_id' => $journey->id,
+                'step_order' => $index + 1,
+                'type' => $type,
+            ]);
+        }
+
+        $this->actingAs($processor)
+            ->get(route('processor.journeys.steps.index', $journey))
+            ->assertOk()
+            ->assertSee('Every workflow stage is recorded.');
     }
 }

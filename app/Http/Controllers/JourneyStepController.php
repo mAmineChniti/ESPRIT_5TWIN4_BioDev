@@ -4,20 +4,40 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreJourneyStepRequest;
 use App\Http\Requests\UpdateJourneyStepRequest;
+use App\Models\City;
+use App\Models\Farm;
 use App\Models\Journey;
 use App\Models\JourneyStep;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class JourneyStepController extends Controller
 {
-    public function index(Journey $journey): View
+    public function index(Request $request, Journey $journey): View
     {
         $this->ensureProcessor();
-        $journey->load(['product', 'steps']);
 
-        return view('back.processor.journeys.steps.index', compact('journey'));
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:120'],
+            'type' => ['nullable', Rule::in(JourneyStep::FLOW)],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+        ]);
+
+        $journey->load(['product', 'steps']);
+        $steps = $journey->steps()
+            ->when($filters['search'] ?? null, fn (Builder $query, string $search) => $query->where('location', 'like', "%{$search}%"))
+            ->when($filters['type'] ?? null, fn (Builder $query, string $type) => $query->where('type', $type))
+            ->when($filters['date_from'] ?? null, fn (Builder $query, string $date) => $query->whereDate('step_date', '>=', $date))
+            ->when($filters['date_to'] ?? null, fn (Builder $query, string $date) => $query->whereDate('step_date', '<=', $date))
+            ->paginate(10)
+            ->withQueryString();
+        $hasFilters = collect($filters)->contains(fn (?string $value): bool => filled($value));
+
+        return view('back.processor.journeys.steps.index', compact('journey', 'steps', 'filters', 'hasFilters'));
     }
 
     public function create(Request $request, Journey $journey): View
@@ -44,7 +64,13 @@ class JourneyStepController extends Controller
             'step_date' => now()->toDateString(),
         ]);
 
-        return view('back.processor.journeys.steps.create', compact('journey', 'step'));
+        $farms = Farm::approved()
+            ->orderBy('name')
+            ->get(['id', 'name', 'address']);
+        $cities = City::query()->orderBy('name')->get(['name', 'country_code']);
+        $countryCodes = City::query()->distinct()->orderBy('country_code')->pluck('country_code');
+
+        return view('back.processor.journeys.steps.create', compact('journey', 'step', 'farms', 'cities', 'countryCodes'));
     }
 
     public function store(StoreJourneyStepRequest $request, Journey $journey): RedirectResponse
@@ -71,7 +97,13 @@ class JourneyStepController extends Controller
         $this->ensureProcessor();
         $this->ensureBelongsToJourney($journey, $step);
 
-        return view('back.processor.journeys.steps.edit', compact('journey', 'step'));
+        $farms = Farm::approved()
+            ->orderBy('name')
+            ->get(['id', 'name', 'address']);
+        $cities = City::query()->orderBy('name')->get(['name', 'country_code']);
+        $countryCodes = City::query()->distinct()->orderBy('country_code')->pluck('country_code');
+
+        return view('back.processor.journeys.steps.edit', compact('journey', 'step', 'farms', 'cities', 'countryCodes'));
     }
 
     public function update(

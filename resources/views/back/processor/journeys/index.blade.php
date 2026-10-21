@@ -8,6 +8,40 @@
     <p class="mt-1 text-muted-foreground">{{ __('Review the journeys generated for products.') }}</p>
 </div>
 
+<form method="GET" action="{{ route('processor.journeys.index') }}" novalidate class="mb-6 flex flex-wrap items-end gap-3 rounded-lg border border-border bg-card p-4">
+    <div class="min-w-48 flex-1 space-y-1">
+        <april:label for="journey-search">{{ __('Search products or locations') }}</april:label>
+        <april:input id="journey-search" name="search" type="search" value="{{ $filters['search'] ?? '' }}" maxlength="120" />
+    </div>
+    <div class="min-w-36 space-y-1">
+        <april:label for="journey-type">{{ __('Step type') }}</april:label>
+        <april:native-select id="journey-type" name="type">
+            <option value="">{{ __('All step types') }}</option>
+            @foreach(\App\Models\JourneyStep::labels() as $value => $label)
+                <option value="{{ $value }}" @selected(($filters['type'] ?? '') === $value)>{{ $label }}</option>
+            @endforeach
+        </april:native-select>
+    </div>
+    <div class="min-w-36 space-y-1">
+        <april:label for="journey-date-from">{{ __('From date') }}</april:label>
+        <april:input id="journey-date-from" name="date_from" type="date" value="{{ $filters['date_from'] ?? '' }}" />
+    </div>
+    <div class="min-w-36 space-y-1">
+        <april:label for="journey-date-to">{{ __('To date') }}</april:label>
+        <april:input id="journey-date-to" name="date_to" type="date" value="{{ $filters['date_to'] ?? '' }}" />
+    </div>
+    <div class="flex gap-2">
+        <april:button type="submit">{{ __('Filter') }}</april:button>
+        @if ($hasFilters)
+            <april:button-link href="{{ route('processor.journeys.index') }}" variant="outline">{{ __('Clear') }}</april:button-link>
+        @endif
+    </div>
+</form>
+
+@if ($errors->any())
+    <p role="alert" class="mb-4 text-sm text-destructive">{{ $errors->first() }}</p>
+@endif
+
 <april:card class="overflow-hidden">
     <x-slot:content>
         <div class="overflow-x-auto">
@@ -53,7 +87,7 @@
                     @empty
                     <tr>
                         <td colspan="4" class="px-6 py-6 text-center text-sm text-muted-foreground">
-                            {{ __('No journeys generated.') }}
+                            {{ $hasFilters ? __('No journeys match your filters.') : __('No journeys generated.') }}
                         </td>
                     </tr>
                     @endforelse

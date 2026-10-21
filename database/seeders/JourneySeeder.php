@@ -18,15 +18,18 @@ class JourneySeeder extends Seeder
     /**
      * The four step types, in the order a product travels through them.
      *
-     * @var list<array{0: string, 1: string}>
+     * @var list<array{0: string, 1: string, 2: string}>
      */
     private const STEP_TYPES = [
-        ['origin', 'Farm or cooperative'],
-        ['transport', 'In transit'],
-        ['storage', 'Warehouse'],
-        ['sale', 'Retail'],
+        ['origin', 'Tunis', 'TN'],
+        ['transport', 'Sousse', 'TN'],
+        ['storage', 'Sfax', 'TN'],
+        ['sale', 'Nabeul', 'TN'],
     ];
 
+    /**
+     * Seed traceability journeys using locations in the city reference.
+     */
     public function run(): void
     {
         $foods = Food::query()
@@ -57,17 +60,21 @@ class JourneySeeder extends Seeder
         }
     }
 
+    /**
+     * Record a seeded subset of the journey workflow.
+     */
     private function recordSteps(int $journeyId): void
     {
         $depth = fake()->numberBetween(2, count(self::STEP_TYPES));
         $firstDate = now()->subDays(fake()->numberBetween(10, 40));
 
-        foreach (array_slice(self::STEP_TYPES, 0, $depth) as $offset => [$type, $location]) {
+        foreach (array_slice(self::STEP_TYPES, 0, $depth) as $offset => [$type, $location, $countryCode]) {
             DB::table('journey_steps')->insert([
                 'journey_id' => $journeyId,
                 'step_order' => $offset + 1,
                 'type' => $type,
                 'location' => $location,
+                'country_code' => $countryCode,
                 'step_date' => $firstDate->copy()->addDays($offset * 3)->format('Y-m-d'),
                 'description' => fake()->sentence(8),
                 'farm_id' => null,

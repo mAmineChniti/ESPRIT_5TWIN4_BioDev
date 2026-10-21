@@ -238,7 +238,7 @@ class ProductRecommender
     {
         return 'recommendation-reasons:'.sha1(json_encode([
             'locale' => app()->getLocale(),
-            'provider' => $this->ai->provider(),
+            'provider' => 'groq',
             'model' => $this->ai->model(),
             'compared_to' => $comparedTo?->only(['id', 'name', 'origin']),
             'products' => $candidates->map(fn (Food $food): array => [

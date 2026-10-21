@@ -24,19 +24,17 @@ class JourneyStep extends Model
     public const FLOW = ['origin', 'transport', 'storage', 'sale'];
 
     /**
-     * Optional links to the farm or shipment behind a step.
+     * Optional farm and shipment references for this step.
      *
-     * Deliberately without foreign keys: the suite runs on SQLite, which
-     * cannot add FKs to existing tables, so integrity is enforced by `exists`
-     * validation on write instead. No code reads these columns yet; whoever
-     * adds the first reader must also add the scoping (approved farm,
-     * reachable shipment) that reader depends on.
+     * These columns intentionally have no foreign keys, so writes validate
+     * references against approved farms and non-cancelled shipments.
      */
     protected $fillable = [
         'journey_id',
         'step_order',
         'type',
         'location',
+        'country_code',
         'step_date',
         'description',
         'farm_id',
@@ -49,6 +47,14 @@ class JourneyStep extends Model
             'step_order' => 'integer',
             'step_date' => 'date',
         ];
+    }
+
+    /**
+     * Farm associated with this traceability step, when one is selected.
+     */
+    public function farm(): BelongsTo
+    {
+        return $this->belongsTo(Farm::class);
     }
 
     public function journey(): BelongsTo
@@ -101,6 +107,6 @@ class JourneyStep extends Model
             }
         }
 
-        return end(self::FLOW);
+        return self::FLOW[array_key_last(self::FLOW)];
     }
 }

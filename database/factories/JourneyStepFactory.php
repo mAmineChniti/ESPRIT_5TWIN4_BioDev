@@ -27,6 +27,7 @@ class JourneyStepFactory extends Factory
             'step_order' => 1,
             'type' => fake()->randomElement(['origin', 'transport', 'storage', 'sale']),
             'location' => fake()->city(),
+            'country_code' => null,
             'step_date' => fake()->date(),
             'description' => fake()->sentence(10),
             'farm_id' => null,
