@@ -181,6 +181,9 @@
 
         <div class="flex items-center gap-2.5 rounded-lg border border-sidebar-border bg-background/50 px-2.5 py-2">
             <april:avatar size="sm">
+                @if ($user->avatarUrl())
+                    <x-slot:image src="{{ $user->avatarUrl() }}" alt="{{ $user->name }}"></x-slot:image>
+                @endif
                 <x-slot:fallback class="bg-primary text-xs font-bold text-primary-foreground">{{ strtoupper(substr($user->name, 0, 1)) }}</x-slot:fallback>
             </april:avatar>
             <div class="min-w-0 flex-1">

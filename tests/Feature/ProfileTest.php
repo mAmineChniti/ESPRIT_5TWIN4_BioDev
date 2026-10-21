@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ProfileTest extends TestCase
@@ -95,5 +97,52 @@ class ProfileTest extends TestCase
             ->assertRedirect(route('profile.edit'));
 
         $this->assertNotNull($user->fresh());
+    }
+
+    public function test_profile_photo_can_be_uploaded(): void
+    {
+        Storage::fake('public');
+
+        $user = User::factory()->create();
+        $file = UploadedFile::fake()->image('avatar.jpg');
+
+        $response = $this
+            ->actingAs($user)
+            ->patch(route('profile.update'), [
+                'name' => 'Test User',
+                'email' => $user->email,
+                'avatar' => $file,
+            ]);
+
+        $response->assertSessionHasNoErrors()->assertRedirect(route('profile.edit'));
+        $user->refresh();
+
+        $this->assertNotNull($user->avatar_path);
+        Storage::disk('public')->assertExists($user->avatar_path);
+        $this->assertNotNull($user->avatarUrl());
+    }
+
+    public function test_profile_photo_can_be_removed(): void
+    {
+        Storage::fake('public');
+
+        $user = User::factory()->create([
+            'avatar_path' => 'avatars/existing.jpg',
+        ]);
+        Storage::disk('public')->put('avatars/existing.jpg', 'content');
+
+        $response = $this
+            ->actingAs($user)
+            ->patch(route('profile.update'), [
+                'name' => 'Test User',
+                'email' => $user->email,
+                'remove_avatar' => '1',
+            ]);
+
+        $response->assertSessionHasNoErrors()->assertRedirect(route('profile.edit'));
+        $user->refresh();
+
+        $this->assertNull($user->avatar_path);
+        Storage::disk('public')->assertMissing('avatars/existing.jpg');
     }
 }
