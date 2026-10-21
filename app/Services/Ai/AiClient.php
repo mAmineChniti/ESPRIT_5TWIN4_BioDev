@@ -169,7 +169,7 @@ class AiClient
         }
 
         if (Str::startsWith($raw, '```')) {
-            $raw = (string) preg_replace('/^```[a-zA-Z]*\s*|\s*```$/m', '', $raw);
+            $raw = (string) preg_replace('/(?:(?:^```[a-zA-Z]*\s*)|(?:\s*```$))/m', '', $raw);
         }
 
         // Take the outermost object, ignoring anything the model wrapped around it.

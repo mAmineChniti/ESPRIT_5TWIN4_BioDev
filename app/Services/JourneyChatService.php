@@ -21,7 +21,7 @@ class JourneyChatService
      */
     public function ask(Journey $journey, string $question, string $locale = 'fr'): string
     {
-        $cacheKey = 'journey-chat:'.$journey->getKey().':'.md5($question.$locale);
+        $cacheKey = 'journey-chat:'.$journey->getKey().':'.hash('sha256', $question.$locale);
 
         return Cache::remember($cacheKey, now()->addHours(24), function () use ($journey, $question, $locale): string {
             $journey->loadMissing(['product', 'steps.farm']);

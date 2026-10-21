@@ -33,7 +33,7 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
-            this.loadSuggestions();
+            void this.loadSuggestions();
         },
 
         csrfToken() {

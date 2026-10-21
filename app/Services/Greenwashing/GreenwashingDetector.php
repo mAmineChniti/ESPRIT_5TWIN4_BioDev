@@ -184,7 +184,7 @@ class GreenwashingDetector
     {
         $food->loadMissing(['certifications', 'transitions', 'reports', 'producer', 'category']);
 
-        return 'greenwashing:'.sha1(json_encode([
+        return 'greenwashing:'.hash('sha256', json_encode([
             'locale' => app()->getLocale(),
             'provider' => 'groq',
             'model' => $this->ai->model(),

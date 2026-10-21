@@ -71,7 +71,7 @@ class FarmStoryService
 
     private function cacheKey(Farm $farm, ?string $locale = null): string
     {
-        $variant = sha1('groq|'.$this->ai->model());
+        $variant = hash('sha256', 'groq|'.$this->ai->model());
 
         return "farm_story_{$farm->id}_".($locale ?? app()->getLocale()).'_'.substr($variant, 0, 12);
     }

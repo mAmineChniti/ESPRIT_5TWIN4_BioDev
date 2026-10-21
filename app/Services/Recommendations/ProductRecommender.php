@@ -236,7 +236,7 @@ class ProductRecommender
      */
     private function reasonsCacheKey(Collection $candidates, ?Food $comparedTo): string
     {
-        return 'recommendation-reasons:'.sha1(json_encode([
+        return 'recommendation-reasons:'.hash('sha256', json_encode([
             'locale' => app()->getLocale(),
             'provider' => 'groq',
             'model' => $this->ai->model(),
