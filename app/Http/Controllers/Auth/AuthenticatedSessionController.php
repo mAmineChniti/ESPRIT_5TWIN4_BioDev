@@ -26,9 +26,20 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
+        $user = $request->user();
+
+        if ($user && $user->hasTwoFactorEnabled()) {
+            Auth::guard('web')->logout();
+
+            $request->session()->put('login.id', $user->id);
+            $request->session()->put('login.remember', $request->boolean('remember'));
+
+            return redirect()->route('two-factor.login');
+        }
+
         $request->session()->regenerate();
 
-        $role = $request->user()?->role ?? 'consumer';
+        $role = $user?->role ?? 'consumer';
 
         return match ($role) {
             'admin' => redirect()->route('dashboard'),

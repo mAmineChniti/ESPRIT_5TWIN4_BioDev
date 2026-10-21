@@ -37,6 +37,14 @@
         </april:card>
 
         <april:card>
+            <x-slot:title>{{ __('Two factor authentication') }}</x-slot:title>
+            <x-slot:description>{{ __("Add additional security to your account using two factor authentication.") }}</x-slot:description>
+            <x-slot:content>
+                @include('back.profile.partials.two-factor-authentication-form')
+            </x-slot:content>
+        </april:card>
+
+        <april:card>
             <x-slot:title>{{ __('Delete account') }}</x-slot:title>
             <x-slot:description>{{ __("Permanently remove your account and data.") }}</x-slot:description>
             <x-slot:content>

@@ -27,6 +27,9 @@
                 <td class="whitespace-nowrap p-4 align-middle">
                     <div class="flex items-center gap-3">
                         <april:avatar size="sm">
+                            @if ($user->avatarUrl())
+                                <x-slot:image src="{{ $user->avatarUrl() }}" alt="{{ $user->name }}"></x-slot:image>
+                            @endif
                             <x-slot:fallback class="bg-primary text-xs font-bold text-primary-foreground">
                                 {{ strtoupper(substr($user->name, 0, 1)) }}
                             </x-slot:fallback>

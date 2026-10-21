@@ -6,9 +6,33 @@
     </form>
 @endif
 
-<form method="post" action="{{ route('profile.update') }}" class="space-y-4" novalidate>
+<form method="post" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="space-y-4" novalidate>
     @csrf
     @method('patch')
+
+    <div class="flex items-center gap-4">
+        <april:avatar size="lg">
+            @if ($user->avatarUrl())
+                <x-slot:image src="{{ $user->avatarUrl() }}" alt="{{ $user->name }}"></x-slot:image>
+            @endif
+            <x-slot:fallback class="bg-primary text-base font-bold text-primary-foreground">{{ strtoupper(substr($user->name, 0, 1)) }}</x-slot:fallback>
+        </april:avatar>
+
+        <div class="flex-1 space-y-2">
+            <april:label for="avatar">{{ __('Profile photo') }}</april:label>
+            <april:input id="avatar" name="avatar" type="file" accept="image/png,image/jpeg,image/webp"
+                         aria-describedby="avatar-error"
+                         :aria-invalid="$errors->has('avatar') ? 'true' : 'false'" />
+            <x-input-error id="avatar-error" :messages="$errors->get('avatar')" />
+
+            @if ($user->avatar_path)
+                <div class="flex items-center gap-2 pt-1">
+                    <april:checkbox id="remove_avatar" name="remove_avatar" value="1" />
+                    <april:label for="remove_avatar" class="text-xs font-normal text-muted-foreground">{{ __('Remove current photo') }}</april:label>
+                </div>
+            @endif
+        </div>
+    </div>
 
     <div class="space-y-2">
         <april:label for="name">{{ __("Name") }}</april:label>

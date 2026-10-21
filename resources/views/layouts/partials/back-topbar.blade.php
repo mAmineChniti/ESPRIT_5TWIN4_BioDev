@@ -8,6 +8,9 @@
         <x-theme-toggle />
         @auth
             <april:avatar size="sm" title="{{ Auth::user()->name }}">
+                @if (Auth::user()->avatarUrl())
+                    <x-slot:image src="{{ Auth::user()->avatarUrl() }}" alt="{{ Auth::user()->name }}"></x-slot:image>
+                @endif
                 <x-slot:fallback class="bg-primary text-xs font-bold text-primary-foreground">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</x-slot:fallback>
             </april:avatar>
         @endauth
