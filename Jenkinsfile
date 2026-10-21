@@ -90,6 +90,7 @@ pipeline {
                         sonar-scanner \
                           -Dsonar.host.url="$SONAR_HOST_URL" \
                           -Dsonar.token="$SONAR_TOKEN" \
+                          -Dsonar.scanner.skipJreProvisioning=true \
                           -Dsonar.qualitygate.wait=true \
                           -Dsonar.qualitygate.timeout=300
                     '''
