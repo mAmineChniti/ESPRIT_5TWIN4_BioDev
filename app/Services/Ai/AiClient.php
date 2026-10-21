@@ -10,11 +10,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
- * Thin client over the hosted chat models.
+ * Thin client over Groq's hosted chat models.
  *
- * Uses Laravel's HTTP client rather than a vendor SDK so the provider is a
- * config value: Groq, OpenRouter, OpenAI and Together all speak the OpenAI
- * chat-completions shape, and Gemini is handled by one extra branch.
+ * Uses Laravel's HTTP client rather than a vendor SDK for simplicity.
  */
 class AiClient
 {
@@ -23,16 +21,9 @@ class AiClient
         return filled($this->key());
     }
 
-    public function provider(): string
-    {
-        return (string) config('services.ai.provider', 'groq');
-    }
-
     public function model(): string
     {
-        return $this->provider() === 'gemini'
-            ? (string) config('services.ai.gemini_model')
-            : (string) config('services.ai.model');
+        return (string) config('services.ai.model', 'llama-3.3-70b-versatile');
     }
 
     /**
@@ -53,7 +44,7 @@ class AiClient
                     'schema' => $schema,
                 ],
             ],
-        ], $maxTokens, $schema));
+        ], $maxTokens));
     }
 
     /**
@@ -63,76 +54,58 @@ class AiClient
      */
     public function text(array $messages, int $maxTokens = 400, ?int $timeout = null): string
     {
-        return trim($this->call($messages, [], $maxTokens, null, $timeout));
+        return trim($this->call($messages, [], $maxTokens, $timeout));
     }
 
     /**
      * @param  list<array{role: string, content: string}>  $messages
      * @param  array<string, mixed>  $options
-     * @param  array<string, mixed>|null  $schema
      */
-    private function complete(array $messages, array $options, int $maxTokens, ?array $schema): string
+    private function complete(array $messages, array $options, int $maxTokens): string
     {
-        return $this->call($messages, $options, $maxTokens, $schema);
+        return $this->call($messages, $options, $maxTokens);
     }
 
     /**
      * @param  list<array{role: string, content: string}>  $messages
      * @param  array<string, mixed>  $options
-     * @param  array<string, mixed>|null  $schema  Required shape, when the
-     *                                             caller expects JSON back
      */
     private function call(
         array $messages,
         array $options,
         int $maxTokens,
-        ?array $schema = null,
         ?int $timeout = null,
     ): string {
         if (! $this->isConfigured()) {
             throw AiException::notConfigured();
         }
 
-        $payload = $this->provider() === 'gemini'
-            ? $this->geminiPayload($messages, $maxTokens, $schema)
-            : $this->openAiPayload($messages, $options, $maxTokens);
+        $payload = $this->openAiPayload($messages, $options, $maxTokens);
+        $url = $this->baseUrl().'/chat/completions';
 
-        $isGemini = $this->provider() === 'gemini';
-
-        $url = $isGemini
-            ? rtrim((string) config('services.ai.gemini_base_url'), '/').'/models/'.$this->model().':generateContent'
-            : $this->baseUrl().'/chat/completions';
-
-        // Gemini rejects an OpenAI-style "Authorization: Bearer" outright; it
-        // wants the key as x-goog-api-key. Sending both fails with a 401.
         $request = Http::acceptJson()
-            ->timeout($timeout ?? (int) config('services.ai.timeout', 25));
+            ->timeout($timeout ?? (int) config('services.ai.timeout', 25))
+            ->withToken($this->key());
 
-        $request = $isGemini
-            ? $request->withHeaders(['x-goog-api-key' => $this->key()])
-            : $request->withToken($this->key());
+        $response = $this->send($request, $url, $payload);
 
-        $response = $this->send($request, $url, $payload, $isGemini);
-
-        return $isGemini
-            ? $this->geminiText($response->json())
-            : (string) data_get($response->json(), 'choices.0.message.content', '');
+        return (string) data_get($response->json(), 'choices.0.message.content', '');
     }
 
     /**
-     * POST with one retry, because the free tiers shed load with a 503 or 429.
+     * POST with one retry, because the free tier sheds load with a 503 or 429.
      *
      * @param  PendingRequest  $request
      * @param  array<string, mixed>  $payload
      */
-    private function send($request, string $url, array $payload, bool $isGemini): Response
+    private function send($request, string $url, array $payload): Response
     {
         for ($attempt = 1; ; $attempt++) {
             try {
                 $response = $request->post($url, $payload);
             } catch (ConnectionException) {
                 if ($attempt >= 2) {
-                    throw AiException::timeout($this->provider());
+                    throw AiException::timeout('groq');
                 }
 
                 usleep(400_000);
@@ -141,7 +114,7 @@ class AiClient
             }
 
             // 429 is deliberately excluded: retrying a rate limit straight away
-            // spends the quota faster. The free tiers need the caller to back
+            // spends the quota faster. The free tier needs the caller to back
             // off, and the detector degrades honestly rather than hanging.
             $retryable = in_array($response->status(), [502, 503, 504], true);
 
@@ -153,13 +126,13 @@ class AiClient
 
             if ($response->failed()) {
                 Log::warning('NutriTrace AI request failed.', [
-                    'provider' => $this->provider(),
+                    'provider' => 'groq',
                     'model' => $this->model(),
                     'status' => $response->status(),
                     'body' => mb_substr($response->body(), 0, 500),
                 ]);
 
-                throw AiException::providerError($this->provider(), $response->status());
+                throw AiException::providerError('groq', $response->status());
             }
 
             return $response;
@@ -180,130 +153,6 @@ class AiClient
             'max_tokens' => $maxTokens,
             ...$options,
         ];
-    }
-
-    /**
-     * @param  list<array{role: string, content: string}>  $messages
-     * @param  array<string, mixed>|null  $schema
-     * @return array<string, mixed>
-     */
-    private function geminiPayload(array $messages, int $maxTokens, ?array $schema): array
-    {
-        // Gemini wants the two shapes separated, and expresses JSON mode as a
-        // responseMimeType rather than a JSON Schema. The caller still passes a
-        // schema so the two paths stay interchangeable and testable.
-        $system = array_values(array_filter($messages, fn (array $m): bool => $m['role'] === 'system'));
-        $turns = array_map(
-            fn (array $m): array => [
-                'role' => $m['role'] === 'assistant' ? 'model' : 'user',
-                'parts' => [['text' => $m['content']]],
-            ],
-            array_values(array_filter($messages, fn (array $m): bool => $m['role'] !== 'system'))
-        );
-
-        return [
-            'systemInstruction' => ['parts' => array_map(
-                fn (array $m): array => ['text' => $m['content']],
-                $system
-            )],
-            'contents' => $turns,
-            'generationConfig' => [
-                'temperature' => 0.2,
-                // Headroom: Gemini counts reasoning against the same budget, so
-                // a limit tuned for the reply alone truncates the answer.
-                'maxOutputTokens' => $maxTokens * 2,
-                // The thinking models spend most of the budget reasoning, which
-                // buys nothing here and routinely cuts the reply short.
-                'thinkingConfig' => ['thinkingBudget' => 0],
-                // Without this Gemini invents its own field names, and every
-                // field the caller reads back comes back empty.
-                ...($schema ? [
-                    'responseMimeType' => 'application/json',
-                    'responseSchema' => $this->geminiSchema($schema),
-                ] : []),
-            ],
-        ];
-    }
-
-    /**
-     * Gemini accepts the JSON Schema subset but not every keyword the OpenAI
-     * endpoint tolerates, so the unsupported parts are stripped on the way in.
-     *
-     * @param  array<string, mixed>  $schema
-     * @return array<string, mixed>
-     */
-    private function geminiSchema(array $schema): array
-    {
-        // Gemini's Schema subset rejects unknown keywords outright, so anything
-        // the OpenAI endpoint tolerates but Gemini does not is dropped here.
-        $clean = function (array $node) use (&$clean): array {
-            $out = [];
-
-            if (isset($node['type']) && is_string($node['type'])) {
-                $out['type'] = $node['type'];
-            }
-
-            if (isset($node['description']) && is_string($node['description'])) {
-                $out['description'] = $node['description'];
-            }
-
-            if (isset($node['enum']) && is_array($node['enum'])) {
-                $out['enum'] = array_values(array_filter($node['enum'], 'is_string'));
-            }
-
-            if (isset($node['properties']) && is_array($node['properties'])) {
-                $out['properties'] = [];
-
-                foreach ($node['properties'] as $name => $child) {
-                    if (is_array($child)) {
-                        $out['properties'][$name] = $clean($child);
-                    }
-                }
-            }
-
-            if (isset($node['required']) && is_array($node['required'])) {
-                $out['required'] = array_values(array_filter($node['required'], 'is_string'));
-            }
-
-            if (isset($node['items']) && is_array($node['items'])) {
-                $out['items'] = $clean($node['items']);
-            }
-
-            return $out;
-        };
-
-        return $clean($schema);
-    }
-
-    /**
-     * @param  array<string, mixed>|null  $body
-     */
-    private function geminiText(?array $body): string
-    {
-        // The reply can be split across parts, and reasoning parts are marked.
-        $parts = data_get($body, 'candidates.0.content.parts', []);
-
-        if (! is_array($parts)) {
-            return '';
-        }
-
-        $text = '';
-
-        foreach ($parts as $part) {
-            if (! is_array($part) || ($part['thought'] ?? false) === true) {
-                continue;
-            }
-
-            $text .= (string) ($part['text'] ?? '');
-        }
-
-        if ($text === '' && data_get($body, 'candidates.0.finishReason') === 'MAX_TOKENS') {
-            throw AiException::malformedResponse(
-                'the model used its whole token budget without finishing the answer'
-            );
-        }
-
-        return $text;
     }
 
     /**
@@ -345,12 +194,10 @@ class AiClient
     }
 
     /**
-     * The OpenAI-compatible base URL for the selected provider.
+     * The Groq base URL.
      *
      * AI_BASE_URL wins when it is set (self-hosted gateways, proxies), but it
-     * is optional: the provider name resolves to a known public endpoint so
-     * switching AI_PROVIDER cannot silently keep sending the new key to the
-     * old provider.
+     * is optional: the default is the Groq public endpoint.
      */
     private function baseUrl(): string
     {
@@ -360,20 +207,12 @@ class AiClient
             return rtrim($configured, '/');
         }
 
-        $endpoint = config('services.ai.endpoints.'.$this->provider());
-
-        if (! is_string($endpoint) || $endpoint === '') {
-            throw AiException::unknownProvider($this->provider());
-        }
-
-        return rtrim($endpoint, '/');
+        return 'https://api.groq.com/openai/v1';
     }
 
     private function key(): ?string
     {
-        $key = $this->provider() === 'gemini'
-            ? (config('services.ai.gemini_key') ?: config('services.ai.key'))
-            : config('services.ai.key');
+        $key = config('services.ai.key');
 
         return is_string($key) && $key !== '' ? $key : null;
     }

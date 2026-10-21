@@ -186,7 +186,7 @@ class GreenwashingDetector
 
         return 'greenwashing:'.sha1(json_encode([
             'locale' => app()->getLocale(),
-            'provider' => $this->ai->provider(),
+            'provider' => 'groq',
             'model' => $this->ai->model(),
             'food' => $food->only(['id', 'name', 'origin', 'environmental_score', 'calories', 'protein', 'carbs', 'fat']),
             'category' => $food->category?->name,

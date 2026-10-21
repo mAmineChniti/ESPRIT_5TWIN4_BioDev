@@ -19,26 +19,25 @@ class JourneyChatTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * Configure Gemini with a test-only key.
+     * Configure Groq with a test-only key.
      */
-    private function configureGemini(): void
+    private function configureGroq(): void
     {
-        Config::set('services.ai.provider', 'gemini');
-        Config::set('services.ai.gemini_key', 'test-gemini-key');
-        Config::set('services.ai.gemini_model', 'gemini-3.8-flash');
+        Config::set('services.ai.key', 'test-groq-key');
+        Config::set('services.ai.model', 'llama-3.3-70b-versatile');
     }
 
     /**
-     * Return a successful Gemini answer body.
+     * Return a successful Groq answer body.
      *
      * @return array<string, mixed>
      */
-    private function geminiAnswer(string $answer = 'The product came from Tunis.'): array
+    private function groqAnswer(string $answer = 'The product came from Tunis.'): array
     {
         return [
-            'candidates' => [[
-                'content' => [
-                    'parts' => [['text' => $answer]],
+            'choices' => [[
+                'message' => [
+                    'content' => $answer,
                 ],
             ]],
         ];
@@ -46,11 +45,11 @@ class JourneyChatTest extends TestCase
 
     public function test_a_visitor_can_ask_a_question_about_a_public_journey(): void
     {
-        $this->configureGemini();
+        $this->configureGroq();
         Http::preventStrayRequests();
         Http::fake([
-            'https://generativelanguage.googleapis.com/v1beta/models/*:generateContent' => Http::response(
-                $this->geminiAnswer('The product came from Tunis.'),
+            'https://api.groq.com/openai/v1/chat/completions' => Http::response(
+                $this->groqAnswer('The product came from Tunis.'),
             ),
         ]);
 
@@ -89,7 +88,7 @@ class JourneyChatTest extends TestCase
             ->assertOk()
             ->assertExactJson(['answer' => 'The product came from Tunis.']);
 
-        Http::assertSent(fn ($request): bool => $request->hasHeader('x-goog-api-key')
+        Http::assertSent(fn ($request): bool => $request->hasHeader('Authorization')
             && str_contains(
                 json_encode($request->data(), JSON_UNESCAPED_UNICODE) ?: '',
                 'Where does this product come from?'
@@ -127,12 +126,12 @@ class JourneyChatTest extends TestCase
             ->assertJsonValidationErrors(['locale']);
     }
 
-    public function test_a_gemini_failure_returns_a_clear_service_unavailable_response(): void
+    public function test_a_groq_failure_returns_a_clear_service_unavailable_response(): void
     {
-        $this->configureGemini();
+        $this->configureGroq();
         Http::preventStrayRequests();
         Http::fake([
-            'https://generativelanguage.googleapis.com/v1beta/models/*:generateContent' => Http::response([], 503),
+            'https://api.groq.com/openai/v1/chat/completions' => Http::response([], 503),
         ]);
 
         $journey = Journey::factory()->create();
@@ -147,11 +146,11 @@ class JourneyChatTest extends TestCase
 
     public function test_identical_questions_are_served_from_the_24_hour_cache(): void
     {
-        $this->configureGemini();
+        $this->configureGroq();
         Http::preventStrayRequests();
         Http::fake([
-            'https://generativelanguage.googleapis.com/v1beta/models/*:generateContent' => Http::response(
-                $this->geminiAnswer('Tunis'),
+            'https://api.groq.com/openai/v1/chat/completions' => Http::response(
+                $this->groqAnswer('Tunis'),
             ),
         ]);
         Cache::flush();
@@ -180,11 +179,11 @@ class JourneyChatTest extends TestCase
 
     public function test_the_public_chat_is_limited_to_20_requests_per_minute(): void
     {
-        $this->configureGemini();
+        $this->configureGroq();
         Http::preventStrayRequests();
         Http::fake([
-            'https://generativelanguage.googleapis.com/v1beta/models/*:generateContent' => Http::response(
-                $this->geminiAnswer(),
+            'https://api.groq.com/openai/v1/chat/completions' => Http::response(
+                $this->groqAnswer(),
             ),
         ]);
         $journey = Journey::factory()->create();

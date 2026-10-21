@@ -230,7 +230,7 @@
                             <p class="mt-1 text-[11px] text-muted-foreground">
                                 {{ __('Scan to verify authentic certificate on NutriTrace') }}</p>
 
-                            <div class="my-4 flex justify-center rounded border border-border/40 bg-white p-3 shadow-inner">
+                            <div class="my-4 flex justify-center rounded border border-border/40 bg-background p-3 shadow-inner">
                                 {!! $qrSvg !!}
                             </div>
 

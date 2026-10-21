@@ -22,30 +22,27 @@ class JourneyAiTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * Configure the existing Gemini provider without exposing a real key.
+     * Configure Groq without exposing a real key.
      */
-    private function configureGemini(): void
+    private function configureGroq(): void
     {
-        Config::set('services.ai.provider', 'gemini');
-        Config::set('services.ai.gemini_key', 'test-gemini-key');
-        Config::set('services.ai.gemini_model', 'gemini-3.8-flash');
+        Config::set('services.ai.key', 'test-groq-key');
+        Config::set('services.ai.model', 'llama-3.3-70b-versatile');
     }
 
     /**
-     * Persist a generated public summary from a mocked Gemini response.
+     * Persist a generated public summary from a mocked Groq response.
      */
     public function test_summary_job_generates_and_saves_a_french_narrative(): void
     {
-        $this->configureGemini();
+        $this->configureGroq();
         $this->seed(CitySeeder::class);
         Http::preventStrayRequests();
         Http::fake([
-            'https://generativelanguage.googleapis.com/v1beta/models/*:generateContent' => Http::response([
-                'candidates' => [[
-                    'content' => [
-                        'parts' => [[
-                            'text' => 'Les olives sont récoltées à Tunis. Elles sont transportées vers Sousse. Le parcours comprend une étape de stockage et une vente locale.',
-                        ]],
+            'https://api.groq.com/openai/v1/chat/completions' => Http::response([
+                'choices' => [[
+                    'message' => [
+                        'content' => 'Les olives sont récoltées à Tunis. Elles sont transportées vers Sousse. Le parcours comprend une étape de stockage et une vente locale.',
                     ],
                 ]],
             ]),
@@ -103,19 +100,18 @@ class JourneyAiTest extends TestCase
         $this->assertStringContainsString('Récolte des olives.', $payloads);
         $this->assertStringContainsString('82', $payloads);
         $this->assertStringContainsString('116', $payloads);
-        $this->assertStringNotContainsString('"responseMimeType":"application/json"', $payloads);
     }
 
     /**
-     * Keep the prior public summary if Gemini fails.
+     * Keep the prior public summary if Groq fails.
      */
     public function test_summary_job_logs_provider_errors_without_erasing_the_existing_summary(): void
     {
-        $this->configureGemini();
+        $this->configureGroq();
         Log::spy();
         Http::preventStrayRequests();
         Http::fake([
-            'https://generativelanguage.googleapis.com/v1beta/models/*:generateContent' => Http::response([], 503),
+            'https://api.groq.com/openai/v1/chat/completions' => Http::response([], 503),
         ]);
 
         $journey = Journey::factory()->create([
@@ -133,7 +129,7 @@ class JourneyAiTest extends TestCase
      */
     public function test_step_observer_queues_summary_generation_after_saving(): void
     {
-        $this->configureGemini();
+        $this->configureGroq();
         $this->seed(CitySeeder::class);
         Queue::fake();
 
