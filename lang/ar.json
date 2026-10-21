@@ -1035,5 +1035,22 @@
     "{1} One greenwashing report was upheld against this product.|[2,*] :count greenwashing reports were upheld against this product.": "{1} تم تأييد بلاغ غسيل أخضر واحد ضد هذا المنتج.|[2,*] تم تأييد :count بلاغات غسيل أخضر ضد هذا المنتج.",
     "{1} Showing the first :count product by name. Use the search above to reach anything else.|[2,*] Showing the first :count products by name. Use the search above to reach anything else.": "{1} عرض أول :count منتج بالاسم. استخدم البحث أعلاه للوصول إلى الباقي.|[2,*] عرض أول :count منتجات بالاسم. استخدم البحث أعلاه للوصول إلى الباقي.",
     "“Made in Europe” covers a very large area. “Product of France” can still be assembled from imported parts.": "«صنع في أوروبا» يغطي مساحة شاسعة. و«منتج فرنسي» قد يُجمّع من قطع مستوردة.",
-    "“Organic”, “eco”, “natural” printed on a pack means nothing on its own. A real certification names the body that issued it and carries a certificate number.": "«عضوي» و«صديق للبيئة» و«طبيعي» المطبوعة على العبوة لا تعني شيئاً وحدها. الشهادة الحقيقية تسمي الجهة المصدرة وتحمل رقم شهادة."
+    "“Organic”, “eco”, “natural” printed on a pack means nothing on its own. A real certification names the body that issued it and carries a certificate number.": "«عضوي» و«صديق للبيئة» و«طبيعي» المطبوعة على العبوة لا تعني شيئاً وحدها. الشهادة الحقيقية تسمي الجهة المصدرة وتحمل رقم شهادة.",
+        "The advisor could not be reached. Please try again in a moment.": "تعذّر الوصول إلى المستشار. يُرجى المحاولة مرة أخرى بعد قليل.",
+    "Analysing…": "جارٍ التحليل…",
+    "Ask the advisor": "اطلب النصيحة",
+    "Transport advisor": "مستشار النقل",
+    "Fill in the distance and weight, then ask for the lowest-footprint mode that suits the load.": "أدخل المسافة والوزن، ثم اطلب وسيلة النقل الأقل بصمة كربونية والمناسبة للحمولة.",
+    "Suggested mode": "الوسيلة المقترحة",
+    "Suggested by the AI model. Footprints are calculated by NutriTrace.": "اقتراح من نموذج الذكاء الاصطناعي. تُحسب البصمات بواسطة NutriTrace.",
+    "AI unavailable: suggested by a distance rule. Footprints are calculated by NutriTrace.": "الذكاء الاصطناعي غير متاح: الاقتراح مبني على قاعدة المسافة. تُحسب البصمات بواسطة NutriTrace.",
+    "Use this mode": "استخدم هذه الوسيلة",
+    "(suggested)": "(مقترحة)",
+    "Switching saves about :kg kg CO₂e (:percent%) compared with :mode.": "التحويل إلى هذه الوسيلة يوفّر حوالي :kg كغ من CO₂e (:percent%) مقارنة بـ :mode.",
+    "This option emits about :kg kg CO₂e more than your current choice; it is suggested for operational reasons.": "تنتج هذه الوسيلة حوالي :kg كغ من CO₂e أكثر من اختيارك الحالي؛ وتُقترح لأسباب تشغيلية.",
+    "Your current choice is already the best option for this load.": "اختيارك الحالي هو بالفعل أفضل خيار لهذه الحمولة.",
+    "For a short trip of :distance km, an electric truck avoids the terminals that rail or sea freight need, and emits far less than a diesel truck.": "في رحلة قصيرة مسافتها :distance كم، تتجنب الشاحنة الكهربائية المحطات التي يتطلبها النقل بالسكك الحديدية أو البحري، وتنبعث منها كميات أقل بكثير من الشاحنة العاملة بالديزل.",
+    "Over :distance km, sea freight has the lowest footprint of all modes, provided both ends are served by a port.": "على مسافة :distance كم، يتميز الشحن البحري بأقل بصمة كربونية بين جميع الوسائل، بشرط أن يخدم ميناءٌ كلا الطرفين.",
+    "Over :distance km, rail keeps the transit time short enough for a refrigerated load while staying far cleaner than road or air.": "على مسافة :distance كم، يحافظ القطار على زمن عبور قصير بما يكفي لحمولة مبردة، مع بقائه أنظف بكثير من الطريق أو الجو.",
+    "Over :distance km, freight rail has one of the lowest footprints of all modes and does not depend on a port.": "على مسافة :distance كم، يتميز قطار الشحن بواحدة من أقل البصمات الكربونية بين جميع الوسائل ولا يعتمد على ميناء."
 }
