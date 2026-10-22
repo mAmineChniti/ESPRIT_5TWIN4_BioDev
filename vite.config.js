@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
-import { bunny } from 'laravel-vite-plugin/fonts';
+// Fonts are loaded at runtime to keep builds working in offline/CI environments.
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
@@ -13,11 +13,6 @@ export default defineConfig({
                 'resources/js/assistant.js',
             ],
             refresh: true,
-            fonts: [
-                bunny('Instrument Sans', {
-                    weights: [400, 500, 600],
-                }),
-            ],
         }),
         tailwindcss(),
     ],
