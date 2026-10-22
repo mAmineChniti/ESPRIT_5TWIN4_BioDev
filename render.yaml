@@ -61,7 +61,6 @@ services:
         value: nutritrace
       - key: MYSQL_PASSWORD
         sync: false
-    disk:
-      name: mysql-data
-      mountPath: /var/lib/mysql
-      sizeGB: 1
+    # NOTE: Render free tier does not support persistent disks. Database data is
+    # ephemeral on free tier; upgrade the plan or use an external MySQL provider
+    # for durable storage.
