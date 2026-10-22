@@ -11,7 +11,6 @@ pipeline {
         SONAR_HOST_URL = 'http://localhost:9000'
         JAVA_HOME = '/usr/lib/jvm/java-21-openjdk'
         PATH = "${JAVA_HOME}/bin:${env.PATH}"
-        RENDER_DEPLOY_HOOK = 'https://api.render.com/deploy/srv-dbd0e1o473hc73aemqig?key=HlnKXfWPazA'
     }
 
     stages {
@@ -101,13 +100,15 @@ pipeline {
 
         stage('Deploy to Render') {
             steps {
-                sh '''
-                    set -e
-                    echo "Triggering Render deployment..."
-                    curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
-                    echo
-                    echo "Render deployment triggered successfully."
-                '''
+                withCredentials([string(credentialsId: 'render-deploy-hook', variable: 'RENDER_DEPLOY_HOOK')]) {
+                    sh '''
+                        set -e
+                        echo "Triggering Render deployment..."
+                        curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
+                        echo
+                        echo "Render deployment triggered successfully."
+                    '''
+                }
             }
         }
     }
