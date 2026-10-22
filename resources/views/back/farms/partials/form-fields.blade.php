@@ -143,15 +143,7 @@
 
     <div class="space-y-2">
         @php
-            // Data-compat shim, not UI copy: rows written before the English
-            // rename still read correctly in this select.
-            $farmingType = match ($value('farming_type', 'Organic')) {
-                'Biologique' => 'Organic',
-                'Raisonné' => 'Sustainable',
-                'Traditionnel' => 'Traditional',
-                'Biodynamique' => 'Biodynamic',
-                default => $value('farming_type', 'Organic'),
-            };
+            $farmingType = $value('farming_type', 'Organic');
         @endphp
         <april:label for="farming_type">
             {{ __('Farming Type') }} <span class="text-destructive">*</span>

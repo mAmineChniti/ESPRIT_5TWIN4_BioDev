@@ -16,9 +16,11 @@ return new class extends Migration
         DB::statement(<<<'SQL'
             DELETE FROM stage_transitions
             WHERE id NOT IN (
-                SELECT MIN(id)
-                FROM stage_transitions
-                GROUP BY food_id, to_stage
+                SELECT keep_id FROM (
+                    SELECT MIN(id) AS keep_id
+                    FROM stage_transitions
+                    GROUP BY food_id, to_stage
+                ) AS keepers
             )
         SQL);
 

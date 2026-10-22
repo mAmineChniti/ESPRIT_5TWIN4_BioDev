@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Enums\ShipmentStatus;
 use App\Enums\TransportMode;
 use App\Http\Requests\ShipmentRequest;
+use App\Http\Requests\TransportAdviceRequest;
 use App\Models\Food;
 use App\Models\Shipment;
 use App\Models\Warehouse;
 use App\Services\CarbonFootprintCalculator;
+use App\Services\Logistics\TransportAdvisor;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -77,6 +80,32 @@ class ShipmentController extends Controller
 
         return redirect()->route('logistics.shipments.index')
             ->with('success', __('Shipment added successfully.'));
+    }
+
+    /**
+     * Recommend a transport mode for the load typed into the form.
+     *
+     * Nothing is saved: the distributor reads the advice and decides. The
+     * warehouse and product are shared reference data, so looking them up
+     * discloses nothing that belongs to another distributor.
+     */
+    public function advise(TransportAdviceRequest $request, TransportAdvisor $advisor): JsonResponse
+    {
+        $data = $request->validated();
+
+        $warehouse = isset($data['warehouse_id']) ? Warehouse::find($data['warehouse_id']) : null;
+        $food = isset($data['food_id']) ? Food::find($data['food_id']) : null;
+
+        $advice = $advisor->advise(
+            (float) $data['distance_km'],
+            (float) $data['weight_kg'],
+            isset($data['transport_mode']) ? TransportMode::from($data['transport_mode']) : null,
+            $data['destination'] ?? null,
+            (bool) $warehouse?->is_refrigerated,
+            $food?->name,
+        );
+
+        return response()->json($advice->toArray());
     }
 
     public function show(Request $request, Shipment $shipment): View

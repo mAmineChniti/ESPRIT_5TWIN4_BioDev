@@ -1035,5 +1035,22 @@
     "{1} One greenwashing report was upheld against this product.|[2,*] :count greenwashing reports were upheld against this product.": "{1} Un rapport d'écoblanchiment a été confirmé contre ce produit.|[2,*] :count rapports d'écoblanchiment ont été confirmés contre ce produit.",
     "{1} Showing the first :count product by name. Use the search above to reach anything else.|[2,*] Showing the first :count products by name. Use the search above to reach anything else.": "{1} Affichage du :count premier produit par nom. Utilisez la recherche ci-dessus pour atteindre les autres.|[2,*] Affichage des :count premiers produits par nom. Utilisez la recherche ci-dessus pour atteindre les autres.",
     "“Made in Europe” covers a very large area. “Product of France” can still be assembled from imported parts.": "« Fabriqué en Europe » couvre une zone immense. Un « produit de France » peut être assemblé à partir de pièces importées.",
-    "“Organic”, “eco”, “natural” printed on a pack means nothing on its own. A real certification names the body that issued it and carries a certificate number.": "« Bio », « éco », « naturel » imprimés sur un emballage ne veulent rien dire seuls. Une vraie certification nomme l'organisme émetteur et porte un numéro de certificat."
+    "“Organic”, “eco”, “natural” printed on a pack means nothing on its own. A real certification names the body that issued it and carries a certificate number.": "« Bio », « éco », « naturel » imprimés sur un emballage ne veulent rien dire seuls. Une vraie certification nomme l'organisme émetteur et porte un numéro de certificat.",
+        "The advisor could not be reached. Please try again in a moment.": "Le conseiller n'a pas pu être joint. Veuillez réessayer dans un instant.",
+    "Analysing…": "Analyse en cours…",
+    "Ask the advisor": "Demander conseil",
+    "Transport advisor": "Conseiller de transport",
+    "Fill in the distance and weight, then ask for the lowest-footprint mode that suits the load.": "Renseignez la distance et le poids, puis demandez le mode à plus faible empreinte adapté au chargement.",
+    "Suggested mode": "Mode suggéré",
+    "Suggested by the AI model. Footprints are calculated by NutriTrace.": "Suggéré par le modèle d'IA. Les empreintes sont calculées par NutriTrace.",
+    "AI unavailable: suggested by a distance rule. Footprints are calculated by NutriTrace.": "IA indisponible : suggéré selon une règle de distance. Les empreintes sont calculées par NutriTrace.",
+    "Use this mode": "Utiliser ce mode",
+    "(suggested)": "(suggéré)",
+    "Switching saves about :kg kg CO₂e (:percent%) compared with :mode.": "Passer à ce mode économise environ :kg kg CO₂e (:percent%) par rapport à :mode.",
+    "This option emits about :kg kg CO₂e more than your current choice; it is suggested for operational reasons.": "Cette option émet environ :kg kg CO₂e de plus que votre choix actuel ; elle est suggérée pour des raisons opérationnelles.",
+    "Your current choice is already the best option for this load.": "Votre choix actuel est déjà la meilleure option pour ce chargement.",
+    "For a short trip of :distance km, an electric truck avoids the terminals that rail or sea freight need, and emits far less than a diesel truck.": "Pour un court trajet de :distance km, un camion électrique évite les terminaux que le fret ferroviaire ou maritime exigent, et émet bien moins qu'un camion diesel.",
+    "Over :distance km, sea freight has the lowest footprint of all modes, provided both ends are served by a port.": "Sur :distance km, le fret maritime a l'empreinte la plus faible de tous les modes, à condition que les deux extrémités soient desservies par un port.",
+    "Over :distance km, rail keeps the transit time short enough for a refrigerated load while staying far cleaner than road or air.": "Sur :distance km, le rail garde un temps de transit assez court pour une cargaison réfrigérée tout en restant bien plus propre que la route ou l'avion.",
+    "Over :distance km, freight rail has one of the lowest footprints of all modes and does not depend on a port.": "Sur :distance km, le fret ferroviaire a l'une des empreintes les plus faibles de tous les modes et ne dépend pas d'un port."
 }

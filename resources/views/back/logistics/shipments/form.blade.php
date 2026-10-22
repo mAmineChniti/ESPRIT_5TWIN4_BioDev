@@ -78,3 +78,5 @@
 </div>
 
 <p class="text-xs text-muted-foreground">{{ __('The carbon footprint is calculated automatically when you save.') }}</p>
+
+<x-transport-advisor />
