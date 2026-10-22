@@ -115,6 +115,7 @@ pipeline {
                     docker compose down || true
                     docker compose up -d --build
                     echo "Local deployment complete."
+                    echo "UI available at: http://localhost:8000"
                 '''
             }
         }
@@ -123,6 +124,7 @@ pipeline {
     post {
         success {
             echo 'CI/CD pipeline completed successfully.'
+            echo 'UI available at: http://localhost:8000'
         }
 
         failure {
