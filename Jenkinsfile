@@ -98,17 +98,15 @@ pipeline {
             }
         }
 
-        stage('Deploy to Render') {
+        stage('Deploy locally') {
             steps {
-                withCredentials([string(credentialsId: 'render-deploy-hook', variable: 'RENDER_DEPLOY_HOOK')]) {
-                    sh '''
-                        set -e
-                        echo "Triggering Render deployment..."
-                        curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
-                        echo
-                        echo "Render deployment triggered successfully."
-                    '''
-                }
+                sh '''
+                    set -e
+                    echo "Deploying locally with Docker Compose..."
+                    docker compose down || true
+                    docker compose up -d --build
+                    echo "Local deployment complete."
+                '''
             }
         }
     }
