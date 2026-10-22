@@ -25,4 +25,10 @@ fi
 
 php artisan migrate --force
 
+# Seed demo data only once per persisted storage volume.
+if [ ! -f storage/app/.seeded ]; then
+    php artisan db:seed --force
+    touch storage/app/.seeded
+fi
+
 exec php artisan serve --no-reload --host=0.0.0.0 --port="${PORT:-8000}"
