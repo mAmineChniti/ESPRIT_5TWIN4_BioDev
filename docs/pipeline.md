@@ -204,9 +204,14 @@ stage('Deploy locally') {
     steps {
         sh '''
             set -e
-            echo "Deploying locally with Docker Compose..."
-            docker compose down || true
-            docker compose up -d --build
+            export BUILD_ID=dontKillMe
+            export JENKINS_NODE_COOKIE=dontKillMe
+            echo "Stopping any previous local server..."
+            pkill -f "artisan serve" || true
+            sleep 1
+            echo "Starting local application server..."
+            nohup php artisan serve --host=0.0.0.0 --port=8000 > /tmp/nutritrace-serve.log 2>&1 &
+            sleep 2
             echo "Local deployment complete."
             echo "UI available at: http://localhost:8000"
         '''
@@ -214,7 +219,7 @@ stage('Deploy locally') {
 }
 ```
 
-Déploie l'application localement avec Docker Compose et affiche le lien de l'interface.
+Déploie l'application localement en lançant `php artisan serve` et affiche le lien de l'interface.
 
 ---
 
