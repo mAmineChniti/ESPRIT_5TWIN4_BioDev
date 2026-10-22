@@ -7,6 +7,7 @@
       $regions   Collection<int, AgriculturalRegion>
 --}}
 @php
+    $regions ??= \App\Models\AgriculturalRegion::orderBy('name')->get();
     $value = fn (string $field, mixed $fallback = null) => old($field, $farm?->{$field} ?? $fallback);
     $errorFor = fn (string $field) => $errors->get($field);
 @endphp
