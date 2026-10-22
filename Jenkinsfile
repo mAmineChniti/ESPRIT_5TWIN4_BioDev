@@ -112,10 +112,19 @@ pipeline {
                 sh '''
                     set -e
                     echo "Deploying locally with Docker Compose..."
+                    mkdir -p .docker-ci
+                    cat > .docker-ci/config.json << 'EOF'
+{
+    "auths": {},
+    "credHelpers": {}
+}
+EOF
+                    export DOCKER_CONFIG="$PWD/.docker-ci"
                     docker compose down || true
-                    docker compose up -d --build
+                    DOCKER_BUILDKIT=0 docker compose up -d --build
                     echo "Local deployment complete."
                     echo "UI available at: http://localhost:8000"
+                    rm -rf .docker-ci
                 '''
             }
         }
