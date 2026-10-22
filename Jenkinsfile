@@ -111,20 +111,16 @@ pipeline {
             steps {
                 sh '''
                     set -e
-                    echo "Deploying locally with Docker Compose..."
-                    mkdir -p .docker-ci
-                    cat > .docker-ci/config.json << 'EOF'
-{
-    "auths": {},
-    "credHelpers": {}
-}
-EOF
-                    export DOCKER_CONFIG="$PWD/.docker-ci"
-                    docker compose down || true
-                    DOCKER_BUILDKIT=0 docker compose up -d --build
+                    export BUILD_ID=dontKillMe
+                    export JENKINS_NODE_COOKIE=dontKillMe
+                    echo "Stopping any previous local server..."
+                    pkill -f "artisan serve" || true
+                    sleep 1
+                    echo "Starting local application server..."
+                    nohup php artisan serve --host=0.0.0.0 --port=8000 > /tmp/nutritrace-serve.log 2>&1 &
+                    sleep 2
                     echo "Local deployment complete."
                     echo "UI available at: http://localhost:8000"
-                    rm -rf .docker-ci
                 '''
             }
         }
