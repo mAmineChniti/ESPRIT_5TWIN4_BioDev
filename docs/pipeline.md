@@ -1,181 +1,245 @@
-# NutriTrace CI/CD Pipeline — Official Documentation
+# NutriTrace Jenkins Pipeline — Step-by-Step Documentation
 
-## Overview
+This document explains the NutriTrace Jenkins pipeline defined in `Jenkinsfile`.
+Each section shows the exact pipeline step and a short explanation.
 
-NutriTrace uses a Jenkins declarative pipeline to build, test, analyze, and deploy the
-application automatically. The pipeline is defined in the repository root as `Jenkinsfile`
-and is executed by a Jenkins job named `nutritrace`.
+## Pipeline Options
 
-The pipeline integrates:
+```groovy
+options {
+    timestamps()
+    disableConcurrentBuilds()
+    buildDiscarder(logRotator(numToKeepStr: '20'))
+}
+```
 
-- **Composer / PHP** dependency installation
-- **Laravel** environment setup and database migration
-- **Pint** code style checks
-- **PHP syntax** checks
-- **Vite / Tailwind** frontend build
-- **PHPUnit** tests with Xdebug coverage
-- **SonarQube** static analysis and quality gate
-- **Render** deployment through a secured webhook
+- `timestamps()`: adds timestamps to console output.
+- `disableConcurrentBuilds()`: prevents overlapping builds.
+- `buildDiscarder(...)`: keeps only the last 20 builds.
 
-## Prerequisites
+## Environment Variables
 
-| Tool | Version | Notes |
-| --- | --- | --- |
-| Jenkins | 2.x | Running on port `8090` |
-| SonarQube | 26.x | Running on port `9000` |
-| PHP | 8.3+ | `pdo_mysql`, `gd`, `sqlite` extensions |
-| Composer | 2.x | |
-| Node.js | 22+ | |
-| SonarScanner CLI | 6.2+ | Installed at `/opt/sonar-scanner` |
+```groovy
+environment {
+    SONAR_HOST_URL = 'http://localhost:9000'
+    JAVA_HOME = '/usr/lib/jvm/java-21-openjdk'
+    PATH = "${JAVA_HOME}/bin:${env.PATH}"
+}
+```
 
-## Jenkins Configuration
+- `SONAR_HOST_URL`: SonarQube server URL.
+- `JAVA_HOME` / `PATH`: Java 21 used by SonarScanner.
 
-### Credentials
+---
 
-The following Jenkins credentials (Secret text) must exist:
+## Stage 1 — Checkout
 
-| Credential ID | Purpose |
+```groovy
+stage('Checkout') {
+    steps {
+        checkout scm
+    }
+}
+```
+
+Clones the repository from GitHub and loads the `Jenkinsfile`.
+
+---
+
+## Stage 2 — Install PHP Dependencies
+
+```groovy
+stage('Install PHP dependencies') {
+    steps {
+        sh 'composer install --no-interaction --prefer-dist'
+    }
+}
+```
+
+Installs PHP dependencies without running interactive prompts.
+
+---
+
+## Stage 3 — Prepare Environment
+
+```groovy
+stage('Prepare environment') {
+    steps {
+        sh '''
+            set -e
+            cp .env.example .env
+            php artisan key:generate
+            touch database/database.sqlite
+            sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
+            sed -i "s|^DB_DATABASE=.*|DB_DATABASE=${WORKSPACE}/database/database.sqlite|" .env
+        '''
+    }
+}
+```
+
+Creates a local `.env`, generates the application key, and configures SQLite for testing.
+
+---
+
+## Stage 4 — Lint (Pint)
+
+```groovy
+stage('Lint (Pint)') {
+    steps {
+        sh './vendor/bin/pint --test'
+    }
+}
+```
+
+Checks PHP code style using Laravel Pint.
+
+---
+
+## Stage 5 — Syntax Check
+
+```groovy
+stage('Syntax check') {
+    steps {
+        sh 'find app database routes tests -name "*.php" -print0 | xargs -0 -n1 -P4 php -l > /dev/null'
+    }
+}
+```
+
+Runs `php -l` on all PHP files in parallel.
+
+---
+
+## Stage 6 — Build Frontend
+
+```groovy
+stage('Build frontend') {
+    steps {
+        sh '''
+            set -e
+            npm ci
+            npm run build
+        '''
+    }
+}
+```
+
+Installs Node dependencies and builds Tailwind/Vite assets.
+
+---
+
+## Stage 7 — Migrate & Seed
+
+```groovy
+stage('Migrate & seed') {
+    steps {
+        sh '''
+            set -e
+            php artisan migrate --force
+            php artisan db:seed --force
+        '''
+    }
+}
+```
+
+Creates the database schema and inserts demo data.
+
+---
+
+## Stage 8 — Tests & Coverage
+
+```groovy
+stage('Tests & coverage') {
+    steps {
+        sh 'php -d zend_extension=xdebug.so -d xdebug.mode=coverage vendor/bin/phpunit --coverage-clover coverage.xml'
+    }
+}
+```
+
+Runs the full PHPUnit suite with Xdebug coverage and generates `coverage.xml`.
+
+---
+
+## Stage 9 — SonarQube Analysis
+
+```groovy
+stage('SonarQube Analysis') {
+    steps {
+        withCredentials([string(credentialsId: 'sonar', variable: 'SONAR_TOKEN')]) {
+            sh '''
+                set -e
+                if [ -z "${SONAR_HOST_URL:-}" ]; then
+                  echo "WARN: SONAR_HOST_URL not configured. Skipping SonarQube analysis."
+                  exit 0
+                fi
+
+                sonar-scanner \
+                  -Dsonar.host.url="$SONAR_HOST_URL" \
+                  -Dsonar.token="$SONAR_TOKEN" \
+                  -Dsonar.scanner.skipJreProvisioning=true \
+                  -Dsonar.qualitygate.wait=true \
+                  -Dsonar.qualitygate.timeout=300
+            '''
+        }
+    }
+}
+```
+
+Runs SonarScanner and waits for the quality gate. The build fails if the gate fails.
+
+---
+
+## Stage 10 — Deploy to Render
+
+```groovy
+stage('Deploy to Render') {
+    steps {
+        withCredentials([string(credentialsId: 'render-deploy-hook', variable: 'RENDER_DEPLOY_HOOK')]) {
+            sh '''
+                set -e
+                echo "Triggering Render deployment..."
+                curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
+                echo
+                echo "Render deployment triggered successfully."
+            '''
+        }
+    }
+}
+```
+
+Triggers Render deployment using a secured Jenkins secret.
+
+---
+
+## Post Actions
+
+```groovy
+post {
+    success {
+        echo 'CI/CD pipeline completed successfully.'
+    }
+
+    failure {
+        echo 'Pipeline failed. Check the stage logs above.'
+    }
+
+    cleanup {
+        archiveArtifacts artifacts: 'coverage.xml,.scannerwork/report-task.txt', allowEmptyArchive: true
+        sh 'rm -f coverage.xml; rm -rf .scannerwork || true'
+    }
+}
+```
+
+- `success`: printed when all stages pass.
+- `failure`: printed when a stage fails.
+- `cleanup`: archives coverage/report files and removes temporary files.
+
+---
+
+## Secrets Used
+
+| Jenkins Credential ID | Purpose |
 | --- | --- |
-| `sonar` | SonarQube user token |
-| `render-deploy-hook` | Render deploy webhook URL |
+| `sonar` | SonarQube authentication token |
+| `render-deploy-hook` | Render deployment webhook URL |
 
-Secrets are stored only in Jenkins and are never committed to the repository.
-
-### Global Tools
-
-- Java 21+ (used by SonarScanner)
-- Git
-- Node.js (optional, system Node is used)
-
-## Pipeline Stages
-
-### 1. Checkout
-
-Clones the repository from GitHub (`master` branch) and loads `Jenkinsfile`.
-
-### 2. Install PHP Dependencies
-
-```bash
-composer install --no-interaction --prefer-dist
-```
-
-### 3. Prepare Environment
-
-- Copies `.env.example` to `.env`
-- Generates `APP_KEY`
-- Creates a SQLite database file
-- Forces SQLite for the test environment
-
-### 4. Lint (Pint)
-
-```bash
-./vendor/bin/pint --test
-```
-
-Ensures PHP code follows the project style.
-
-### 5. Syntax Check
-
-```bash
-find app database routes tests -name '*.php' -print0 | xargs -0 -n1 -P4 php -l
-```
-
-### 6. Build Frontend
-
-```bash
-npm ci
-npm run build
-```
-
-Compiles Tailwind CSS and JavaScript assets with Vite.
-
-### 7. Migrate & Seed
-
-```bash
-php artisan migrate --force
-php artisan db:seed --force
-```
-
-### 8. Tests & Coverage
-
-```bash
-php -d zend_extension=xdebug.so -d xdebug.mode=coverage vendor/bin/phpunit --coverage-clover coverage.xml
-```
-
-Runs the full PHPUnit suite and generates a Clover coverage report.
-
-### 9. SonarQube Analysis
-
-```bash
-sonar-scanner \
-  -Dsonar.host.url="$SONAR_HOST_URL" \
-  -Dsonar.token="$SONAR_TOKEN" \
-  -Dsonar.scanner.skipJreProvisioning=true \
-  -Dsonar.qualitygate.wait=true \
-  -Dsonar.qualitygate.timeout=300
-```
-
-The quality gate must pass before deployment.
-
-### 10. Deploy to Render
-
-```bash
-curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
-```
-
-Triggered only after all previous stages succeed.
-
-## SonarQube Configuration
-
-Project key: `NutriTrace`
-
-Configuration file: `sonar-project.properties`
-
-Important settings:
-
-- Sources: `app`, `config`, `database`, `routes`, `resources`
-- Tests: `tests`
-- PHP version: `8.5`
-- Coverage report: `coverage.xml`
-
-## Render Deployment
-
-The application is deployed to Render using a Blueprint (`render.yaml`).
-
-Services:
-
-- `nutritrace` (web, Docker)
-- `nutritrace-db` (MySQL 8, private service with persistent disk)
-
-Required secrets in Render:
-
-- `APP_KEY`
-- `DB_PASSWORD`
-- `MYSQL_ROOT_PASSWORD`
-- `MYSQL_PASSWORD`
-
-## Running the Pipeline Manually
-
-### Trigger from Jenkins UI
-
-1. Open `http://localhost:8090/job/nutritrace/`
-2. Click **Build Now**
-
-### Trigger from CLI
-
-```bash
-rm -f /tmp/jcookies.txt
-curl -s -c /tmp/jcookies.txt -u "admin:admin" 'http://localhost:8090/' >/dev/null
-CRUMB=$(curl -s -b /tmp/jcookies.txt -u "admin:admin" 'http://localhost:8090/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)')
-FIELD=${CRUMB%%:*}; VALUE=${CRUMB#*:}
-curl -b /tmp/jcookies.txt -u "admin:admin" -X POST "http://localhost:8090/job/nutritrace/build" -H "$FIELD: $VALUE"
-```
-
-## Verification Checklist
-
-- [ ] `vendor/bin/pint --dirty --format agent` passes
-- [ ] `npm run build` passes
-- [ ] `php artisan test --compact` passes (677 tests)
-- [ ] SonarQube quality gate passes
-- [ ] Jenkins build is `SUCCESS`
-- [ ] Render deployment succeeds
+Secrets are stored only in Jenkins and are never committed to Git.
