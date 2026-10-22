@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\WarehouseRequest;
 use App\Models\Warehouse;
+use App\Services\Logistics\WarehouseCarbonAnalyst;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -54,6 +56,28 @@ class WarehouseController extends Controller
             ->paginate(10);
 
         return view('back.logistics.warehouses.show', compact('warehouse', 'shipments'));
+    }
+
+    /**
+     * The AI carbon analysis of a warehouse.
+     *
+     * Scoped like show(): a distributor's analysis only covers their own
+     * shipments, so it never describes another distributor's freight.
+     */
+    public function analyze(Request $request, Warehouse $warehouse, WarehouseCarbonAnalyst $analyst): JsonResponse
+    {
+        $user = $request->user();
+
+        $report = $analyst->analyze($warehouse, $user->isAdmin() ? null : $user->id);
+
+        if ($report === null) {
+            return response()->json([
+                'empty' => true,
+                'message' => __('No shipments to analyse yet.'),
+            ]);
+        }
+
+        return response()->json($report->toArray());
     }
 
     public function edit(Warehouse $warehouse): View
