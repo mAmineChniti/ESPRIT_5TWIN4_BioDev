@@ -1,6 +1,8 @@
 # ---------- PHP dependencies ----------
 FROM php:8.3-cli-alpine AS vendor
-RUN docker-php-ext-install pdo pdo_mysql pcntl bcmath
+RUN apk add --no-cache libpng-dev libjpeg-turbo-dev freetype-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo pdo_mysql pcntl bcmath gd
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 COPY composer.json composer.lock ./
@@ -19,7 +21,9 @@ RUN npm run build
 
 # ---------- Runtime ----------
 FROM php:8.3-cli-alpine
-RUN docker-php-ext-install pdo pdo_mysql pcntl bcmath
+RUN apk add --no-cache libpng-dev libjpeg-turbo-dev freetype-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo pdo_mysql pcntl bcmath gd
 WORKDIR /app
 
 COPY --from=vendor /app/vendor ./vendor
