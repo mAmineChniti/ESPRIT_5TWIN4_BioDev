@@ -117,13 +117,22 @@ stage('Build frontend') {
         sh '''
             set -e
             npm ci
-            npm run build
+            for attempt in 1 2 3; do
+                if npm run build; then
+                    break
+                fi
+                echo "Frontend build failed on attempt $attempt; retrying..."
+                sleep 5
+                if [ "$attempt" = "3" ]; then
+                    exit 1
+                fi
+            done
         '''
     }
 }
 ```
 
-Installs Node dependencies and builds Tailwind/Vite assets.
+Installs Node dependencies and builds Tailwind/Vite assets. The build is retried up to three times to handle transient network failures while fetching fonts.
 
 ---
 
@@ -199,12 +208,13 @@ stage('Deploy locally') {
             docker compose down || true
             docker compose up -d --build
             echo "Local deployment complete."
+            echo "UI available at: http://localhost:8000"
         '''
     }
 }
 ```
 
-Deploys the application locally using Docker Compose.
+Deploys the application locally using Docker Compose and prints the local UI link.
 
 ---
 
@@ -214,6 +224,7 @@ Deploys the application locally using Docker Compose.
 post {
     success {
         echo 'CI/CD pipeline completed successfully.'
+        echo 'UI available at: http://localhost:8000'
     }
 
     failure {
