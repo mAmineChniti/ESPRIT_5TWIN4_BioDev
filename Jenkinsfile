@@ -113,14 +113,35 @@ pipeline {
                     set -e
                     export BUILD_ID=dontKillMe
                     export JENKINS_NODE_COOKIE=dontKillMe
+
+                    # Avoid docker-credential-secretservice D-Bus failures in CI.
+                    mkdir -p .docker-ci/bin
+                    cat > .docker-ci/bin/docker-credential-secretservice << 'EOF'
+#!/bin/sh
+case "$1" in
+  get|list|store|erase) echo '{}' ;;
+  *) echo '{}' ;;
+esac
+exit 0
+EOF
+                    chmod +x .docker-ci/bin/docker-credential-secretservice
+                    export PATH="$PWD/.docker-ci/bin:$PATH"
+
+                    mkdir -p .docker-ci/config
+                    printf '{"auths":{},"credHelpers":{}}' > .docker-ci/config/config.json
+                    export DOCKER_CONFIG="$PWD/.docker-ci/config"
+
                     echo "Stopping any previous local server..."
                     pkill -f "artisan serve" || true
                     sleep 1
-                    echo "Starting local application server..."
-                    nohup php artisan serve --host=0.0.0.0 --port=8000 > /tmp/nutritrace-serve.log 2>&1 &
-                    sleep 2
+
+                    echo "Deploying locally with Docker Compose..."
+                    docker compose down || true
+                    docker compose up -d --build
+
                     echo "Local deployment complete."
                     echo "UI available at: http://localhost:8000"
+                    rm -rf .docker-ci
                 '''
             }
         }
