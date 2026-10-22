@@ -75,6 +75,8 @@ Route::prefix('{locale}')->whereIn('locale', Locale::values())->group(function (
         return view('front.home', CatalogController::catalogData());
     })->name('home');
 
+    Route::get('/guard', fn () => view('front.guard'))->name('guard');
+
     Route::get('/products', [ConsumerSearchController::class, 'index'])->name('products.index');
     Route::get('/products/scan', [ConsumerSearchController::class, 'scan'])->name('products.scan');
     Route::get('/products/compare', [ProductComparisonController::class, 'index'])->name('products.compare');

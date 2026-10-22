@@ -278,3 +278,13 @@ post {
 
 
 Les secrets sont stockés uniquement dans Jenkins et ne sont jamais commités dans Git.
+
+---
+
+## Équipe BioDev — 5TWIN4
+
+- Mohamed Amine Chniti
+- Mohamed Amine Souibgui
+- Wiem Karaja
+- Hiba Khadhraoui
+- Montaha Trabelsi
