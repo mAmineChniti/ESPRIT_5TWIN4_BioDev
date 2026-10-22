@@ -1,9 +1,9 @@
-# NutriTrace Jenkins Pipeline — Step-by-Step Documentation
+# Pipeline Jenkins NutriTrace — Documentation étape par étape
 
-This document explains the NutriTrace Jenkins pipeline defined in `Jenkinsfile`.
-Each section shows the exact pipeline step and a short explanation.
+Ce document explique le pipeline Jenkins de NutriTrace défini dans `Jenkinsfile`.
+Chaque section présente l'étape exacte du pipeline et une courte explication.
 
-## Pipeline Options
+## Options du pipeline
 
 ```groovy
 options {
@@ -13,11 +13,11 @@ options {
 }
 ```
 
-- `timestamps()`: adds timestamps to console output.
-- `disableConcurrentBuilds()`: prevents overlapping builds.
-- `buildDiscarder(...)`: keeps only the last 20 builds.
+- `timestamps()` : ajoute des horodatages dans la sortie console.
+- `disableConcurrentBuilds()` : empêche les builds simultanés.
+- `buildDiscarder(...)` : conserve uniquement les 20 derniers builds.
 
-## Environment Variables
+## Variables d'environnement
 
 ```groovy
 environment {
@@ -27,12 +27,12 @@ environment {
 }
 ```
 
-- `SONAR_HOST_URL`: SonarQube server URL.
-- `JAVA_HOME` / `PATH`: Java 21 used by SonarScanner.
+- `SONAR_HOST_URL` : URL du serveur SonarQube.
+- `JAVA_HOME` / `PATH` : Java 21 utilisé par SonarScanner.
 
 ---
 
-## Stage 1 — Checkout
+## Étape 1 — Checkout
 
 ```groovy
 stage('Checkout') {
@@ -42,11 +42,11 @@ stage('Checkout') {
 }
 ```
 
-Clones the repository from GitHub and loads the `Jenkinsfile`.
+Clone le dépôt depuis GitHub et charge le `Jenkinsfile`.
 
 ---
 
-## Stage 2 — Install PHP Dependencies
+## Étape 2 — Installation des dépendances PHP
 
 ```groovy
 stage('Install PHP dependencies') {
@@ -56,11 +56,11 @@ stage('Install PHP dependencies') {
 }
 ```
 
-Installs PHP dependencies without running interactive prompts.
+Installe les dépendances PHP sans interaction.
 
 ---
 
-## Stage 3 — Prepare Environment
+## Étape 3 — Préparation de l'environnement
 
 ```groovy
 stage('Prepare environment') {
@@ -77,11 +77,11 @@ stage('Prepare environment') {
 }
 ```
 
-Creates a local `.env`, generates the application key, and configures SQLite for testing.
+Crée un fichier `.env` local, génère la clé d'application et configure SQLite pour les tests.
 
 ---
 
-## Stage 4 — Lint (Pint)
+## Étape 4 — Lint (Pint)
 
 ```groovy
 stage('Lint (Pint)') {
@@ -91,11 +91,11 @@ stage('Lint (Pint)') {
 }
 ```
 
-Checks PHP code style using Laravel Pint.
+Vérifie le style du code PHP avec Laravel Pint.
 
 ---
 
-## Stage 5 — Syntax Check
+## Étape 5 — Vérification syntaxique
 
 ```groovy
 stage('Syntax check') {
@@ -105,11 +105,11 @@ stage('Syntax check') {
 }
 ```
 
-Runs `php -l` on all PHP files in parallel.
+Exécute `php -l` sur tous les fichiers PHP en parallèle.
 
 ---
 
-## Stage 6 — Build Frontend
+## Étape 6 — Build du frontend
 
 ```groovy
 stage('Build frontend') {
@@ -132,11 +132,11 @@ stage('Build frontend') {
 }
 ```
 
-Installs Node dependencies and builds Tailwind/Vite assets. The build is retried up to three times to handle transient network failures while fetching fonts.
+Installe les dépendances Node et compile les assets Tailwind/Vite. Le build est réessayé jusqu'à trois fois pour gérer les échecs réseau transitoires lors du téléchargement des polices.
 
 ---
 
-## Stage 7 — Migrate & Seed
+## Étape 7 — Migration et seed
 
 ```groovy
 stage('Migrate & seed') {
@@ -150,11 +150,11 @@ stage('Migrate & seed') {
 }
 ```
 
-Creates the database schema and inserts demo data.
+Crée le schéma de base de données et insère les données de démonstration.
 
 ---
 
-## Stage 8 — Tests & Coverage
+## Étape 8 — Tests et couverture
 
 ```groovy
 stage('Tests & coverage') {
@@ -164,11 +164,11 @@ stage('Tests & coverage') {
 }
 ```
 
-Runs the full PHPUnit suite with Xdebug coverage and generates `coverage.xml`.
+Exécute toute la suite PHPUnit avec la couverture Xdebug et génère `coverage.xml`.
 
 ---
 
-## Stage 9 — SonarQube Analysis
+## Étape 9 — Analyse SonarQube
 
 ```groovy
 stage('SonarQube Analysis') {
@@ -193,11 +193,11 @@ stage('SonarQube Analysis') {
 }
 ```
 
-Runs SonarScanner and waits for the quality gate. The build fails if the gate fails.
+Exécute SonarScanner et attend le quality gate. Le build échoue si le quality gate échoue.
 
 ---
 
-## Stage 10 — Deploy Locally
+## Étape 10 — Déploiement local
 
 ```groovy
 stage('Deploy locally') {
@@ -214,11 +214,11 @@ stage('Deploy locally') {
 }
 ```
 
-Deploys the application locally using Docker Compose and prints the local UI link.
+Déploie l'application localement avec Docker Compose et affiche le lien de l'interface.
 
 ---
 
-## Post Actions
+## Actions post-build
 
 ```groovy
 post {
@@ -238,17 +238,17 @@ post {
 }
 ```
 
-- `success`: printed when all stages pass.
-- `failure`: printed when a stage fails.
-- `cleanup`: archives coverage/report files and removes temporary files.
+- `success` : affiché quand toutes les étapes réussissent.
+- `failure` : affiché quand une étape échoue.
+- `cleanup` : archive les fichiers de couverture/rapport et supprime les fichiers temporaires.
 
 ---
 
-## Secrets Used
+## Secrets utilisés
 
-| Jenkins Credential ID | Purpose |
+| Identifiant de credential Jenkins | Usage |
 | --- | --- |
-| `sonar` | SonarQube authentication token |
+| `sonar` | Jeton d'authentification SonarQube |
 
 
-Secrets are stored only in Jenkins and are never committed to Git.
+Les secrets sont stockés uniquement dans Jenkins et ne sont jamais commités dans Git.
