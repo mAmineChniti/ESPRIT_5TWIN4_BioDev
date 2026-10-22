@@ -16,6 +16,7 @@
         <div><dt class="text-muted-foreground">{{ __('Refrigerated') }}</dt><dd class="font-medium">{{ $warehouse->is_refrigerated ? __('Yes') : __('No') }}</dd></div>
     </dl>
 </div>
+<x-warehouse-carbon-analysis :warehouse="$warehouse" />
 
 <h2 class="text-lg font-semibold mb-3">{{ __('Shipments from this warehouse (:count)', ['count' => $shipments->total()]) }}</h2>
 <april:card class="overflow-hidden">
