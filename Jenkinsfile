@@ -56,7 +56,16 @@ pipeline {
                 sh '''
                     set -e
                     npm ci
-                    npm run build
+                    for attempt in 1 2 3; do
+                        if npm run build; then
+                            break
+                        fi
+                        echo "Frontend build failed on attempt $attempt; retrying..."
+                        sleep 5
+                        if [ "$attempt" = "3" ]; then
+                            exit 1
+                        fi
+                    done
                 '''
             }
         }
