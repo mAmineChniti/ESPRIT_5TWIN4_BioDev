@@ -25,4 +25,4 @@ fi
 
 php artisan migrate --force
 
-exec php artisan serve --no-reload --host=0.0.0.0 --port=8000
+exec php artisan serve --no-reload --host=0.0.0.0 --port="${PORT:-8000}"

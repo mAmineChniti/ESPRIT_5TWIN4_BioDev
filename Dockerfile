@@ -34,9 +34,13 @@ RUN mkdir -p storage/framework/sessions storage/framework/views storage/framewor
 
 USER www-data
 
+ENV PORT=8000
+ENV APP_ENV=production
+ENV APP_DEBUG=false
+
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
-    CMD wget -qO- http://127.0.0.1:8000/up > /dev/null || exit 1
+    CMD wget -qO- "http://127.0.0.1:${PORT:-8000}/up" > /dev/null || exit 1
 
 CMD ["sh", "/app/docker/entrypoint.sh"]
