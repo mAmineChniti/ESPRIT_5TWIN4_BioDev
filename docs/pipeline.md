@@ -188,25 +188,23 @@ Runs SonarScanner and waits for the quality gate. The build fails if the gate fa
 
 ---
 
-## Stage 10 — Deploy to Render
+## Stage 10 — Deploy Locally
 
 ```groovy
-stage('Deploy to Render') {
+stage('Deploy locally') {
     steps {
-        withCredentials([string(credentialsId: 'render-deploy-hook', variable: 'RENDER_DEPLOY_HOOK')]) {
-            sh '''
-                set -e
-                echo "Triggering Render deployment..."
-                curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
-                echo
-                echo "Render deployment triggered successfully."
-            '''
-        }
+        sh '''
+            set -e
+            echo "Deploying locally with Docker Compose..."
+            docker compose down || true
+            docker compose up -d --build
+            echo "Local deployment complete."
+        '''
     }
 }
 ```
 
-Triggers Render deployment using a secured Jenkins secret.
+Deploys the application locally using Docker Compose.
 
 ---
 
@@ -240,6 +238,6 @@ post {
 | Jenkins Credential ID | Purpose |
 | --- | --- |
 | `sonar` | SonarQube authentication token |
-| `render-deploy-hook` | Render deployment webhook URL |
+
 
 Secrets are stored only in Jenkins and are never committed to Git.
