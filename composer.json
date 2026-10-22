@@ -8,6 +8,7 @@
     "require": {
         "php": "^8.3",
         "alamellama/geographer": "^1.2",
+        "fakerphp/faker": "^1.24",
         "laravel/framework": "^12.56",
         "laravel/tinker": "^3.0",
         "mallardduck/blade-lucide-icons": "^2.0",
@@ -15,7 +16,6 @@
         "yungifez/april-ui": "^1.3"
     },
     "require-dev": {
-        "fakerphp/faker": "^1.23",
         "laravel/boost": "^2.10",
         "laravel/breeze": "^2.4",
         "laravel/pail": "^1.2.5",
